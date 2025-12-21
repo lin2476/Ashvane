@@ -18,7 +18,6 @@
 
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
-            /* 关键修复：去除移动端默认的方形点击高亮 */
             -webkit-tap-highlight-color: transparent; 
         }
 
@@ -32,7 +31,6 @@
             transition: background 0.5s ease;
         }
 
-        /* 主题类 */
         body.theme-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
         body.theme-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); color: #fff; }
         body.theme-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
@@ -47,7 +45,7 @@
             position: fixed; top: 20px; right: 20px;
             width: 45px; height: 45px;
             background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%; /* 完美圆形 */
+            border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -68,7 +66,7 @@
             display: flex; align-items: center;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            border-radius: 60px; /* 胶囊形 */
+            border-radius: 60px;
             padding: 6px;
             box-shadow: 0 10px 35px rgba(0,0,0,0.1);
             border: 2px solid #fff;
@@ -82,13 +80,12 @@
             display: flex; align-items: center; gap: 10px;
             padding: 12px 22px;
             background: #f8fafc;
-            border-radius: 40px; /* 确保是圆角 */
+            border-radius: 40px;
             cursor: pointer;
             font-weight: 600; color: var(--engine-color);
             transition: all 0.2s; user-select: none;
             border: 1px solid transparent;
         }
-        /* 修复按压时的圆角背景 */
         .current-engine:active { background: #dbeafe; transform: scale(0.96); border-radius: 40px; }
 
         .y-icon {
@@ -117,6 +114,22 @@
 
         .search-input { flex: 1; border: none; background: transparent; padding: 0 15px; font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500; }
 
+        /* --- 新增/修改：右侧跳转按钮样式 --- */
+        .site-jump-btn {
+            display: none; /* 默认隐藏，仅在非本地搜索时显示 */
+            align-items: center; justify-content: center;
+            padding: 0 16px;
+            height: 40px;
+            color: #94a3b8;
+            cursor: pointer;
+            border-left: 1px solid #e2e8f0;
+            transition: color 0.3s;
+            margin-right: 5px;
+        }
+        /* 鼠标悬停时，颜色变成当前搜索引擎的主题色 */
+        .site-jump-btn:hover { color: var(--engine-color); }
+        .site-jump-btn i { font-size: 1.25rem; }
+
         /* ================= 卡片容器 ================= */
         .category-section {
             background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px);
@@ -140,7 +153,7 @@
             transition: transform 0.3s, background 0.3s;
             border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        .card:active { transform: scale(0.96); } /* 手机端按压反馈 */
+        .card:active { transform: scale(0.96); } 
         .card i { font-size: 2.2rem; margin-bottom: 8px; color: var(--theme-color); }
         .card span { font-size: 0.9rem; font-weight: 500; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
@@ -184,38 +197,25 @@
 
         /* ================= 📱 移动端专项紧凑优化 ================= */
         @media (max-width: 600px) {
-            .container { padding: 20px 10px; } /* 减少左右边距，利用屏幕宽度 */
+            .container { padding: 20px 10px; }
             
             .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
             .settings-btn { top: 15px; right: 15px; width: 40px; height: 40px; }
 
             .search-container { padding: 4px; }
             .current-engine { padding: 10px 14px; gap: 6px; }
-            .current-engine span { display: none; } /* 隐藏文字省空间 */
+            .current-engine span { display: none; }
             .search-input { padding: 0 10px; font-size: 1rem; }
+            
+            /* 移动端图标按钮微调 */
+            .site-jump-btn { padding: 0 10px; }
 
-            /* 分类区域紧凑化 */
-            .category-section { 
-                padding: 15px 12px; /* 减少内部浪费 */
-                border-radius: 20px; 
-                margin-bottom: 15px; /* 减少块间距 */
-            }
+            .category-section { padding: 15px 12px; border-radius: 20px; margin-bottom: 15px; }
             .category-header { margin-bottom: 12px; }
             .category-icon { width: 28px; height: 28px; margin-right: 8px; font-size: 1rem; }
             .category-title { font-size: 1rem; }
-
-            /* 网格极致紧凑 */
-            .grid { 
-                grid-template-columns: repeat(3, 1fr); /* 强制3列 */
-                gap: 8px; /* 间距由 18px -> 8px */
-            }
-
-            /* 卡片紧凑化 */
-            .card { 
-                height: 90px; /* 高度压缩 */
-                border-radius: 16px; 
-                padding: 0 4px;
-            }
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .card { height: 90px; border-radius: 16px; padding: 0 4px; }
             .card i { font-size: 1.8rem; margin-bottom: 6px; }
             .card span { font-size: 0.8rem; }
         }
@@ -270,6 +270,9 @@
                     </div>
                 </div>
                 <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
+                <div class="site-jump-btn" id="siteJumpBtn" title="前往网站首页">
+                    <i class="ri-external-link-line"></i>
+                </div>
             </div>
         </header>
         <main id="app"></main>
@@ -319,9 +322,25 @@
         // 搜索逻辑
         let currentMode = 'local';
         const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
+        
+        // --- 修改：对应的首页链接 ---
+        const homepages = {
+            google: "https://www.google.com",
+            bing: "https://www.bing.com",
+            yandex: "https://yandex.com"
+        };
+        const jumpBtn = document.getElementById('siteJumpBtn');
+
         const engineList = document.getElementById('engineList');
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
+
+        // 修改：跳转按钮点击事件
+        jumpBtn.addEventListener('click', () => {
+            if (currentMode !== 'local' && homepages[currentMode]) {
+                window.open(homepages[currentMode], '_blank');
+            }
+        });
 
         currentEngineShow.addEventListener('click', (e) => { e.stopPropagation(); engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; });
         document.querySelectorAll('.engine-item').forEach(item => {
@@ -335,6 +354,15 @@
                 currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
                 engineList.style.display = 'none';
+                
+                // --- 修改：控制跳转按钮显示，并更新提示文字 ---
+                if (mode === 'local') {
+                    jumpBtn.style.display = 'none';
+                } else {
+                    jumpBtn.style.display = 'flex';
+                    jumpBtn.setAttribute('title', `前往 ${name} 首页`);
+                }
+                
                 searchInput.focus();
             });
         });
