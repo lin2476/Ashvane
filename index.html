@@ -8,9 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ================= 核心变量 ================= */
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-bg: rgba(255, 255, 255, 0.85);
             --glass-border: rgba(255, 255, 255, 0.6);
             --menu-hover: #f1f5f9;
             --text-main: #1f2937;
@@ -30,7 +29,6 @@
 
         .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
 
-        /* ================= 头部与搜索栏 ================= */
         header { text-align: center; margin-bottom: 50px; padding-top: 30px; position: relative; z-index: 1000; }
         
         .title-area h1 { 
@@ -38,7 +36,6 @@
             color: #2c3e50; 
             margin-bottom: 30px; 
             letter-spacing: -1px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         .search-container {
@@ -59,11 +56,9 @@
 
         .search-container:focus-within {
             transform: translateY(-2px);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.12);
             border-color: var(--engine-color);
         }
 
-        /* 引擎选择器 */
         .engine-selector { position: relative; flex-shrink: 0; }
 
         .current-engine {
@@ -79,9 +74,8 @@
             transition: all 0.3s;
             user-select: none;
         }
-        .current-engine:hover { background: #f1f5f9; }
 
-        /* 自定义 Yandex 图标样式 (圆形红底白字) */
+        /* 自定义 Y 图标 */
         .y-icon {
             display: inline-flex;
             align-items: center;
@@ -96,9 +90,9 @@
             font-weight: bold;
             font-style: normal;
             line-height: 1;
+            flex-shrink: 0;
         }
 
-        /* 下拉列表 */
         .engine-list {
             position: absolute;
             top: calc(100% + 15px);
@@ -144,7 +138,7 @@
             font-weight: 500;
         }
 
-        /* ================= 内容卡片 ================= */
+        /* 分类与卡片样式 */
         .category-section {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
@@ -157,44 +151,16 @@
             transition: all 0.7s ease;
         }
         .category-section.visible { opacity: 1; transform: translateY(0); }
-
         .category-header { display: flex; align-items: center; margin-bottom: 22px; }
-        .category-icon { 
-            width: 36px; height: 36px; border-radius: 10px; 
-            display: flex; align-items: center; justify-content: center; 
-            margin-right: 14px; color: white; font-size: 1.2rem;
-        }
-        .category-title { font-weight: 700; font-size: 1.2rem; }
-
+        .category-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: white; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
-
-        .card {
-            background: rgba(255,255,255,0.5);
-            padding: 22px 10px;
-            border-radius: 20px;
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid transparent;
-        }
-        .card:hover {
-            background: #fff;
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.06);
-            border-color: #fff;
-        }
+        .card { background: rgba(255,255,255,0.5); padding: 22px 10px; border-radius: 20px; text-decoration: none; color: var(--text-main); display: flex; flex-direction: column; align-items: center; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid transparent; }
+        .card:hover { background: #fff; transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.06); border-color: #fff; }
         .card i { font-size: 2.2rem; margin-bottom: 12px; color: var(--theme-color); }
-        .card span { font-size: 0.9rem; font-weight: 500; text-align: center; }
+        .card span { font-size: 0.9rem; font-weight: 500; }
 
-        /* ================= 手机端优化 ================= */
         @media (max-width: 600px) {
-            .container { padding: 20px 15px; }
-            .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
-            .current-engine { padding: 10px 15px; }
-            .current-engine span { display: none; } /* 手机端隐藏文字 */
+            .current-engine span { display: none; }
             .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
             .card { padding: 15px 5px; }
             .card i { font-size: 1.8rem; }
@@ -214,21 +180,20 @@
                         <i class="ri-arrow-down-s-line"></i>
                     </div>
                     <div class="engine-list" id="engineList">
-                        <div class="engine-item" data-engine="local" data-color="#4a90e2"><i class="ri-search-eye-line"></i>本地搜索</div>
-                        <div class="engine-item" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i>Google</div>
-                        <div class="engine-item" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i>Bing</div>
-                        <div class="engine-item" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em>Yandex</div>
+                        <div class="engine-item" data-engine="local" data-color="#4a90e2"><i class="ri-search-eye-line"></i><label>本地搜索</label></div>
+                        <div class="engine-item" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
+                        <div class="engine-item" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
+                        <div class="engine-item" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em><label>Yandex</label></div>
                     </div>
                 </div>
                 <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
             </div>
         </header>
-
         <main id="app"></main>
     </div>
 
     <script>
-        // ================= 网站数据 =================
+        // 网站数据部分
         const navData = [
             {
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
@@ -236,8 +201,8 @@
                     { name: "ChatGPT", url: "https://chat.openai.com", icon: "ri-openai-fill" },
                     { name: "Claude", url: "https://claude.ai", icon: "ri-brain-fill" },
                     { name: "DeepSeek", url: "https://www.deepseek.com", icon: "ri-shining-fill" },
-                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" },
-                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" }
+                    { name: "Kimi", url: "https://kimi.moonshot.cn", icon: "ri-shining-2-fill" },
+                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" }
                 ]
             },
             {
@@ -246,23 +211,11 @@
                     { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-fill" },
                     { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" },
                     { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
-                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-2-fill" },
                     { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" }
-                ]
-            },
-            {
-                category: "效率工具", icon: "ri-tools-fill", themeColor: "#3b82f6",
-                items: [
-                    { name: "Notion", url: "https://notion.so", icon: "ri-sticky-note-fill" },
-                    { name: "DeepL", url: "https://deepl.com", icon: "ri-translate-2" },
-                    { name: "Gmail", url: "https://mail.google.com", icon: "ri-mail-fill" },
-                    { name: "Canva", url: "https://canva.com", icon: "ri-palette-fill" },
-                    { name: "Figma", url: "https://figma.com", icon: "ri-pen-nib-fill" }
                 ]
             }
         ];
 
-        // ================= 搜索逻辑 =================
         let currentMode = 'local';
         const searchEngines = {
             google: "https://www.google.com/search?q=",
@@ -274,24 +227,25 @@
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
 
-        // 开关菜单
         currentEngineShow.addEventListener('click', (e) => {
             e.stopPropagation();
             engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex';
         });
 
-        // 切换引擎
+        // 核心修复逻辑
         document.querySelectorAll('.engine-item').forEach(item => {
             item.addEventListener('click', () => {
                 const mode = item.getAttribute('data-engine');
                 const color = item.getAttribute('data-color');
-                const name = item.querySelector('span') ? item.querySelector('span').innerText : item.innerText;
-                const iconHtml = item.querySelector('i') ? item.querySelector('i').outerHTML : item.querySelector('.y-icon').outerHTML;
+                // 修复：只提取 label 标签内的纯文本
+                const name = item.querySelector('label').innerText;
+                // 修复：只抓取图标 HTML（i标签或em标签）
+                const iconHtml = (item.querySelector('i') || item.querySelector('.y-icon')).outerHTML;
 
                 currentMode = mode;
                 document.documentElement.style.setProperty('--engine-color', color);
                 
-                // 更新展示区域的内容
+                // 重新组合，避免文字重复
                 currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
                 
@@ -300,7 +254,6 @@
             });
         });
 
-        // 执行搜索
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const query = searchInput.value.trim();
@@ -310,7 +263,6 @@
             }
         });
 
-        // 本地实时筛选
         searchInput.addEventListener('input', (e) => {
             if (currentMode !== 'local') return;
             const val = e.target.value.toLowerCase();
@@ -321,7 +273,6 @@
             renderNav(filtered);
         });
 
-        // 渲染函数
         function renderNav(data) {
             const app = document.getElementById('app');
             app.innerHTML = data.map((group, idx) => `
