@@ -37,6 +37,10 @@
         
         body.theme-midnight .card { border-color: rgba(255,255,255,0.1); color: #1e293b; }
         body.theme-midnight .title-area h1 { color: #f1f5f9; }
+        body.theme-midnight .input-style, body.theme-midnight .manage-item { background: #f1f5f9; border-color: transparent; }
+        body.theme-midnight .group-header:hover { background: rgba(255,255,255,0.1); }
+        body.theme-midnight .modal { background: #0f172a; color: #fff; }
+        body.theme-midnight .modal-header h3 { color: #fff; }
 
         .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; position: relative; }
 
@@ -114,9 +118,8 @@
 
         .search-input { flex: 1; border: none; background: transparent; padding: 0 15px; font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500; }
 
-        /* --- 新增/修改：右侧跳转按钮样式 --- */
         .site-jump-btn {
-            display: none; /* 默认隐藏，仅在非本地搜索时显示 */
+            display: none;
             align-items: center; justify-content: center;
             padding: 0 16px;
             height: 40px;
@@ -126,7 +129,6 @@
             transition: color 0.3s;
             margin-right: 5px;
         }
-        /* 鼠标悬停时，颜色变成当前搜索引擎的主题色 */
         .site-jump-btn:hover { color: var(--engine-color); }
         .site-jump-btn i { font-size: 1.25rem; }
 
@@ -137,6 +139,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             opacity: 0; transform: translateY(20px);
             transition: all 0.6s ease;
+            position: relative;
         }
         .category-section.visible { opacity: 1; transform: translateY(0); }
         .category-header { display: flex; align-items: center; margin-bottom: 20px; }
@@ -144,8 +147,14 @@
         .category-title { font-weight: 700; font-size: 1.1rem; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
+        
+        .grid:empty::after {
+            content: "暂无内容，请在设置中添加";
+            display: block; grid-column: 1 / -1;
+            text-align: center; color: #999; font-size: 0.9rem; padding: 10px 0;
+            border: 2px dashed rgba(255,255,255,0.5); border-radius: 15px;
+        }
 
-        /* 卡片 */
         .card {
             background: var(--glass-bg); height: 110px; padding: 0 10px;
             border-radius: 20px; text-decoration: none; color: var(--text-main);
@@ -157,67 +166,163 @@
         .card i { font-size: 2.2rem; margin-bottom: 8px; color: var(--theme-color); }
         .card span { font-size: 0.9rem; font-weight: 500; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
-        /* ================= 设置弹窗 ================= */
+        /* ================= 设置页 (全屏修改) ================= */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
-            z-index: 3000; display: none; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s;
+            z-index: 3000; 
+            visibility: hidden; opacity: 0; transition: all 0.3s;
         }
-        .modal-overlay.open { display: flex; opacity: 1; }
-        .modal {
-            background: white; width: 85%; max-width: 380px;
-            border-radius: 24px; padding: 25px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            transform: scale(0.9); transition: transform 0.3s;
-        }
-        .modal-overlay.open .modal { transform: scale(1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-header h3 { font-size: 1.3rem; color: #333; }
-        .close-btn { font-size: 1.5rem; padding: 5px; cursor: pointer; color: #999; }
+        .modal-overlay.open { visibility: visible; opacity: 1; }
         
-        .setting-group { margin-bottom: 20px; }
-        .setting-title { font-size: 0.9rem; font-weight: 700; color: #666; margin-bottom: 10px; display: block; }
-        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .toggle-label { font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 8px; }
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; 
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+            display: flex; flex-direction: column;
+        }
+        .modal-overlay.open .modal { transform: translateY(0); }
+        
+        /* 顶部固定栏 */
+        .modal-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 20px; border-bottom: 1px solid #f1f5f9;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+        .modal-header h3 { font-size: 1.2rem; color: #333; font-weight: 700; }
+        .close-btn { font-size: 1.8rem; padding: 5px; cursor: pointer; color: #666; }
+
+        /* 内容滚动区 */
+        .modal-content-scroll {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding: 20px;
+            width: 100%; max-width: 700px; /* 大屏限制宽度 */
+            margin: 0 auto; /* 居中 */
+        }
+        
+        /* --- 折叠面板样式 --- */
+        .setting-group { margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+        .setting-group:last-child { border-bottom: none; }
+        
+        .group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 5px; cursor: pointer; user-select: none;
+            transition: background 0.2s; border-radius: 8px;
+        }
+        .group-header:hover { background: #f8fafc; }
+        .setting-title { font-size: 1rem; font-weight: 700; color: #555; display: block; }
+        .arrow-icon { color: #999; transition: transform 0.3s; }
+        
+        .group-content {
+            display: none; padding: 5px 5px 20px 5px; 
+            animation: slideDown 0.3s ease-out;
+        }
+        .setting-group.active .group-content { display: block; }
+        .setting-group.active .arrow-icon { transform: rotate(180deg); color: #4a90e2; }
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 开关和滑块 */
+        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .toggle-label { font-size: 1rem; color: #333; display: flex; align-items: center; gap: 8px; }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s; border-radius: 24px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         input:checked + .slider { background-color: #4a90e2; }
         input:checked + .slider:before { transform: translateX(20px); }
-        .theme-options { display: flex; gap: 8px; }
-        .theme-opt { flex: 1; height: 50px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; }
-        .theme-opt.active { border-color: #4a90e2; transform: scale(0.96); }
+        .theme-options { display: flex; gap: 8px; margin-bottom: 20px; }
+        .theme-opt { flex: 1; height: 60px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; }
+        .theme-opt.active { border-color: #4a90e2; transform: scale(0.98); }
         .bg-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
         .bg-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
         .bg-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
         .range-slider { width: 100%; height: 6px; background: #eee; border-radius: 5px; -webkit-appearance: none; }
-        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #4a90e2; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4a90e2; }
 
-        /* ================= 📱 移动端专项紧凑优化 ================= */
+        /* --- 自定义添加表单 --- */
+        .add-nav-form { display: flex; flex-direction: column; gap: 15px; }
+        .input-style {
+            width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
+            font-size: 1rem; outline: none; transition: border 0.3s; background: #f8fafc;
+        }
+        .input-style:focus { border-color: #4a90e2; background: #fff; }
+        .color-row { display: flex; align-items: center; justify-content: space-between; font-size: 1rem; color: #555; }
+        .color-row input[type="color"] { border: none; width: 45px; height: 35px; cursor: pointer; background: transparent; }
+        .action-btn {
+            background: #4a90e2; color: white; border: none; padding: 14px;
+            border-radius: 12px; cursor: pointer; font-size: 1rem; font-weight: 600;
+            transition: background 0.2s; text-align: center; margin-top: 5px;
+        }
+        .action-btn.edit-mode { background: #f59e0b; }
+        .action-btn:active { transform: scale(0.98); }
+        .reset-btn { background: #fee2e2; color: #ef4444; margin-top: 15px; }
+        .form-tip { font-size: 0.85rem; color: #999; margin-top: -8px; }
+
+        /* --- 板块管理列表 --- */
+        #manageList { display: flex; flex-direction: column; gap: 12px; }
+        .manage-item { 
+            background: #f8fafc; border-radius: 14px; padding: 10px 12px; border: 1px solid #eee;
+        }
+        .manage-header { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+        .manage-color-picker { width: 28px; height: 28px; border: none; border-radius: 50%; cursor: pointer; padding: 0; background: none; flex-shrink: 0;}
+        .manage-title-input { flex: 1; border: none; background: transparent; font-size: 1rem; font-weight: bold; color: #333; outline: none; border-bottom: 1px dashed transparent; min-width: 0; }
+        .manage-title-input:focus { border-bottom-color: #4a90e2; }
+        
+        .manage-btn-group {
+            display: flex; align-items: center; gap: 20px; 
+            padding-left: 12px; border-left: 1px solid #e2e8f0; margin-left: 5px;
+        }
+        .manage-icon-btn { 
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+            border-radius: 6px; cursor: pointer; color: #64748b; font-size: 1.3rem;
+        }
+        .manage-icon-btn:hover { background: #e2e8f0; color: #333; }
+        .btn-add-item { color: #10a37f; }
+        .btn-add-item:hover { background: #d1fae5; }
+        .btn-delete-cat { color: #ef4444; }
+        .btn-delete-cat:hover { background: #fee2e2; color: #dc2626; }
+        
+        .manage-subitems { 
+            display: none; padding-top: 10px; padding-left: 10px; border-top: 1px dashed #e2e8f0; margin-top: 10px;
+        }
+        .manage-subitems.open { display: block; }
+        
+        .sub-item-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .sub-item-info { display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1; }
+        .sub-item-name { color: #333; font-weight: 500; white-space: nowrap; }
+        .sub-item-url { color: #999; font-size: 0.8rem; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .sub-actions { 
+            display: flex; align-items: center; gap: 20px; 
+            padding-left: 15px; margin-left: 10px;
+            border-left: 1px solid #eee;
+        }
+        .sub-btn { 
+            cursor: pointer; font-size: 1.2rem; padding: 5px; 
+            transition: color 0.2s;
+        }
+        .sub-btn-edit { color: #4a90e2; }
+        .sub-btn-del { color: #94a3b8; }
+        .sub-btn-del:hover { color: #ef4444; }
+
         @media (max-width: 600px) {
             .container { padding: 20px 10px; }
-            
             .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
             .settings-btn { top: 15px; right: 15px; width: 40px; height: 40px; }
-
             .search-container { padding: 4px; }
             .current-engine { padding: 10px 14px; gap: 6px; }
             .current-engine span { display: none; }
             .search-input { padding: 0 10px; font-size: 1rem; }
-            
-            /* 移动端图标按钮微调 */
             .site-jump-btn { padding: 0 10px; }
-
             .category-section { padding: 15px 12px; border-radius: 20px; margin-bottom: 15px; }
-            .category-header { margin-bottom: 12px; }
-            .category-icon { width: 28px; height: 28px; margin-right: 8px; font-size: 1rem; }
-            .category-title { font-size: 1rem; }
             .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .card { height: 90px; border-radius: 16px; padding: 0 4px; }
             .card i { font-size: 1.8rem; margin-bottom: 6px; }
             .card span { font-size: 0.8rem; }
+            
+            /* 手机端全屏微调 */
+            .modal-content-scroll { padding: 15px 15px 80px 15px; }
         }
     </style>
 </head>
@@ -231,23 +336,71 @@
                 <h3>偏好设置</h3>
                 <i class="ri-close-line close-btn" id="closeSettings"></i>
             </div>
-            <div class="setting-group">
-                <span class="setting-title">搜索引擎</span>
-                <div class="toggle-item"><span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span><label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label></div>
-                <div class="toggle-item"><span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span><label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label></div>
-                <div class="toggle-item"><span class="toggle-label"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span><label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label></div>
-            </div>
-            <div class="setting-group">
-                <span class="setting-title">背景主题</span>
-                <div class="theme-options">
-                    <div class="theme-opt bg-aurora active" onclick="setTheme('aurora')" title="极光"></div>
-                    <div class="theme-opt bg-midnight" onclick="setTheme('midnight')" title="深邃"></div>
-                    <div class="theme-opt bg-morning" onclick="setTheme('morning')" title="清晨"></div>
+            
+            <div class="modal-content-scroll">
+                <div class="setting-group" id="group-add">
+                    <div class="group-header" onclick="toggleGroup('group-add')">
+                        <span class="setting-title" id="formTitle">新增/编辑 内容</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
+                    <div class="group-content">
+                        <div class="add-nav-form">
+                            <input type="text" id="newCatTitle" placeholder="板块名称 (必填)" class="input-style">
+                            <div class="color-row">
+                                <span>板块标题颜色:</span>
+                                <input type="color" id="newCatColor" value="#4a90e2">
+                            </div>
+                            <div style="border-top:1px dashed #eee; margin:5px 0;"></div>
+                            <input type="text" id="newItemName" placeholder="网址名称 (选填)" class="input-style">
+                            <input type="url" id="newItemUrl" placeholder="网址链接 (选填)" class="input-style">
+                            <div class="form-tip" id="formTip">* 仅填写板块名称可创建空板块</div>
+                            <button id="addNavBtn" class="action-btn">添加</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="setting-group">
-                <span class="setting-title">卡片透明度</span>
-                <input type="range" min="0.4" max="1" step="0.1" value="0.9" class="range-slider" id="opacitySlider">
+
+                <div class="setting-group" id="group-manage">
+                    <div class="group-header" onclick="toggleGroup('group-manage')">
+                        <span class="setting-title">管理当前板块</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
+                    <div class="group-content">
+                        <div id="manageList">
+                            </div>
+                        <button id="resetNavBtn" class="action-btn reset-btn" style="display:none; width:100%">重置所有数据</button>
+                    </div>
+                </div>
+
+                <div class="setting-group" id="group-engine">
+                    <div class="group-header" onclick="toggleGroup('group-engine')">
+                        <span class="setting-title">搜索引擎</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
+                    <div class="group-content">
+                        <div class="toggle-item"><span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span><label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label></div>
+                        <div class="toggle-item"><span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span><label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label></div>
+                        <div class="toggle-item"><span class="toggle-label"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span><label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label></div>
+                    </div>
+                </div>
+
+                <div class="setting-group" id="group-theme">
+                    <div class="group-header" onclick="toggleGroup('group-theme')">
+                        <span class="setting-title">背景主题</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
+                    <div class="group-content">
+                        <div class="theme-options">
+                            <div class="theme-opt bg-aurora active" onclick="setTheme('aurora')" title="极光"></div>
+                            <div class="theme-opt bg-midnight" onclick="setTheme('midnight')" title="深邃"></div>
+                            <div class="theme-opt bg-morning" onclick="setTheme('morning')" title="清晨"></div>
+                        </div>
+                        
+                        <div style="border-top: 1px dashed #eee; padding-top: 15px; margin-top: 5px;">
+                            <span class="setting-title" style="font-size: 0.9rem; margin-bottom: 15px; display:block; color:#666;">卡片透明度</span>
+                            <input type="range" min="0.4" max="1" step="0.1" value="0.9" class="range-slider" id="opacitySlider">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -279,7 +432,13 @@
     </div>
 
     <script>
-        const navData = [
+        // ================= 折叠面板逻辑 =================
+        function toggleGroup(groupId) {
+            const group = document.getElementById(groupId);
+            group.classList.toggle('active');
+        }
+
+        const defaultNavData = [
             {
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
@@ -303,7 +462,16 @@
             }
         ];
 
-        // 配置读取
+        let navData = JSON.parse(localStorage.getItem('myHubNavData')) || JSON.parse(JSON.stringify(defaultNavData));
+        let editingState = null;
+
+        function saveNavData() {
+            localStorage.setItem('myHubNavData', JSON.stringify(navData));
+            renderNav(navData);
+            renderManageList(); 
+        }
+
+        // ================= 配置读取 =================
         const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || { engines: { google: true, bing: true, yandex: true }, theme: 'aurora', opacity: 0.9 };
 
         function applyConfig() {
@@ -316,31 +484,20 @@
             setTheme(savedConfig.theme, false);
             document.documentElement.style.setProperty('--glass-opacity', savedConfig.opacity);
             document.getElementById('opacitySlider').value = savedConfig.opacity;
+            if (localStorage.getItem('myHubNavData')) document.getElementById('resetNavBtn').style.display = 'block';
         }
         function saveConfig() { localStorage.setItem('myHubConfig', JSON.stringify(savedConfig)); }
 
-        // 搜索逻辑
+        // ================= 搜索逻辑 =================
         let currentMode = 'local';
         const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
-        
-        // --- 修改：对应的首页链接 ---
-        const homepages = {
-            google: "https://www.google.com",
-            bing: "https://www.bing.com",
-            yandex: "https://yandex.com"
-        };
+        const homepages = { google: "https://www.google.com", bing: "https://www.bing.com", yandex: "https://yandex.com" };
         const jumpBtn = document.getElementById('siteJumpBtn');
-
         const engineList = document.getElementById('engineList');
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
 
-        // 修改：跳转按钮点击事件
-        jumpBtn.addEventListener('click', () => {
-            if (currentMode !== 'local' && homepages[currentMode]) {
-                window.open(homepages[currentMode], '_blank');
-            }
-        });
+        jumpBtn.addEventListener('click', () => { if (currentMode !== 'local' && homepages[currentMode]) window.open(homepages[currentMode], '_blank'); });
 
         currentEngineShow.addEventListener('click', (e) => { e.stopPropagation(); engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; });
         document.querySelectorAll('.engine-item').forEach(item => {
@@ -354,15 +511,8 @@
                 currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
                 engineList.style.display = 'none';
-                
-                // --- 修改：控制跳转按钮显示，并更新提示文字 ---
-                if (mode === 'local') {
-                    jumpBtn.style.display = 'none';
-                } else {
-                    jumpBtn.style.display = 'flex';
-                    jumpBtn.setAttribute('title', `前往 ${name} 首页`);
-                }
-                
+                if (mode === 'local') { jumpBtn.style.display = 'none'; } 
+                else { jumpBtn.style.display = 'flex'; jumpBtn.setAttribute('title', `前往 ${name} 首页`); }
                 searchInput.focus();
             });
         });
@@ -381,11 +531,18 @@
             renderNav(filtered);
         });
 
-        // 设置面板逻辑
+        // ================= 设置面板逻辑 =================
         const modalOverlay = document.getElementById('modalOverlay');
-        document.getElementById('openSettings').addEventListener('click', () => modalOverlay.classList.add('open'));
-        document.getElementById('closeSettings').addEventListener('click', () => modalOverlay.classList.remove('open'));
-        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove('open'); });
+        document.getElementById('openSettings').addEventListener('click', () => {
+            modalOverlay.classList.add('open');
+            renderManageList(); 
+        });
+        document.getElementById('closeSettings').addEventListener('click', () => {
+            modalOverlay.classList.remove('open');
+            resetEditMode();
+        });
+        // 阻止点击内容区域关闭，只在点击遮罩(如果露出)时关闭，但全屏模式下基本没有遮罩了
+        // modalOverlay.addEventListener('click', ...) // 全屏模式可以省略此逻辑
 
         function updateEngineState(key, isChecked) { savedConfig.engines[key] = isChecked; applyConfig(); saveConfig(); }
         document.getElementById('toggleGoogle').addEventListener('change', (e) => updateEngineState('google', e.target.checked));
@@ -407,18 +564,231 @@
             saveConfig();
         });
 
+        // ================= 内容管理 =================
+
+        function renderManageList() {
+            const listContainer = document.getElementById('manageList');
+            if (navData.length === 0) {
+                listContainer.innerHTML = '<div style="color:#999;text-align:center;font-size:0.9rem">暂无数据</div>';
+                return;
+            }
+
+            listContainer.innerHTML = navData.map((group, gIdx) => `
+                <div class="manage-item">
+                    <div class="manage-header">
+                        <input type="color" class="manage-color-picker" value="${group.themeColor}" onchange="updateCatColor(${gIdx}, this.value)">
+                        <input type="text" class="manage-title-input" value="${group.category}" onchange="updateCatTitle(${gIdx}, this.value)">
+                        <div class="manage-btn-group">
+                            <div class="manage-icon-btn btn-add-item" title="向此板块添加网址" onclick="prepareAddItem(${gIdx})"><i class="ri-add-line"></i></div>
+                            <div class="manage-icon-btn" onclick="toggleSubItems(${gIdx})"><i class="ri-arrow-down-s-line" id="arrow-${gIdx}"></i></div>
+                            <div class="manage-icon-btn btn-delete-cat" onclick="deleteCategory(${gIdx})"><i class="ri-delete-bin-line"></i></div>
+                        </div>
+                    </div>
+                    <div class="manage-subitems" id="sub-${gIdx}">
+                        ${group.items.length === 0 ? '<div style="text-align:center;color:#ccc;font-size:0.8rem;padding:5px;">暂无网址</div>' : ''}
+                        ${group.items.map((item, iIdx) => `
+                            <div class="sub-item-row">
+                                <div class="sub-item-info">
+                                    <span class="sub-item-name">${item.name}</span>
+                                    <span class="sub-item-url">${item.url}</span>
+                                </div>
+                                <div class="sub-actions">
+                                    <i class="ri-edit-line sub-btn sub-btn-edit" onclick="startEditItem(${gIdx}, ${iIdx})"></i>
+                                    <i class="ri-close-circle-line sub-btn sub-btn-del" onclick="deleteItem(${gIdx}, ${iIdx})"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.toggleSubItems = function(idx) {
+            const sub = document.getElementById(`sub-${idx}`);
+            const arrow = document.getElementById(`arrow-${idx}`);
+            if (sub.classList.contains('open')) {
+                sub.classList.remove('open');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                sub.classList.add('open');
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        };
+
+        window.updateCatTitle = function(idx, newTitle) {
+            if(!newTitle.trim()) return;
+            navData[idx].category = newTitle;
+            saveNavData();
+        };
+
+        window.updateCatColor = function(idx, newColor) {
+            navData[idx].themeColor = newColor;
+            saveNavData();
+        };
+
+        window.deleteCategory = function(idx) {
+            if(confirm(`确定要删除板块 "${navData[idx].category}" 及其下所有网址吗？`)) {
+                navData.splice(idx, 1);
+                saveNavData();
+            }
+        };
+
+        window.deleteItem = function(gIdx, iIdx) {
+            navData[gIdx].items.splice(iIdx, 1);
+            saveNavData();
+            setTimeout(() => toggleSubItems(gIdx), 50); 
+        };
+
+        // --- 准备添加：点击加号 ---
+        window.prepareAddItem = function(gIdx) {
+            const group = navData[gIdx];
+            document.getElementById('newCatTitle').value = group.category;
+            document.getElementById('newCatColor').value = group.themeColor;
+            
+            // 清空网址输入
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemUrl').value = '';
+            
+            // 界面反馈
+            document.getElementById('group-add').classList.add('active');
+            document.getElementById('group-add').scrollIntoView({ behavior: 'smooth' });
+            
+            // 聚焦到网址名称，方便直接输入
+            setTimeout(() => document.getElementById('newItemName').focus(), 300);
+        }
+
+        // --- 编辑逻辑 ---
+        window.startEditItem = function(gIdx, iIdx) {
+            const item = navData[gIdx].items[iIdx];
+            const group = navData[gIdx];
+
+            document.getElementById('newCatTitle').value = group.category;
+            document.getElementById('newCatColor').value = group.themeColor;
+            document.getElementById('newItemName').value = item.name;
+            document.getElementById('newItemUrl').value = item.url;
+
+            editingState = { gIdx, iIdx };
+            const btn = document.getElementById('addNavBtn');
+            btn.innerText = "保存修改";
+            btn.classList.add('edit-mode');
+            document.getElementById('formTitle').innerText = "编辑选中内容";
+            document.getElementById('formTip').innerText = "* 正在编辑模式";
+
+            document.getElementById('group-add').classList.add('active');
+            document.getElementById('group-add').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        function resetEditMode() {
+            editingState = null;
+            document.getElementById('newCatTitle').value = '';
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemUrl').value = '';
+            const btn = document.getElementById('addNavBtn');
+            btn.innerText = "添加";
+            btn.classList.remove('edit-mode');
+            document.getElementById('formTitle').innerText = "新增/编辑 内容";
+            document.getElementById('formTip').innerText = "* 仅填写板块名称可创建空板块";
+        }
+
+        // --- 核心：添加/保存逻辑 ---
+        document.getElementById('addNavBtn').addEventListener('click', () => {
+            const title = document.getElementById('newCatTitle').value.trim();
+            const color = document.getElementById('newCatColor').value;
+            const itemName = document.getElementById('newItemName').value.trim();
+            let itemUrl = document.getElementById('newItemUrl').value.trim();
+
+            if (!title) { alert('请输入板块名称！'); return; }
+
+            // 检查：是否正在尝试添加网址但信息不全
+            if ((itemName && !itemUrl) || (!itemName && itemUrl)) {
+                alert('若要添加网址，请同时填写名称和链接。\n若仅需创建空板块，请清空网址信息。');
+                return;
+            }
+
+            if (itemUrl && !itemUrl.startsWith('http://') && !itemUrl.startsWith('https://')) itemUrl = 'https://' + itemUrl;
+
+            // 模式 1: 编辑现有网址
+            if (editingState) {
+                const { gIdx, iIdx } = editingState;
+                
+                if (navData[gIdx].category !== title) {
+                    const targetGroup = navData.find(g => g.category === title);
+                    navData[gIdx].items.splice(iIdx, 1);
+                    if(navData[gIdx].items.length === 0) navData.splice(gIdx, 1);
+
+                    const newItem = { name: itemName, url: itemUrl, icon: "ri-link" };
+                    
+                    if (targetGroup) {
+                        targetGroup.items.push(newItem);
+                    } else {
+                        navData.unshift({ category: title, icon: "ri-folder-fill", themeColor: color, items: [newItem] });
+                    }
+                } else {
+                    navData[gIdx].themeColor = color;
+                    navData[gIdx].items[iIdx] = { name: itemName, url: itemUrl, icon: "ri-link" };
+                }
+                alert('修改保存成功！');
+                resetEditMode();
+            } 
+            // 模式 2: 新增
+            else {
+                const existingCategory = navData.find(c => c.category === title);
+                const hasItem = itemName && itemUrl;
+
+                if (existingCategory) {
+                    existingCategory.themeColor = color;
+                    if (hasItem) {
+                        existingCategory.items.push({ name: itemName, url: itemUrl, icon: "ri-link" });
+                        alert('已添加到现有板块！');
+                    } else {
+                        alert('现有板块颜色已更新！');
+                    }
+                } else {
+                    const newItems = hasItem ? [{ name: itemName, url: itemUrl, icon: "ri-link" }] : [];
+                    navData.unshift({
+                        category: title,
+                        icon: hasItem ? "ri-folder-add-fill" : "ri-folder-fill",
+                        themeColor: color,
+                        items: newItems
+                    });
+                    alert(hasItem ? '新板块及网址已添加！' : '空板块已创建！');
+                }
+                
+                document.getElementById('newItemName').value = '';
+                document.getElementById('newItemUrl').value = '';
+            }
+
+            saveNavData();
+            document.getElementById('resetNavBtn').style.display = 'block';
+        });
+
+        document.getElementById('resetNavBtn').addEventListener('click', () => {
+            if(confirm('确定要清空所有自定义数据，恢复到初始状态吗？此操作不可撤销。')) {
+                localStorage.removeItem('myHubNavData');
+                navData = JSON.parse(JSON.stringify(defaultNavData));
+                saveNavData();
+                document.getElementById('resetNavBtn').style.display = 'none';
+                resetEditMode();
+                alert('已重置');
+            }
+        });
+
         function renderNav(data) {
             const app = document.getElementById('app');
+            if (data.length === 0) {
+                app.innerHTML = '<div style="text-align:center;padding:50px;color:#666">未找到结果</div>';
+                return;
+            }
             app.innerHTML = data.map((group, idx) => `
                 <div class="category-section" style="transition-delay: ${idx * 0.1}s">
                     <div class="category-header">
-                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon}"></i></div>
+                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon || 'ri-folder-fill'}"></i></div>
                         <div class="category-title" style="color:${group.themeColor}">${group.category}</div>
                     </div>
                     <div class="grid">
                         ${group.items.map(item => `
                             <a href="${item.url}" class="card" target="_blank" style="--theme-color:${group.themeColor}">
-                                <i class="${item.icon}"></i>
+                                <i class="${item.icon || 'ri-link'}"></i>
                                 <span title="${item.name}">${item.name}</span>
                             </a>
                         `).join('')}
