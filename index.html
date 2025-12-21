@@ -9,8 +9,9 @@
     
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.6);
+            /* 默认变量，会被JS动态修改 */
+            --glass-opacity: 0.9;
+            --glass-bg: rgba(255, 255, 255, var(--glass-opacity));
             --menu-hover: #f1f5f9;
             --text-main: #1f2937;
             --engine-color: #4a90e2; 
@@ -20,15 +21,47 @@
 
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); /* 默认极光 */
             background-attachment: fixed;
             min-height: 100vh;
             color: var(--text-main);
             padding-bottom: 60px;
+            transition: background 0.5s ease;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        /* 预设背景类 */
+        body.theme-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        body.theme-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); color: #fff; }
+        body.theme-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
+        
+        /* 深色模式下的文字适配 */
+        body.theme-midnight .title-area h1 { color: #e2e8f0; }
+        body.theme-midnight .card { border-color: rgba(255,255,255,0.1); color: #1e293b; } /* 卡片内部保持深色字或适配 */
 
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; position: relative; }
+
+        /* ================= 设置按钮 ================= */
+        .settings-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 2000;
+            transition: all 0.3s;
+            border: 2px solid white;
+        }
+        .settings-btn:hover { transform: rotate(90deg); background: white; }
+        .settings-btn i { font-size: 1.5rem; color: #555; }
+
+        /* ================= 头部 ================= */
         header { text-align: center; margin-bottom: 50px; padding-top: 30px; position: relative; z-index: 1000; }
         
         .title-area h1 { 
@@ -36,8 +69,10 @@
             color: #2c3e50; 
             margin-bottom: 30px; 
             letter-spacing: -1px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
+        /* ================= 搜索组件 ================= */
         .search-container {
             position: relative;
             max-width: 680px;
@@ -46,7 +81,6 @@
             align-items: center;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border-radius: 60px;
             padding: 6px;
             box-shadow: 0 10px 35px rgba(0,0,0,0.1);
@@ -56,7 +90,9 @@
 
         .search-container:focus-within {
             transform: translateY(-2px);
+            box-shadow: 0 15px 45px rgba(0,0,0,0.12);
             border-color: var(--engine-color);
+            outline: none;
         }
 
         .engine-selector { position: relative; flex-shrink: 0; }
@@ -71,26 +107,19 @@
             cursor: pointer;
             font-weight: 600;
             color: var(--engine-color);
-            transition: all 0.3s;
+            transition: all 0.2s;
             user-select: none;
+            border: 1px solid transparent;
         }
+        .current-engine:hover { background: #eff6ff; }
+        .current-engine:active { background: #dbeafe; transform: scale(0.98); }
 
-        /* 自定义 Y 图标 */
         .y-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            background-color: #fc3f1d;
-            color: white;
-            border-radius: 50%;
-            font-size: 13px;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            font-style: normal;
-            line-height: 1;
-            flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; background-color: #fc3f1d;
+            color: white; border-radius: 50%; font-size: 13px;
+            font-family: Arial, sans-serif; font-weight: bold;
+            line-height: 1; flex-shrink: 0;
         }
 
         .engine-list {
@@ -100,13 +129,14 @@
             background: #fff;
             border-radius: 20px;
             padding: 8px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
             width: 170px;
             display: none;
             flex-direction: column;
             gap: 4px;
             z-index: 9999;
             animation: menuPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
         }
 
         @keyframes menuPop {
@@ -116,58 +146,183 @@
 
         .engine-item {
             padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            color: var(--text-main);
-            border-radius: 14px;
-            transition: all 0.2s;
+            display: flex; align-items: center; gap: 12px;
+            cursor: pointer; font-size: 0.95rem; color: var(--text-main);
+            border-radius: 14px; transition: all 0.2s;
         }
         .engine-item:hover { background: var(--menu-hover); color: var(--engine-color); }
+        /* 隐藏掉没被勾选的引擎 */
+        .engine-item.hidden { display: none; }
 
         .search-input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 0 15px;
-            font-size: 1.1rem;
-            outline: none;
-            color: var(--text-main);
-            font-weight: 500;
+            flex: 1; border: none; background: transparent; padding: 0 15px;
+            font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500;
         }
 
-        /* 分类与卡片样式 */
+        /* ================= 卡片容器 ================= */
         .category-section {
-            background: var(--glass-bg);
+            background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(15px);
             border-radius: 28px;
             padding: 30px;
             margin-bottom: 30px;
-            border: 1px solid var(--glass-border);
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.7s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
         }
         .category-section.visible { opacity: 1; transform: translateY(0); }
+
         .category-header { display: flex; align-items: center; margin-bottom: 22px; }
-        .category-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: white; }
+        .category-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: white; font-size: 1.2rem;}
+        .category-title { font-weight: 700; font-size: 1.2rem; }
+
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
-        .card { background: rgba(255,255,255,0.5); padding: 22px 10px; border-radius: 20px; text-decoration: none; color: var(--text-main); display: flex; flex-direction: column; align-items: center; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid transparent; }
-        .card:hover { background: #fff; transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.06); border-color: #fff; }
-        .card i { font-size: 2.2rem; margin-bottom: 12px; color: var(--theme-color); }
-        .card span { font-size: 0.9rem; font-weight: 500; }
+
+        /* ================= 卡片样式 (尺寸修复) ================= */
+        .card {
+            background: var(--glass-bg); /* 使用变量控制透明度 */
+            height: 110px; /* 强制固定高度，解决尺寸不一问题 */
+            padding: 0 10px; /* 上下padding去掉，改用flex居中 */
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* 垂直居中 */
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid #fff; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .card:hover {
+            background: #fff;
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            border-color: var(--theme-color);
+        }
+
+        .card i { font-size: 2.2rem; margin-bottom: 8px; color: var(--theme-color); }
+        
+        /* 文本截断处理 */
+        .card span { 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            width: 100%;
+            text-align: center;
+            white-space: nowrap; /* 不换行 */
+            overflow: hidden;    /* 超出隐藏 */
+            text-overflow: ellipsis; /* 显示省略号 */
+            display: block;
+        }
+
+        /* ================= 设置弹窗 ================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+            z-index: 3000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.open { display: flex; opacity: 1; }
+
+        .modal {
+            background: white; width: 90%; max-width: 400px;
+            border-radius: 24px; padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.open .modal { transform: scale(1); }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-header h3 { font-size: 1.5rem; color: #333; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #999; transition: color 0.2s; }
+        .close-btn:hover { color: #333; }
+
+        .setting-group { margin-bottom: 25px; }
+        .setting-title { font-size: 0.95rem; font-weight: 700; color: #666; margin-bottom: 12px; display: block; }
+
+        /* 开关样式 */
+        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .toggle-label { font-size: 0.95rem; color: #333; display: flex; align-items: center; gap: 8px; }
+        
+        /* 自定义 Checkbox */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4a90e2; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* 风格选择按钮 */
+        .theme-options { display: flex; gap: 10px; }
+        .theme-opt { 
+            flex: 1; height: 60px; border-radius: 12px; cursor: pointer; 
+            border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            transition: transform 0.2s;
+        }
+        .theme-opt:hover { transform: translateY(-3px); }
+        .theme-opt.active { border-color: #4a90e2; transform: scale(0.95); }
+        .bg-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .bg-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
+        .bg-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
+
+        /* 滑块 */
+        .range-slider { width: 100%; -webkit-appearance: none; height: 6px; background: #eee; border-radius: 5px; outline: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4a90e2; cursor: pointer; }
 
         @media (max-width: 600px) {
-            .current-engine span { display: none; }
+            .settings-btn { top: 15px; right: 15px; width: 40px; height: 40px; }
             .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            .card { padding: 15px 5px; }
+            .card { padding: 0 5px; height: 100px; } /* 手机端稍微矮一点 */
             .card i { font-size: 1.8rem; }
+            .current-engine span { display: none; }
         }
     </style>
 </head>
 <body>
+
+    <div class="settings-btn" id="openSettings">
+        <i class="ri-settings-3-line"></i>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>个性化设置</h3>
+                <i class="ri-close-line close-btn" id="closeSettings"></i>
+            </div>
+            
+            <div class="setting-group">
+                <span class="setting-title">启用的搜索引擎</span>
+                <div class="toggle-item">
+                    <span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span>
+                    <label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-item">
+                    <span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span>
+                    <label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-item">
+                    <span class="toggle-label" style="display:flex;align-items:center;gap:4px;"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span>
+                    <label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <span class="setting-title">背景风格</span>
+                <div class="theme-options">
+                    <div class="theme-opt bg-aurora active" onclick="setTheme('aurora')" title="极光"></div>
+                    <div class="theme-opt bg-midnight" onclick="setTheme('midnight')" title="深邃"></div>
+                    <div class="theme-opt bg-morning" onclick="setTheme('morning')" title="清晨"></div>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <span class="setting-title">卡片不透明度</span>
+                <input type="range" min="0.4" max="1" step="0.1" value="0.9" class="range-slider" id="opacitySlider">
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <header>
@@ -181,9 +336,9 @@
                     </div>
                     <div class="engine-list" id="engineList">
                         <div class="engine-item" data-engine="local" data-color="#4a90e2"><i class="ri-search-eye-line"></i><label>本地搜索</label></div>
-                        <div class="engine-item" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
-                        <div class="engine-item" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
-                        <div class="engine-item" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em><label>Yandex</label></div>
+                        <div class="engine-item" id="optGoogle" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
+                        <div class="engine-item" id="optBing" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
+                        <div class="engine-item" id="optYandex" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em><label>Yandex</label></div>
                     </div>
                 </div>
                 <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
@@ -193,7 +348,7 @@
     </div>
 
     <script>
-        // 网站数据部分
+        // ================= 配置数据 =================
         const navData = [
             {
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
@@ -202,7 +357,8 @@
                     { name: "Claude", url: "https://claude.ai", icon: "ri-brain-fill" },
                     { name: "DeepSeek", url: "https://www.deepseek.com", icon: "ri-shining-fill" },
                     { name: "Kimi", url: "https://kimi.moonshot.cn", icon: "ri-shining-2-fill" },
-                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" }
+                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" },
+                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" }
                 ]
             },
             {
@@ -211,11 +367,46 @@
                     { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-fill" },
                     { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" },
                     { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
-                    { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" }
+                    { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" },
+                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-2-fill" }
                 ]
             }
         ];
 
+        // ================= 初始化与状态管理 =================
+        // 从本地存储读取设置，或者使用默认值
+        const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || {
+            engines: { google: true, bing: true, yandex: true },
+            theme: 'aurora',
+            opacity: 0.9
+        };
+
+        // 应用初始设置
+        function applyConfig() {
+            // 1. 引擎显隐
+            document.getElementById('optGoogle').style.display = savedConfig.engines.google ? 'flex' : 'none';
+            document.getElementById('optBing').style.display = savedConfig.engines.bing ? 'flex' : 'none';
+            document.getElementById('optYandex').style.display = savedConfig.engines.yandex ? 'flex' : 'none';
+            
+            // 同步 Checkbox 状态
+            document.getElementById('toggleGoogle').checked = savedConfig.engines.google;
+            document.getElementById('toggleBing').checked = savedConfig.engines.bing;
+            document.getElementById('toggleYandex').checked = savedConfig.engines.yandex;
+
+            // 2. 主题
+            setTheme(savedConfig.theme, false); // false 代表不重复保存
+
+            // 3. 透明度
+            document.documentElement.style.setProperty('--glass-opacity', savedConfig.opacity);
+            document.getElementById('opacitySlider').value = savedConfig.opacity;
+        }
+
+        // 保存设置到本地
+        function saveConfig() {
+            localStorage.setItem('myHubConfig', JSON.stringify(savedConfig));
+        }
+
+        // ================= 搜索核心逻辑 =================
         let currentMode = 'local';
         const searchEngines = {
             google: "https://www.google.com/search?q=",
@@ -232,20 +423,16 @@
             engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex';
         });
 
-        // 核心修复逻辑
         document.querySelectorAll('.engine-item').forEach(item => {
             item.addEventListener('click', () => {
                 const mode = item.getAttribute('data-engine');
                 const color = item.getAttribute('data-color');
-                // 修复：只提取 label 标签内的纯文本
                 const name = item.querySelector('label').innerText;
-                // 修复：只抓取图标 HTML（i标签或em标签）
                 const iconHtml = (item.querySelector('i') || item.querySelector('.y-icon')).outerHTML;
 
                 currentMode = mode;
                 document.documentElement.style.setProperty('--engine-color', color);
                 
-                // 重新组合，避免文字重复
                 currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
                 
@@ -273,6 +460,53 @@
             renderNav(filtered);
         });
 
+        // ================= 设置面板交互逻辑 =================
+        const modalOverlay = document.getElementById('modalOverlay');
+        const openBtn = document.getElementById('openSettings');
+        const closeBtn = document.getElementById('closeSettings');
+
+        openBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
+        closeBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) modalOverlay.classList.remove('open');
+        });
+
+        // 1. 监听引擎开关
+        function updateEngineState(key, isChecked) {
+            savedConfig.engines[key] = isChecked;
+            applyConfig(); // 重新应用（隐藏/显示下拉项）
+            saveConfig();
+        }
+        document.getElementById('toggleGoogle').addEventListener('change', (e) => updateEngineState('google', e.target.checked));
+        document.getElementById('toggleBing').addEventListener('change', (e) => updateEngineState('bing', e.target.checked));
+        document.getElementById('toggleYandex').addEventListener('change', (e) => updateEngineState('yandex', e.target.checked));
+
+        // 2. 监听主题切换
+        window.setTheme = function(themeName, save = true) {
+            // 移除所有 theme- 类
+            document.body.classList.remove('theme-aurora', 'theme-midnight', 'theme-morning');
+            // 添加新类
+            document.body.classList.add(`theme-${themeName}`);
+            
+            // 更新 UI 选中态
+            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.bg-${themeName}`).classList.add('active');
+
+            if (save) {
+                savedConfig.theme = themeName;
+                saveConfig();
+            }
+        };
+
+        // 3. 监听透明度
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.documentElement.style.setProperty('--glass-opacity', val);
+            savedConfig.opacity = val;
+            saveConfig();
+        });
+
+        // ================= 渲染页面 =================
         function renderNav(data) {
             const app = document.getElementById('app');
             app.innerHTML = data.map((group, idx) => `
@@ -285,7 +519,7 @@
                         ${group.items.map(item => `
                             <a href="${item.url}" class="card" target="_blank" style="--theme-color:${group.themeColor}">
                                 <i class="${item.icon}"></i>
-                                <span>${item.name}</span>
+                                <span title="${item.name}">${item.name}</span>
                             </a>
                         `).join('')}
                     </div>
@@ -297,6 +531,9 @@
         }
 
         document.addEventListener('click', () => engineList.style.display = 'none');
+        
+        // 启动
+        applyConfig();
         renderNav(navData);
     </script>
 </body>
