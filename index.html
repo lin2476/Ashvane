@@ -2,14 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Hub | 个人数字空间</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* 默认变量，会被JS动态修改 */
             --glass-opacity: 0.9;
             --glass-bg: rgba(255, 255, 255, var(--glass-opacity));
             --menu-hover: #f1f5f9;
@@ -17,11 +16,15 @@
             --engine-color: #4a90e2; 
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            /* 关键修复：去除移动端默认的方形点击高亮 */
+            -webkit-tap-highlight-color: transparent; 
+        }
 
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); /* 默认极光 */
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             background-attachment: fixed;
             min-height: 100vh;
             color: var(--text-main);
@@ -29,192 +32,117 @@
             transition: background 0.5s ease;
         }
 
-        /* 预设背景类 */
+        /* 主题类 */
         body.theme-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
         body.theme-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); color: #fff; }
         body.theme-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
         
-        /* 深色模式下的文字适配 */
-        body.theme-midnight .title-area h1 { color: #e2e8f0; }
-        body.theme-midnight .card { border-color: rgba(255,255,255,0.1); color: #1e293b; } /* 卡片内部保持深色字或适配 */
+        body.theme-midnight .card { border-color: rgba(255,255,255,0.1); color: #1e293b; }
+        body.theme-midnight .title-area h1 { color: #f1f5f9; }
 
         .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; position: relative; }
 
         /* ================= 设置按钮 ================= */
         .settings-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 45px;
-            height: 45px;
+            position: fixed; top: 20px; right: 20px;
+            width: 45px; height: 45px;
             background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 50%; /* 完美圆形 */
+            display: flex; align-items: center; justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             z-index: 2000;
-            transition: all 0.3s;
+            transition: transform 0.3s, background 0.3s;
             border: 2px solid white;
         }
-        .settings-btn:hover { transform: rotate(90deg); background: white; }
+        .settings-btn:active { transform: scale(0.9); background: #fff; }
         .settings-btn i { font-size: 1.5rem; color: #555; }
 
         /* ================= 头部 ================= */
-        header { text-align: center; margin-bottom: 50px; padding-top: 30px; position: relative; z-index: 1000; }
-        
-        .title-area h1 { 
-            font-size: 2.5rem; 
-            color: #2c3e50; 
-            margin-bottom: 30px; 
-            letter-spacing: -1px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
+        header { text-align: center; margin-bottom: 40px; padding-top: 30px; position: relative; z-index: 1000; }
+        .title-area h1 { font-size: 2.5rem; color: #2c3e50; margin-bottom: 30px; letter-spacing: -1px; text-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
         /* ================= 搜索组件 ================= */
         .search-container {
-            position: relative;
-            max-width: 680px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
+            position: relative; max-width: 680px; margin: 0 auto;
+            display: flex; align-items: center;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            border-radius: 60px;
+            border-radius: 60px; /* 胶囊形 */
             padding: 6px;
             box-shadow: 0 10px 35px rgba(0,0,0,0.1);
             border: 2px solid #fff;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: all 0.3s;
         }
-
-        .search-container:focus-within {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.12);
-            border-color: var(--engine-color);
-            outline: none;
-        }
+        .search-container:focus-within { transform: translateY(-2px); border-color: var(--engine-color); box-shadow: 0 15px 45px rgba(0,0,0,0.12); }
 
         .engine-selector { position: relative; flex-shrink: 0; }
 
         .current-engine {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             padding: 12px 22px;
             background: #f8fafc;
-            border-radius: 40px;
+            border-radius: 40px; /* 确保是圆角 */
             cursor: pointer;
-            font-weight: 600;
-            color: var(--engine-color);
-            transition: all 0.2s;
-            user-select: none;
+            font-weight: 600; color: var(--engine-color);
+            transition: all 0.2s; user-select: none;
             border: 1px solid transparent;
         }
-        .current-engine:hover { background: #eff6ff; }
-        .current-engine:active { background: #dbeafe; transform: scale(0.98); }
+        /* 修复按压时的圆角背景 */
+        .current-engine:active { background: #dbeafe; transform: scale(0.96); border-radius: 40px; }
 
         .y-icon {
             display: inline-flex; align-items: center; justify-content: center;
             width: 20px; height: 20px; background-color: #fc3f1d;
             color: white; border-radius: 50%; font-size: 13px;
-            font-family: Arial, sans-serif; font-weight: bold;
-            line-height: 1; flex-shrink: 0;
+            font-family: Arial, sans-serif; font-weight: bold; line-height: 1; flex-shrink: 0;
         }
 
         .engine-list {
-            position: absolute;
-            top: calc(100% + 15px);
-            left: 0;
-            background: #fff;
-            border-radius: 20px;
-            padding: 8px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-            width: 170px;
-            display: none;
-            flex-direction: column;
-            gap: 4px;
-            z-index: 9999;
-            animation: menuPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
+            position: absolute; top: calc(100% + 15px); left: 0;
+            background: #fff; border-radius: 20px; padding: 8px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); width: 170px;
+            display: none; flex-direction: column; gap: 4px; z-index: 9999;
+            animation: menuPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        @keyframes menuPop {
-            0% { opacity: 0; transform: scale(0.9) translateY(-10px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        @keyframes menuPop { 0% { opacity: 0; transform: scale(0.95) translateY(-5px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 
         .engine-item {
-            padding: 12px 16px;
-            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; display: flex; align-items: center; gap: 12px;
             cursor: pointer; font-size: 0.95rem; color: var(--text-main);
-            border-radius: 14px; transition: all 0.2s;
+            border-radius: 14px; transition: background 0.2s;
         }
-        .engine-item:hover { background: var(--menu-hover); color: var(--engine-color); }
-        /* 隐藏掉没被勾选的引擎 */
+        .engine-item:active { background: var(--menu-hover); transform: scale(0.98); }
         .engine-item.hidden { display: none; }
 
-        .search-input {
-            flex: 1; border: none; background: transparent; padding: 0 15px;
-            font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500;
-        }
+        .search-input { flex: 1; border: none; background: transparent; padding: 0 15px; font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500; }
 
         /* ================= 卡片容器 ================= */
         .category-section {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(15px);
-            border-radius: 28px;
-            padding: 30px;
-            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px);
+            border-radius: 28px; padding: 30px; margin-bottom: 30px;
             border: 1px solid rgba(255, 255, 255, 0.5);
             opacity: 0; transform: translateY(20px);
-            transition: opacity 0.7s ease, transform 0.7s ease;
+            transition: all 0.6s ease;
         }
         .category-section.visible { opacity: 1; transform: translateY(0); }
-
-        .category-header { display: flex; align-items: center; margin-bottom: 22px; }
-        .category-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: white; font-size: 1.2rem;}
-        .category-title { font-weight: 700; font-size: 1.2rem; }
+        .category-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .category-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-size: 1.1rem; }
+        .category-title { font-weight: 700; font-size: 1.1rem; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
 
-        /* ================= 卡片样式 (尺寸修复) ================= */
+        /* 卡片 */
         .card {
-            background: var(--glass-bg); /* 使用变量控制透明度 */
-            height: 110px; /* 强制固定高度，解决尺寸不一问题 */
-            padding: 0 10px; /* 上下padding去掉，改用flex居中 */
-            border-radius: 20px;
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center; /* 垂直居中 */
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 2px solid #fff; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background: var(--glass-bg); height: 110px; padding: 0 10px;
+            border-radius: 20px; text-decoration: none; color: var(--text-main);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: transform 0.3s, background 0.3s;
+            border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-
-        .card:hover {
-            background: #fff;
-            transform: translateY(-8px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-            border-color: var(--theme-color);
-        }
-
+        .card:active { transform: scale(0.96); } /* 手机端按压反馈 */
         .card i { font-size: 2.2rem; margin-bottom: 8px; color: var(--theme-color); }
-        
-        /* 文本截断处理 */
-        .card span { 
-            font-size: 0.9rem; 
-            font-weight: 500; 
-            width: 100%;
-            text-align: center;
-            white-space: nowrap; /* 不换行 */
-            overflow: hidden;    /* 超出隐藏 */
-            text-overflow: ellipsis; /* 显示省略号 */
-            display: block;
-        }
+        .card span { font-size: 0.9rem; font-weight: 500; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
         /* ================= 设置弹窗 ================= */
         .modal-overlay {
@@ -224,101 +152,101 @@
             opacity: 0; transition: opacity 0.3s;
         }
         .modal-overlay.open { display: flex; opacity: 1; }
-
         .modal {
-            background: white; width: 90%; max-width: 400px;
-            border-radius: 24px; padding: 30px;
+            background: white; width: 85%; max-width: 380px;
+            border-radius: 24px; padding: 25px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: scale(0.9); transition: transform 0.3s;
         }
         .modal-overlay.open .modal { transform: scale(1); }
-
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .modal-header h3 { font-size: 1.5rem; color: #333; }
-        .close-btn { font-size: 1.5rem; cursor: pointer; color: #999; transition: color 0.2s; }
-        .close-btn:hover { color: #333; }
-
-        .setting-group { margin-bottom: 25px; }
-        .setting-title { font-size: 0.95rem; font-weight: 700; color: #666; margin-bottom: 12px; display: block; }
-
-        /* 开关样式 */
-        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .toggle-label { font-size: 0.95rem; color: #333; display: flex; align-items: center; gap: 8px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { font-size: 1.3rem; color: #333; }
+        .close-btn { font-size: 1.5rem; padding: 5px; cursor: pointer; color: #999; }
         
-        /* 自定义 Checkbox */
+        .setting-group { margin-bottom: 20px; }
+        .setting-title { font-size: 0.9rem; font-weight: 700; color: #666; margin-bottom: 10px; display: block; }
+        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .toggle-label { font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 8px; }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         input:checked + .slider { background-color: #4a90e2; }
         input:checked + .slider:before { transform: translateX(20px); }
-
-        /* 风格选择按钮 */
-        .theme-options { display: flex; gap: 10px; }
-        .theme-opt { 
-            flex: 1; height: 60px; border-radius: 12px; cursor: pointer; 
-            border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-            transition: transform 0.2s;
-        }
-        .theme-opt:hover { transform: translateY(-3px); }
-        .theme-opt.active { border-color: #4a90e2; transform: scale(0.95); }
+        .theme-options { display: flex; gap: 8px; }
+        .theme-opt { flex: 1; height: 50px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; }
+        .theme-opt.active { border-color: #4a90e2; transform: scale(0.96); }
         .bg-aurora { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
         .bg-midnight { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
         .bg-morning { background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%); }
+        .range-slider { width: 100%; height: 6px; background: #eee; border-radius: 5px; -webkit-appearance: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #4a90e2; }
 
-        /* 滑块 */
-        .range-slider { width: 100%; -webkit-appearance: none; height: 6px; background: #eee; border-radius: 5px; outline: none; }
-        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4a90e2; cursor: pointer; }
-
+        /* ================= 📱 移动端专项紧凑优化 ================= */
         @media (max-width: 600px) {
+            .container { padding: 20px 10px; } /* 减少左右边距，利用屏幕宽度 */
+            
+            .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
             .settings-btn { top: 15px; right: 15px; width: 40px; height: 40px; }
-            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            .card { padding: 0 5px; height: 100px; } /* 手机端稍微矮一点 */
-            .card i { font-size: 1.8rem; }
-            .current-engine span { display: none; }
+
+            .search-container { padding: 4px; }
+            .current-engine { padding: 10px 14px; gap: 6px; }
+            .current-engine span { display: none; } /* 隐藏文字省空间 */
+            .search-input { padding: 0 10px; font-size: 1rem; }
+
+            /* 分类区域紧凑化 */
+            .category-section { 
+                padding: 15px 12px; /* 减少内部浪费 */
+                border-radius: 20px; 
+                margin-bottom: 15px; /* 减少块间距 */
+            }
+            .category-header { margin-bottom: 12px; }
+            .category-icon { width: 28px; height: 28px; margin-right: 8px; font-size: 1rem; }
+            .category-title { font-size: 1rem; }
+
+            /* 网格极致紧凑 */
+            .grid { 
+                grid-template-columns: repeat(3, 1fr); /* 强制3列 */
+                gap: 8px; /* 间距由 18px -> 8px */
+            }
+
+            /* 卡片紧凑化 */
+            .card { 
+                height: 90px; /* 高度压缩 */
+                border-radius: 16px; 
+                padding: 0 4px;
+            }
+            .card i { font-size: 1.8rem; margin-bottom: 6px; }
+            .card span { font-size: 0.8rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="settings-btn" id="openSettings">
-        <i class="ri-settings-3-line"></i>
-    </div>
+    <div class="settings-btn" id="openSettings"><i class="ri-settings-3-line"></i></div>
 
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-header">
-                <h3>个性化设置</h3>
+                <h3>偏好设置</h3>
                 <i class="ri-close-line close-btn" id="closeSettings"></i>
             </div>
-            
             <div class="setting-group">
-                <span class="setting-title">启用的搜索引擎</span>
-                <div class="toggle-item">
-                    <span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span>
-                    <label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label>
-                </div>
-                <div class="toggle-item">
-                    <span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span>
-                    <label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label>
-                </div>
-                <div class="toggle-item">
-                    <span class="toggle-label" style="display:flex;align-items:center;gap:4px;"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span>
-                    <label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label>
-                </div>
+                <span class="setting-title">搜索引擎</span>
+                <div class="toggle-item"><span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span><label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label></div>
+                <div class="toggle-item"><span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span><label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label></div>
+                <div class="toggle-item"><span class="toggle-label"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span><label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label></div>
             </div>
-
             <div class="setting-group">
-                <span class="setting-title">背景风格</span>
+                <span class="setting-title">背景主题</span>
                 <div class="theme-options">
                     <div class="theme-opt bg-aurora active" onclick="setTheme('aurora')" title="极光"></div>
                     <div class="theme-opt bg-midnight" onclick="setTheme('midnight')" title="深邃"></div>
                     <div class="theme-opt bg-morning" onclick="setTheme('morning')" title="清晨"></div>
                 </div>
             </div>
-
             <div class="setting-group">
-                <span class="setting-title">卡片不透明度</span>
+                <span class="setting-title">卡片透明度</span>
                 <input type="range" min="0.4" max="1" step="0.1" value="0.9" class="range-slider" id="opacitySlider">
             </div>
         </div>
@@ -348,7 +276,6 @@
     </div>
 
     <script>
-        // ================= 配置数据 =================
         const navData = [
             {
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
@@ -373,69 +300,40 @@
             }
         ];
 
-        // ================= 初始化与状态管理 =================
-        // 从本地存储读取设置，或者使用默认值
-        const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || {
-            engines: { google: true, bing: true, yandex: true },
-            theme: 'aurora',
-            opacity: 0.9
-        };
+        // 配置读取
+        const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || { engines: { google: true, bing: true, yandex: true }, theme: 'aurora', opacity: 0.9 };
 
-        // 应用初始设置
         function applyConfig() {
-            // 1. 引擎显隐
             document.getElementById('optGoogle').style.display = savedConfig.engines.google ? 'flex' : 'none';
             document.getElementById('optBing').style.display = savedConfig.engines.bing ? 'flex' : 'none';
             document.getElementById('optYandex').style.display = savedConfig.engines.yandex ? 'flex' : 'none';
-            
-            // 同步 Checkbox 状态
             document.getElementById('toggleGoogle').checked = savedConfig.engines.google;
             document.getElementById('toggleBing').checked = savedConfig.engines.bing;
             document.getElementById('toggleYandex').checked = savedConfig.engines.yandex;
-
-            // 2. 主题
-            setTheme(savedConfig.theme, false); // false 代表不重复保存
-
-            // 3. 透明度
+            setTheme(savedConfig.theme, false);
             document.documentElement.style.setProperty('--glass-opacity', savedConfig.opacity);
             document.getElementById('opacitySlider').value = savedConfig.opacity;
         }
+        function saveConfig() { localStorage.setItem('myHubConfig', JSON.stringify(savedConfig)); }
 
-        // 保存设置到本地
-        function saveConfig() {
-            localStorage.setItem('myHubConfig', JSON.stringify(savedConfig));
-        }
-
-        // ================= 搜索核心逻辑 =================
+        // 搜索逻辑
         let currentMode = 'local';
-        const searchEngines = {
-            google: "https://www.google.com/search?q=",
-            bing: "https://www.bing.com/search?q=",
-            yandex: "https://yandex.com/search/?text="
-        };
-
+        const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
         const engineList = document.getElementById('engineList');
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
 
-        currentEngineShow.addEventListener('click', (e) => {
-            e.stopPropagation();
-            engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex';
-        });
-
+        currentEngineShow.addEventListener('click', (e) => { e.stopPropagation(); engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; });
         document.querySelectorAll('.engine-item').forEach(item => {
             item.addEventListener('click', () => {
                 const mode = item.getAttribute('data-engine');
                 const color = item.getAttribute('data-color');
                 const name = item.querySelector('label').innerText;
                 const iconHtml = (item.querySelector('i') || item.querySelector('.y-icon')).outerHTML;
-
                 currentMode = mode;
                 document.documentElement.style.setProperty('--engine-color', color);
-                
                 currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
-                
                 engineList.style.display = 'none';
                 searchInput.focus();
             });
@@ -444,61 +342,36 @@
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const query = searchInput.value.trim();
-                if (query && currentMode !== 'local') {
-                    window.open(searchEngines[currentMode] + encodeURIComponent(query), '_blank');
-                }
+                if (query && currentMode !== 'local') window.open(searchEngines[currentMode] + encodeURIComponent(query), '_blank');
             }
         });
 
         searchInput.addEventListener('input', (e) => {
             if (currentMode !== 'local') return;
             const val = e.target.value.toLowerCase();
-            const filtered = navData.map(group => ({
-                ...group,
-                items: group.items.filter(i => i.name.toLowerCase().includes(val))
-            })).filter(g => g.items.length > 0);
+            const filtered = navData.map(group => ({ ...group, items: group.items.filter(i => i.name.toLowerCase().includes(val)) })).filter(g => g.items.length > 0);
             renderNav(filtered);
         });
 
-        // ================= 设置面板交互逻辑 =================
+        // 设置面板逻辑
         const modalOverlay = document.getElementById('modalOverlay');
-        const openBtn = document.getElementById('openSettings');
-        const closeBtn = document.getElementById('closeSettings');
+        document.getElementById('openSettings').addEventListener('click', () => modalOverlay.classList.add('open'));
+        document.getElementById('closeSettings').addEventListener('click', () => modalOverlay.classList.remove('open'));
+        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove('open'); });
 
-        openBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
-        closeBtn.addEventListener('click', () => modalOverlay.classList.remove('open'));
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) modalOverlay.classList.remove('open');
-        });
-
-        // 1. 监听引擎开关
-        function updateEngineState(key, isChecked) {
-            savedConfig.engines[key] = isChecked;
-            applyConfig(); // 重新应用（隐藏/显示下拉项）
-            saveConfig();
-        }
+        function updateEngineState(key, isChecked) { savedConfig.engines[key] = isChecked; applyConfig(); saveConfig(); }
         document.getElementById('toggleGoogle').addEventListener('change', (e) => updateEngineState('google', e.target.checked));
         document.getElementById('toggleBing').addEventListener('change', (e) => updateEngineState('bing', e.target.checked));
         document.getElementById('toggleYandex').addEventListener('change', (e) => updateEngineState('yandex', e.target.checked));
 
-        // 2. 监听主题切换
         window.setTheme = function(themeName, save = true) {
-            // 移除所有 theme- 类
             document.body.classList.remove('theme-aurora', 'theme-midnight', 'theme-morning');
-            // 添加新类
             document.body.classList.add(`theme-${themeName}`);
-            
-            // 更新 UI 选中态
             document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
             document.querySelector(`.bg-${themeName}`).classList.add('active');
-
-            if (save) {
-                savedConfig.theme = themeName;
-                saveConfig();
-            }
+            if (save) { savedConfig.theme = themeName; saveConfig(); }
         };
 
-        // 3. 监听透明度
         document.getElementById('opacitySlider').addEventListener('input', (e) => {
             const val = e.target.value;
             document.documentElement.style.setProperty('--glass-opacity', val);
@@ -506,7 +379,6 @@
             saveConfig();
         });
 
-        // ================= 渲染页面 =================
         function renderNav(data) {
             const app = document.getElementById('app');
             app.innerHTML = data.map((group, idx) => `
@@ -525,14 +397,10 @@
                     </div>
                 </div>
             `).join('');
-            setTimeout(() => {
-                document.querySelectorAll('.category-section').forEach(el => el.classList.add('visible'));
-            }, 50);
+            setTimeout(() => { document.querySelectorAll('.category-section').forEach(el => el.classList.add('visible')); }, 50);
         }
 
         document.addEventListener('click', () => engineList.style.display = 'none');
-        
-        // 启动
         applyConfig();
         renderNav(navData);
     </script>
