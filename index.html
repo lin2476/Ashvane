@@ -3,194 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人导航 | My Hub</title>
+    <title>My Hub | 个人数字空间</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ================= CSS 样式区域 ================= */
+        /* ================= 变量定义 ================= */
         :root {
-            --bg-color: #f8f9fa;       /* 背景色：极浅灰，接近白 */
-            --card-bg: #ffffff;        /* 卡片背景：纯白 */
-            --text-main: #2c3e50;      /* 主文字色 */
-            --text-sub: #95a5a6;       /* 次要文字色 */
-            --accent-color: #4a90e2;   /* 提亮色：静谧蓝 */
-            --shadow: 0 8px 30px rgba(0, 0, 0, 0.04); /* 柔和阴影 */
-            --radius: 16px;            /* 圆角大小 */
-            --container-width: 1000px; /* 最大宽度 */
+            /* 更加通透的磨砂白 */
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --menu-hover: #f3f4f6;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --engine-color: #4a90e2; /* 默认蓝色 */
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            /* 极光渐变背景 */
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* 容器限制 */
-        .container {
-            width: 100%;
-            max-width: var(--container-width);
-            padding: 60px 20px 40px; /* 上左右下 */
-        }
-
-        /* 头部：问候与搜索 */
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            animation: fadeInDown 0.8s ease;
-        }
-
-        .greeting {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 25px;
             color: var(--text-main);
-            letter-spacing: -0.5px;
+            padding-bottom: 60px;
+            overflow-x: hidden;
         }
 
-        /* 搜索框容器 */
-        .search-box {
+        /* 动态背景层 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 60%),
+                        radial-gradient(circle, rgba(168, 237, 234, 0.5) 0%, transparent 50%);
+            animation: moveBg 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes moveBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+        /* ================= 头部与搜索 ================= */
+        header { 
+            text-align: center; 
+            margin-bottom: 50px; 
+            padding-top: 30px; 
+            position: relative; 
+            z-index: 1000;
+        }
+
+        .title-area h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .title-area p { color: #555; margin-bottom: 40px; font-weight: 500; }
+
+        /* 搜索框容器 - 胶囊形状 */
+        .search-container {
             position: relative;
-            max-width: 500px;
+            max-width: 680px;
             margin: 0 auto;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-sub);
-            font-size: 1.2rem;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 18px 20px 18px 50px;
-            border: none;
-            border-radius: 50px;
-            background: var(--card-bg);
-            box-shadow: var(--shadow);
-            font-size: 1rem;
-            color: var(--text-main);
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        .search-box input:focus {
-            box-shadow: 0 10px 40px rgba(74, 144, 226, 0.15);
-            transform: translateY(-2px);
-        }
-
-        /* 分类标题 */
-        .category-section {
-            margin-bottom: 50px;
-            animation: fadeInUp 0.8s ease;
-        }
-
-        .category-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 60px;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 2px solid rgba(255,255,255,0.8);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* 搜索框聚焦态：发光 */
+        .search-container:focus-within {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(74, 144, 226, 0.15);
+            border-color: var(--engine-color);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* 引擎选择按钮 */
+        .engine-selector { position: relative; }
+
+        .current-engine {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #f1f5f9;
+            border-radius: 40px; /* 圆角胶囊 */
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--engine-color);
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .current-engine:hover { background: #e2e8f0; }
+
+        /* 下拉菜单 - 优化为 iOS 悬浮菜单风格 */
+        .engine-list {
+            position: absolute;
+            top: calc(100% + 15px);
+            left: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 8px; /* 内部留白 */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+            width: 160px;
+            display: none;
+            flex-direction: column;
+            gap: 4px; /* 选项间距 */
+            z-index: 9999;
+            transform-origin: top left;
+            animation: menuPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes menuPop {
+            0% { opacity: 0; transform: scale(0.9) translateY(-10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 下拉项 - 圆角处理，解决“方形按压”问题 */
+        .engine-item {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
             color: var(--text-main);
-            opacity: 0.9;
-            padding-left: 5px;
+            border-radius: 12px; /* 关键：子菜单项也是圆角的 */
+            transition: all 0.2s;
+        }
+
+        .engine-item:hover {
+            background: var(--menu-hover);
+            color: var(--engine-color);
+            transform: translateX(3px); /* 悬停微动 */
         }
         
-        .category-title i {
-            color: var(--accent-color);
-        }
+        /* 图标对齐 */
+        .engine-item i { font-size: 1.1rem; }
 
-        /* 网格布局 */
+        /* 输入框 */
+        .search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 0 20px;
+            font-size: 1.1rem;
+            height: 100%;
+            outline: none;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        .search-input::placeholder { color: #9ca3af; font-weight: 400; }
+
+        /* ================= 内容卡片 ================= */
+        main { position: relative; z-index: 1; }
+
+        .category-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            /* 初始隐藏，用于JS控制动画 */
+            opacity: 0; 
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        /* 动画激活态 */
+        .category-section.visible { opacity: 1; transform: translateY(0); }
+
+        .category-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .category-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 12px; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .category-title { font-weight: 700; font-size: 1.1rem; opacity: 0.9; }
+
         .grid {
             display: grid;
-            /* 自动适应列宽，最小宽度160px，保证卡片不拥挤 */
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+            gap: 15px;
         }
 
-        /* 卡片样式 */
         .card {
-            background: var(--card-bg);
-            padding: 25px 15px;
-            border-radius: var(--radius);
+            background: rgba(255,255,255,0.6);
+            padding: 20px 10px;
+            border-radius: 16px;
             text-decoration: none;
             color: var(--text-main);
-            box-shadow: var(--shadow);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性动效 */
             border: 1px solid transparent;
-            height: 100%;
+            position: relative;
+            overflow: hidden;
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-            border-color: rgba(74, 144, 226, 0.1);
+            background: #fff;
+            transform: translateY(-6px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-color: rgba(255,255,255,0.8);
         }
 
-        .card-icon {
-            font-size: 2.2rem;
+        /* 图标动画 */
+        .card i {
+            font-size: 2rem;
             margin-bottom: 12px;
-            color: var(--accent-color);
+            color: var(--theme-color);
             transition: transform 0.3s;
         }
+        .card:hover i { transform: scale(1.15); }
         
-        .card:hover .card-icon {
-            transform: scale(1.1);
-        }
+        .card span { font-size: 0.85rem; font-weight: 500; }
 
-        .card-title {
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        /* 底部版权 */
-        footer {
-            margin-top: auto;
-            padding: 30px;
-            color: var(--text-sub);
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        /* 简单动画 */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ======== 手机端适配优化 ======== */
-        @media (max-width: 768px) {
-            .container { padding: 40px 15px; }
-            .greeting { font-size: 1.8rem; }
-            .grid { 
-                grid-template-columns: repeat(2, 1fr); /* 手机端强制两列 */
-                gap: 12px;
-            }
-            .card { padding: 20px 10px; }
-            .card-icon { font-size: 1.8rem; }
-            .card-title { font-size: 0.9rem; }
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .title-area h1 { font-size: 1.8rem; }
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .current-engine span { display: none; }
+            .engine-list { width: 140px; }
+            .search-container { padding: 5px; }
+            .card { padding: 15px 5px; }
+            .card i { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -198,146 +259,211 @@
 
     <div class="container">
         <header>
-            <div class="greeting" id="greeting">Hello</div>
-            <div class="search-box">
-                <i class="ri-search-2-line"></i>
-                <input type="text" id="searchInput" placeholder="Search my links..." autocomplete="off">
+            <div class="title-area">
+                <h1 id="greeting">Welcome</h1>
+                <p>Start your journey from here</p>
+            </div>
+
+            <div class="search-container">
+                <div class="engine-selector" id="engineSelector">
+                    <div class="current-engine" id="currentEngine">
+                        <i class="ri-search-eye-line"></i>
+                        <span>本地搜索</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="engine-list" id="engineList">
+                        <div class="engine-item" data-engine="local" data-color="#4a90e2"><i class="ri-search-eye-line"></i>本地搜索</div>
+                        <div class="engine-item" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i>Google</div>
+                        <div class="engine-item" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i>Bing</div>
+                        <div class="engine-item" data-engine="yandex" data-color="#fc3f1d"><i class="ri-yandex-fill"></i>Yandex</div>
+                    </div>
+                </div>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
             </div>
         </header>
 
         <main id="app"></main>
     </div>
 
-    <footer>
-        <p>© 2025 My Personal Hub. Designed for Efficiency.</p>
-    </footer>
-
     <script>
-        // ================= 数据配置区域 (在这里修改你的链接) =================
-        // 图标请去 https://remixicon.com/ 查找类名
+        // ================= 数据配置 =================
         const navData = [
             {
-                category: "常用 / Daily",
-                icon: "ri-star-smile-fill",
+                category: "智能助手 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
-                    { name: "Google", url: "https://google.com", icon: "ri-google-fill" },
                     { name: "ChatGPT", url: "https://chat.openai.com", icon: "ri-openai-fill" },
-                    { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
-                    { name: "Gmail", url: "https://mail.google.com", icon: "ri-mail-fill" },
-                    { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" }
+                    { name: "Claude", url: "https://claude.ai", icon: "ri-brain-fill" },
+                    { name: "DeepSeek", url: "https://www.deepseek.com", icon: "ri-shining-fill" },
+                    { name: "Kimi", url: "https://kimi.moonshot.cn", icon: "ri-shining-2-fill" },
+                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" },
+                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" },
+                    { name: "Poe", url: "https://poe.com", icon: "ri-chat-4-fill" },
+                    { name: "HuggingFace", url: "https://huggingface.co", icon: "ri-emoji-sticker-fill" }
                 ]
             },
             {
-                category: "开发 / Dev",
-                icon: "ri-code-s-slash-line",
+                category: "社交与社区", icon: "ri-group-fill", themeColor: "#8b5cf6",
                 items: [
-                    { name: "Vercel", url: "https://vercel.com", icon: "ri-triangle-fill" },
-                    { name: "MDN", url: "https://developer.mozilla.org", icon: "ri-book-open-line" },
-                    { name: "StackOverflow", url: "https://stackoverflow.com", icon: "ri-stack-line" },
-                    { name: "Tailwind", url: "https://tailwindcss.com", icon: "ri-windy-line" }
+                    { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
+                    { name: "Twitter/X", url: "https://twitter.com", icon: "ri-twitter-x-fill" },
+                    { name: "Instagram", url: "https://instagram.com", icon: "ri-instagram-fill" },
+                    { name: "Reddit", url: "https://reddit.com", icon: "ri-reddit-fill" },
+                    { name: "V2EX", url: "https://v2ex.com", icon: "ri-chat-voice-fill" },
+                    { name: "Weibo", url: "https://weibo.com", icon: "ri-weibo-fill" },
+                    { name: "Telegram", url: "https://web.telegram.org", icon: "ri-telegram-fill" },
+                    { name: "Discord", url: "https://discord.com", icon: "ri-discord-fill" }
                 ]
             },
             {
-                category: "设计 / Design",
-                icon: "ri-palette-line",
+                category: "视频与娱乐", icon: "ri-movie-2-fill", themeColor: "#f43f5e",
+                items: [
+                    { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-fill" },
+                    { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" },
+                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-fill" },
+                    { name: "Spotify", url: "https://spotify.com", icon: "ri-spotify-fill" },
+                    { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" },
+                    { name: "Twitch", url: "https://twitch.tv", icon: "ri-twitch-fill" },
+                    { name: "Douyu", url: "https://douyu.com", icon: "ri-tv-fill" },
+                    { name: "AppleMusic", url: "https://music.apple.com", icon: "ri-apple-fill" }
+                ]
+            },
+            {
+                category: "开发与设计", icon: "ri-code-box-fill", themeColor: "#3b82f6",
                 items: [
                     { name: "Figma", url: "https://figma.com", icon: "ri-pen-nib-fill" },
-                    { name: "Dribbble", url: "https://dribbble.com", icon: "ri-dribbble-line" },
-                    { name: "Unsplash", url: "https://unsplash.com", icon: "ri-image-2-fill" }
+                    { name: "Vercel", url: "https://vercel.com", icon: "ri-triangle-fill" },
+                    { name: "Dribbble", url: "https://dribbble.com", icon: "ri-dribbble-fill" },
+                    { name: "StackOverflow", url: "https://stackoverflow.com", icon: "ri-stack-fill" },
+                    { name: "LeetCode", url: "https://leetcode.cn", icon: "ri-code-s-slash-fill" },
+                    { name: "Unsplash", url: "https://unsplash.com", icon: "ri-camera-fill" },
+                    { name: "MDN", url: "https://developer.mozilla.org", icon: "ri-book-open-fill" },
+                    { name: "IconFont", url: "https://iconfont.cn", icon: "ri-star-fill" }
                 ]
             },
             {
-                category: "摸鱼 / Relax",
-                icon: "ri-cup-line",
+                category: "实用工具箱", icon: "ri-tools-fill", themeColor: "#64748b",
                 items: [
-                    { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-line" },
-                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-2-line" },
-                    { name: "Twitter", url: "https://twitter.com", icon: "ri-twitter-x-line" }
+                    { name: "Google", url: "https://google.com", icon: "ri-google-fill" },
+                    { name: "DeepL", url: "https://deepl.com", icon: "ri-translate-2" },
+                    { name: "Notion", url: "https://notion.so", icon: "ri-sticky-note-fill" },
+                    { name: "TinyPNG", url: "https://tinypng.com", icon: "ri-image-2-fill" },
+                    { name: "SpeedTest", url: "https://speedtest.net", icon: "ri-speed-up-fill" },
+                    { name: "Convertio", url: "https://convertio.co", icon: "ri-file-transfer-fill" },
+                    { name: "Gmail", url: "https://mail.google.com", icon: "ri-mail-fill" },
+                    { name: "ProcessOn", url: "https://processon.com", icon: "ri-mind-map" }
                 ]
             }
         ];
 
-        // ================= 逻辑代码 (一般不需要动) =================
+        // ================= 逻辑控制 =================
+        let currentMode = 'local';
+        const searchEngines = {
+            google: "https://www.google.com/search?q=",
+            bing: "https://www.bing.com/search?q=",
+            yandex: "https://yandex.com/search/?text="
+        };
 
-        // 1. 设置问候语
-        function setGreeting() {
-            const hour = new Date().getHours();
-            const greetingEl = document.getElementById('greeting');
-            let text = '';
-            if (hour >= 5 && hour < 12) text = 'Good Morning.';
-            else if (hour >= 12 && hour < 18) text = 'Good Afternoon.';
-            else text = 'Good Evening.';
-            greetingEl.innerText = text;
-        }
-
-        // 2. 渲染页面核心函数
-        function renderNav(data) {
-            const app = document.getElementById('app');
-            app.innerHTML = ''; // 清空当前内容
-
-            if (data.length === 0) {
-                app.innerHTML = '<div style="text-align:center;color:#999;margin-top:50px;">未找到相关结果</div>';
-                return;
-            }
-
-            data.forEach(group => {
-                // 创建分类块
-                const section = document.createElement('div');
-                section.className = 'category-section';
-
-                // 标题
-                const title = document.createElement('h3');
-                title.className = 'category-title';
-                title.innerHTML = `<i class="${group.icon}"></i> ${group.category}`;
-                section.appendChild(title);
-
-                // 网格容器
-                const grid = document.createElement('div');
-                grid.className = 'grid';
-
-                // 卡片
-                group.items.forEach(item => {
-                    const card = document.createElement('a');
-                    card.href = item.url;
-                    card.className = 'card';
-                    card.target = '_blank'; // 新标签页打开
-
-                    card.innerHTML = `
-                        <i class="${item.icon || 'ri-link'} card-icon"></i>
-                        <div class="card-title">${item.name}</div>
-                    `;
-                    grid.appendChild(card);
-                });
-
-                section.appendChild(grid);
-                app.appendChild(section);
-            });
-        }
-
-        // 3. 搜索过滤逻辑
+        const selector = document.getElementById('engineSelector');
+        const engineList = document.getElementById('engineList');
+        const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-            
-            if (!keyword) {
-                renderNav(navData); // 搜索为空时，显示全部
-                return;
-            }
 
-            // 筛选两层结构：分类 -> 链接
-            const filteredData = navData.map(group => {
-                const filteredItems = group.items.filter(item => 
-                    item.name.toLowerCase().includes(keyword) || 
-                    item.url.toLowerCase().includes(keyword)
-                );
-                return { ...group, items: filteredItems };
-            }).filter(group => group.items.length > 0); // 移除没有结果的分类
-
-            renderNav(filteredData);
+        // 切换下拉显示
+        currentEngineShow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex';
         });
 
-        // 初始化执行
-        setGreeting();
+        // 选中引擎
+        document.querySelectorAll('.engine-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const mode = item.getAttribute('data-engine');
+                const color = item.getAttribute('data-color');
+                const name = item.innerText;
+                const icon = item.querySelector('i').className;
+
+                currentMode = mode;
+                
+                // 更新 CSS 变量，让搜索框发光颜色随引擎改变
+                document.documentElement.style.setProperty('--engine-color', color);
+                
+                currentEngineShow.innerHTML = `<i class="${icon}"></i><span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
+                searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
+                
+                engineList.style.display = 'none';
+                searchInput.focus();
+                
+                if(mode === 'local') renderNav(navData); 
+            });
+        });
+
+        // 搜索回车
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (!query) return;
+                if (currentMode !== 'local') {
+                    window.open(searchEngines[currentMode] + encodeURIComponent(query), '_blank');
+                }
+            }
+        });
+
+        // 本地搜索实时过滤
+        searchInput.addEventListener('input', (e) => {
+            if (currentMode !== 'local') return;
+            const val = e.target.value.toLowerCase();
+            const filtered = navData.map(group => {
+                const items = group.items.filter(i => i.name.toLowerCase().includes(val));
+                return { ...group, items };
+            }).filter(g => g.items.length > 0);
+            renderNav(filtered);
+        });
+
+        // 时间问候
+        function updateGreeting() {
+            const hr = new Date().getHours();
+            const g = document.getElementById('greeting');
+            let text = "Hello";
+            if (hr < 6) text = "Late Night";
+            else if (hr < 12) text = "Good Morning";
+            else if (hr < 18) text = "Good Afternoon";
+            else text = "Good Evening";
+            g.innerText = text;
+        }
+
+        // 渲染页面（带瀑布流动画）
+        function renderNav(data) {
+            const app = document.getElementById('app');
+            app.innerHTML = data.map((group, index) => `
+                <div class="category-section" style="transition-delay: ${index * 0.1}s">
+                    <div class="category-header">
+                        <div class="category-icon" style="background:${group.themeColor}">
+                            <i class="${group.icon}"></i>
+                        </div>
+                        <div class="category-title" style="color:${group.themeColor}">${group.category}</div>
+                    </div>
+                    <div class="grid">
+                        ${group.items.map(item => `
+                            <a href="${item.url}" class="card" target="_blank" style="--theme-color:${group.themeColor}">
+                                <i class="${item.icon}"></i>
+                                <span>${item.name}</span>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // 触发重绘以执行动画
+            setTimeout(() => {
+                document.querySelectorAll('.category-section').forEach(el => el.classList.add('visible'));
+            }, 50);
+        }
+
+        // 点击空白处关闭下拉
+        document.addEventListener('click', () => { engineList.style.display = 'none'; });
+
+        // 初始化
+        updateGreeting();
         renderNav(navData);
 
     </script>
