@@ -8,94 +8,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ================= 变量定义 ================= */
         :root {
-            /* 更加通透的磨砂白 */
-            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-bg: rgba(255, 255, 255, 0.75);
             --glass-border: rgba(255, 255, 255, 0.6);
             --menu-hover: #f3f4f6;
             --text-main: #1f2937;
-            --text-sub: #6b7280;
-            --engine-color: #4a90e2; /* 默认蓝色 */
+            --engine-color: #4a90e2; 
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            /* 极光渐变背景 */
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             min-height: 100vh;
-            color: var(--text-main);
             padding-bottom: 60px;
-            overflow-x: hidden;
-        }
-
-        /* 动态背景层 */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 60%),
-                        radial-gradient(circle, rgba(168, 237, 234, 0.5) 0%, transparent 50%);
-            animation: moveBg 20s linear infinite;
-            z-index: -1;
-        }
-
-        @keyframes moveBg {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
 
-        /* ================= 头部与搜索 ================= */
-        header { 
-            text-align: center; 
-            margin-bottom: 50px; 
-            padding-top: 30px; 
-            position: relative; 
-            z-index: 1000;
-        }
+        header { text-align: center; margin-bottom: 50px; padding-top: 30px; position: relative; z-index: 1000; }
+        .title-area h1 { font-size: 2.5rem; color: #2c3e50; margin-bottom: 30px; }
 
-        .title-area h1 {
-            font-size: 2.5rem;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        .title-area p { color: #555; margin-bottom: 40px; font-weight: 500; }
-
-        /* 搜索框容器 - 胶囊形状 */
+        /* ================= 搜索组件 ================= */
         .search-container {
             position: relative;
             max-width: 680px;
             margin: 0 auto;
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 60px;
-            padding: 8px;
+            padding: 6px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             border: 2px solid rgba(255,255,255,0.8);
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        /* 搜索框聚焦态：发光 */
-        .search-container:focus-within {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.12), 0 0 0 4px rgba(74, 144, 226, 0.15);
-            border-color: var(--engine-color);
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* 引擎选择按钮 */
-        .engine-selector { position: relative; }
+        .engine-selector { position: relative; flex-shrink: 0; }
 
         .current-engine {
             display: flex;
@@ -103,7 +55,7 @@
             gap: 8px;
             padding: 12px 20px;
             background: #f1f5f9;
-            border-radius: 40px; /* 圆角胶囊 */
+            border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
             color: var(--engine-color);
@@ -111,25 +63,70 @@
             user-select: none;
         }
 
-        .current-engine:hover { background: #e2e8f0; }
-
-        /* 下拉菜单 - 优化为 iOS 悬浮菜单风格 */
         .engine-list {
             position: absolute;
             top: calc(100% + 15px);
             left: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
+            background: white;
             border-radius: 20px;
-            padding: 8px; /* 内部留白 */
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+            padding: 8px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
             width: 160px;
             display: none;
             flex-direction: column;
-            gap: 4px; /* 选项间距 */
+            gap: 4px;
             z-index: 9999;
-            transform-origin: top left;
             animation: menuPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .engine-item {
+            padding: 12px 15px;
+            display: flex; align-items: center; gap: 12px;
+            cursor: pointer; font-size: 0.95rem; border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .engine-item:hover { background: var(--menu-hover); color: var(--engine-color); }
+
+        .search-input {
+            flex: 1; border: none; background: transparent;
+            padding: 0 15px; font-size: 1.1rem; outline: none;
+            color: var(--text-main); font-weight: 500; width: 100%;
+        }
+
+        /* ================= 移动端专项优化 ================= */
+        @media (max-width: 600px) {
+            .title-area h1 { font-size: 1.8rem; }
+            .container { padding: 20px 15px; }
+
+            /* 缩小引擎选择器的占位 */
+            .current-engine {
+                padding: 10px 12px;
+                gap: 4px;
+            }
+
+            /* 隐藏引擎文字，只留图标 */
+            .current-engine span { display: none; }
+            
+            /* 针对 Yandex 的特殊处理：如果当前是 Yandex，强制显示一个 Y 字图标 */
+            .engine-yandex-mobile::before {
+                content: 'Y';
+                font-family: 'Arial', sans-serif;
+                font-weight: 900;
+                font-size: 1.2rem;
+                display: inline-block;
+                width: 20px;
+                text-align: center;
+            }
+            /* 手机端隐藏 Yandex 原本不显示的图标 */
+            .engine-yandex-mobile i.ri-yandex-fill { display: none; }
+
+            .search-input { font-size: 1rem; padding: 0 10px; }
+            
+            /* 网格改为3列，增加空间感 */
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .card { padding: 15px 5px; }
+            .card i { font-size: 1.6rem; }
         }
 
         @keyframes menuPop {
@@ -137,133 +134,32 @@
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* 下拉项 - 圆角处理，解决“方形按压”问题 */
-        .engine-item {
-            padding: 12px 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            color: var(--text-main);
-            border-radius: 12px; /* 关键：子菜单项也是圆角的 */
-            transition: all 0.2s;
-        }
-
-        .engine-item:hover {
-            background: var(--menu-hover);
-            color: var(--engine-color);
-            transform: translateX(3px); /* 悬停微动 */
-        }
-        
-        /* 图标对齐 */
-        .engine-item i { font-size: 1.1rem; }
-
-        /* 输入框 */
-        .search-input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 0 20px;
-            font-size: 1.1rem;
-            height: 100%;
-            outline: none;
-            color: var(--text-main);
-            font-weight: 500;
-        }
-        .search-input::placeholder { color: #9ca3af; font-weight: 400; }
-
-        /* ================= 内容卡片 ================= */
-        main { position: relative; z-index: 1; }
-
+        /* ================= 列表卡片样式 ================= */
         .category-section {
             background: var(--glass-bg);
             backdrop-filter: blur(12px);
             border-radius: 24px;
             padding: 25px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-            /* 初始隐藏，用于JS控制动画 */
-            opacity: 0; 
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.6s ease;
         }
-        
-        /* 动画激活态 */
         .category-section.visible { opacity: 1; transform: translateY(0); }
-
-        .category-header { display: flex; align-items: center; margin-bottom: 20px; }
-        .category-icon {
-            width: 36px; height: 36px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            margin-right: 12px; color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .category-title { font-weight: 700; font-size: 1.1rem; opacity: 0.9; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-            gap: 15px;
-        }
-
-        .card {
-            background: rgba(255,255,255,0.6);
-            padding: 20px 10px;
-            border-radius: 16px;
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性动效 */
-            border: 1px solid transparent;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            background: #fff;
-            transform: translateY(-6px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            border-color: rgba(255,255,255,0.8);
-        }
-
-        /* 图标动画 */
-        .card i {
-            font-size: 2rem;
-            margin-bottom: 12px;
-            color: var(--theme-color);
-            transition: transform 0.3s;
-        }
-        .card:hover i { transform: scale(1.15); }
-        
+        .category-header { display: flex; align-items: center; margin-bottom: 18px; }
+        .category-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .card { background: rgba(255,255,255,0.5); padding: 18px 10px; border-radius: 16px; text-decoration: none; color: var(--text-main); display: flex; flex-direction: column; align-items: center; transition: all 0.3s; }
+        .card:hover { background: #fff; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .card i { font-size: 2rem; margin-bottom: 8px; color: var(--theme-color); }
         .card span { font-size: 0.85rem; font-weight: 500; }
-
-        /* 移动端适配 */
-        @media (max-width: 600px) {
-            .title-area h1 { font-size: 1.8rem; }
-            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            .current-engine span { display: none; }
-            .engine-list { width: 140px; }
-            .search-container { padding: 5px; }
-            .card { padding: 15px 5px; }
-            .card i { font-size: 1.8rem; }
-        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header>
-            <div class="title-area">
-                <h1 id="greeting">Welcome</h1>
-                <p>Start your journey from here</p>
-            </div>
-
+            <div class="title-area"><h1 id="greeting">Welcome</h1></div>
             <div class="search-container">
                 <div class="engine-selector" id="engineSelector">
                     <div class="current-engine" id="currentEngine">
@@ -281,12 +177,10 @@
                 <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
             </div>
         </header>
-
         <main id="app"></main>
     </div>
 
     <script>
-        // ================= 数据配置 =================
         const navData = [
             {
                 category: "智能助手 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
@@ -294,68 +188,32 @@
                     { name: "ChatGPT", url: "https://chat.openai.com", icon: "ri-openai-fill" },
                     { name: "Claude", url: "https://claude.ai", icon: "ri-brain-fill" },
                     { name: "DeepSeek", url: "https://www.deepseek.com", icon: "ri-shining-fill" },
-                    { name: "Kimi", url: "https://kimi.moonshot.cn", icon: "ri-shining-2-fill" },
                     { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" },
-                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" },
-                    { name: "Poe", url: "https://poe.com", icon: "ri-chat-4-fill" },
-                    { name: "HuggingFace", url: "https://huggingface.co", icon: "ri-emoji-sticker-fill" }
+                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" }
                 ]
             },
             {
-                category: "社交与社区", icon: "ri-group-fill", themeColor: "#8b5cf6",
-                items: [
-                    { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
-                    { name: "Twitter/X", url: "https://twitter.com", icon: "ri-twitter-x-fill" },
-                    { name: "Instagram", url: "https://instagram.com", icon: "ri-instagram-fill" },
-                    { name: "Reddit", url: "https://reddit.com", icon: "ri-reddit-fill" },
-                    { name: "V2EX", url: "https://v2ex.com", icon: "ri-chat-voice-fill" },
-                    { name: "Weibo", url: "https://weibo.com", icon: "ri-weibo-fill" },
-                    { name: "Telegram", url: "https://web.telegram.org", icon: "ri-telegram-fill" },
-                    { name: "Discord", url: "https://discord.com", icon: "ri-discord-fill" }
-                ]
-            },
-            {
-                category: "视频与娱乐", icon: "ri-movie-2-fill", themeColor: "#f43f5e",
+                category: "社交娱乐", icon: "ri-movie-fill", themeColor: "#f43f5e",
                 items: [
                     { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-fill" },
                     { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" },
-                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-fill" },
-                    { name: "Spotify", url: "https://spotify.com", icon: "ri-spotify-fill" },
-                    { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" },
-                    { name: "Twitch", url: "https://twitch.tv", icon: "ri-twitch-fill" },
-                    { name: "Douyu", url: "https://douyu.com", icon: "ri-tv-fill" },
-                    { name: "AppleMusic", url: "https://music.apple.com", icon: "ri-apple-fill" }
+                    { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
+                    { name: "Discord", url: "https://discord.com", icon: "ri-discord-fill" },
+                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-2-fill" }
                 ]
             },
             {
-                category: "开发与设计", icon: "ri-code-box-fill", themeColor: "#3b82f6",
+                category: "开发设计", icon: "ri-code-box-fill", themeColor: "#3b82f6",
                 items: [
                     { name: "Figma", url: "https://figma.com", icon: "ri-pen-nib-fill" },
+                    { name: "StackOverflow", url: "https://stackoverflow.com", icon: "ri-stack-fill" },
                     { name: "Vercel", url: "https://vercel.com", icon: "ri-triangle-fill" },
                     { name: "Dribbble", url: "https://dribbble.com", icon: "ri-dribbble-fill" },
-                    { name: "StackOverflow", url: "https://stackoverflow.com", icon: "ri-stack-fill" },
-                    { name: "LeetCode", url: "https://leetcode.cn", icon: "ri-code-s-slash-fill" },
-                    { name: "Unsplash", url: "https://unsplash.com", icon: "ri-camera-fill" },
-                    { name: "MDN", url: "https://developer.mozilla.org", icon: "ri-book-open-fill" },
-                    { name: "IconFont", url: "https://iconfont.cn", icon: "ri-star-fill" }
-                ]
-            },
-            {
-                category: "实用工具箱", icon: "ri-tools-fill", themeColor: "#64748b",
-                items: [
-                    { name: "Google", url: "https://google.com", icon: "ri-google-fill" },
-                    { name: "DeepL", url: "https://deepl.com", icon: "ri-translate-2" },
-                    { name: "Notion", url: "https://notion.so", icon: "ri-sticky-note-fill" },
-                    { name: "TinyPNG", url: "https://tinypng.com", icon: "ri-image-2-fill" },
-                    { name: "SpeedTest", url: "https://speedtest.net", icon: "ri-speed-up-fill" },
-                    { name: "Convertio", url: "https://convertio.co", icon: "ri-file-transfer-fill" },
-                    { name: "Gmail", url: "https://mail.google.com", icon: "ri-mail-fill" },
-                    { name: "ProcessOn", url: "https://processon.com", icon: "ri-mind-map" }
+                    { name: "LeetCode", url: "https://leetcode.cn", icon: "ri-code-s-slash-fill" }
                 ]
             }
         ];
 
-        // ================= 逻辑控制 =================
         let currentMode = 'local';
         const searchEngines = {
             google: "https://www.google.com/search?q=",
@@ -363,83 +221,65 @@
             yandex: "https://yandex.com/search/?text="
         };
 
-        const selector = document.getElementById('engineSelector');
+        const engineSelector = document.getElementById('engineSelector');
         const engineList = document.getElementById('engineList');
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
 
-        // 切换下拉显示
         currentEngineShow.addEventListener('click', (e) => {
             e.stopPropagation();
             engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex';
         });
 
-        // 选中引擎
         document.querySelectorAll('.engine-item').forEach(item => {
             item.addEventListener('click', () => {
                 const mode = item.getAttribute('data-engine');
                 const color = item.getAttribute('data-color');
                 const name = item.innerText;
-                const icon = item.querySelector('i').className;
+                const iconClass = item.querySelector('i').className;
 
                 currentMode = mode;
-                
-                // 更新 CSS 变量，让搜索框发光颜色随引擎改变
                 document.documentElement.style.setProperty('--engine-color', color);
                 
-                currentEngineShow.innerHTML = `<i class="${icon}"></i><span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
+                // 处理手机端 Yandex 的特殊类名
+                if (mode === 'yandex') {
+                    currentEngineShow.classList.add('engine-yandex-mobile');
+                } else {
+                    currentEngineShow.classList.remove('engine-yandex-mobile');
+                }
+
+                currentEngineShow.innerHTML = `<i class="${iconClass}"></i><span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
-                
                 engineList.style.display = 'none';
                 searchInput.focus();
-                
-                if(mode === 'local') renderNav(navData); 
             });
         });
 
-        // 搜索回车
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const query = searchInput.value.trim();
-                if (!query) return;
-                if (currentMode !== 'local') {
+                if (query && currentMode !== 'local') {
                     window.open(searchEngines[currentMode] + encodeURIComponent(query), '_blank');
                 }
             }
         });
 
-        // 本地搜索实时过滤
         searchInput.addEventListener('input', (e) => {
             if (currentMode !== 'local') return;
             const val = e.target.value.toLowerCase();
-            const filtered = navData.map(group => {
-                const items = group.items.filter(i => i.name.toLowerCase().includes(val));
-                return { ...group, items };
-            }).filter(g => g.items.length > 0);
+            const filtered = navData.map(group => ({
+                ...group,
+                items: group.items.filter(i => i.name.toLowerCase().includes(val))
+            })).filter(g => g.items.length > 0);
             renderNav(filtered);
         });
 
-        // 时间问候
-        function updateGreeting() {
-            const hr = new Date().getHours();
-            const g = document.getElementById('greeting');
-            let text = "Hello";
-            if (hr < 6) text = "Late Night";
-            else if (hr < 12) text = "Good Morning";
-            else if (hr < 18) text = "Good Afternoon";
-            else text = "Good Evening";
-            g.innerText = text;
-        }
-
-        // 渲染页面（带瀑布流动画）
         function renderNav(data) {
             const app = document.getElementById('app');
-            app.innerHTML = data.map((group, index) => `
-                <div class="category-section" style="transition-delay: ${index * 0.1}s">
+            app.innerHTML = data.map((group, idx) => `
+                <div class="category-section" style="transition-delay: ${idx * 0.1}s">
                     <div class="category-header">
-                        <div class="category-icon" style="background:${group.themeColor}">
-                            <i class="${group.icon}"></i>
-                        </div>
+                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon}"></i></div>
                         <div class="category-title" style="color:${group.themeColor}">${group.category}</div>
                     </div>
                     <div class="grid">
@@ -452,20 +292,13 @@
                     </div>
                 </div>
             `).join('');
-
-            // 触发重绘以执行动画
             setTimeout(() => {
                 document.querySelectorAll('.category-section').forEach(el => el.classList.add('visible'));
             }, 50);
         }
 
-        // 点击空白处关闭下拉
-        document.addEventListener('click', () => { engineList.style.display = 'none'; });
-
-        // 初始化
-        updateGreeting();
+        document.addEventListener('click', () => engineList.style.display = 'none');
         renderNav(navData);
-
     </script>
 </body>
 </html>
