@@ -109,14 +109,14 @@
         }
         .current-engine:active { transform: scale(0.96); }
 
-        /* Yandex 图标修复样式 */
+        /* Yandex 图标修复样式 - 已添加 font-style: normal */
         .y-icon {
             display: inline-flex; 
             align-items: center; 
             justify-content: center;
             width: 20px; 
             height: 20px; 
-            min-width: 20px; /* 关键：防止被挤压 */
+            min-width: 20px; 
             min-height: 20px; 
             background-color: #fc3f1d;
             color: white; 
@@ -124,9 +124,10 @@
             font-size: 13px;
             font-family: Arial, sans-serif; 
             font-weight: bold; 
+            font-style: normal; /* 关键修复：防止 em 标签导致的倾斜 */
             line-height: 1; 
             flex-shrink: 0;
-            padding-bottom: 2px; /* 视觉垂直微调 */
+            padding-bottom: 2px;
         }
 
         .engine-list {
@@ -480,7 +481,10 @@
         // ================= 搜索逻辑 =================
         let currentMode = 'local';
         const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
-        const homepages = { google: "https://www.google.com", bing: "https://www.bing.com", yandex: "https://yandex.com" };
+        
+        // Bing 的首页跳转链接已修正为 bing.com
+        const homepages = { google: "https://www.google.com", bing: "https://bing.com", yandex: "https://yandex.com" };
+        
         const jumpBtn = document.getElementById('siteJumpBtn');
         const engineList = document.getElementById('engineList');
         const currentEngineShow = document.getElementById('currentEngine');
