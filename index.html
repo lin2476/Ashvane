@@ -13,7 +13,7 @@
             --glass-bg: rgba(255, 255, 255, var(--glass-opacity));
             --menu-hover: #f1f5f9;
             --text-main: #1f2937;
-            --engine-color: #4285f4; /* 默认为 Google 蓝 */
+            --engine-color: #fc3f1d; /* 默认为 Yandex 红 */
             --theme-transition: background 0.5s ease, color 0.3s ease;
         }
 
@@ -40,7 +40,7 @@
             --menu-hover: rgba(255,255,255,0.1);
         }
         
-        /* 深色模式适配 */
+        /* 深色模式下的特殊覆盖 */
         body.theme-midnight .card { border-color: rgba(255,255,255,0.1); }
         body.theme-midnight .search-container { background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.1); }
         body.theme-midnight .search-input { color: #fff; }
@@ -109,7 +109,7 @@
         }
         .current-engine:active { transform: scale(0.96); }
 
-        /* Yandex 图标样式 */
+        /* Yandex 图标修复样式 */
         .y-icon {
             display: inline-flex; 
             align-items: center; 
@@ -124,7 +124,7 @@
             font-size: 13px;
             font-family: Arial, sans-serif; 
             font-weight: bold; 
-            font-style: normal;
+            font-style: normal; 
             line-height: 1; 
             flex-shrink: 0;
             padding-bottom: 2px;
@@ -150,7 +150,7 @@
         .search-input { flex: 1; border: none; background: transparent; padding: 0 15px; font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500; }
 
         .site-jump-btn {
-            display: flex;
+            display: flex; /* 总是显示，因为删除了本地搜索 */
             align-items: center; justify-content: center;
             padding: 0 16px; height: 40px; color: #94a3b8; cursor: pointer;
             border-left: 1px solid #e2e8f0; transition: color 0.3s; margin-right: 5px;
@@ -174,7 +174,6 @@
         .category-title { font-weight: 700; font-size: 1.1rem; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
-        
         .grid:empty::after {
             content: "暂无内容，请在设置中添加"; display: block; grid-column: 1 / -1;
             text-align: center; color: #999; font-size: 0.9rem; padding: 10px 0;
@@ -300,28 +299,29 @@
 
         .reset-btn { width: 100%; padding: 12px; background: #fee2e2; color: #ef4444; margin-top: 15px; border: none; border-radius: 10px; cursor: pointer; }
 
-        /* ==================== 移动端优化 ==================== */
+        /* ==================== 移动端优化 (自适应) ==================== */
         @media (max-width: 768px) {
             .container { padding: 30px 10px; }
             .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
             .category-section { padding: 20px 12px; border-radius: 20px; }
             
-            /* Grid 布局自适应优化:
-               - auto-fit: 当元素不足以填满一行时，自动拉伸填满。
-               - minmax(22%, 1fr): 每个元素最小占宽约22%（也就是一行4个），最大自由拉伸。
-               - 结果: 1个元素占满，2个元素各50%，3个元素各33.3%，4个及以上每行4个。
+            /* Grid 设置：
+               auto-fit 配合 minmax(85px, 1fr) 
+               当一行能容纳4个(或更多)85px宽的卡片时，它就是多列。
+               如果只有1-3个，它们会自动伸展平分整行 (1fr 的作用)。
             */
             .grid { 
-                grid-template-columns: repeat(auto-fit, minmax(22%, 1fr)); 
+                grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); 
                 gap: 8px; 
             }
-            
+
             .card { height: 90px; padding: 0 4px; border-radius: 16px; }
             .card i { font-size: 1.6rem; margin-bottom: 4px; }
             .card span { font-size: 0.75rem; transform: scale(0.95); }
             
             .search-container { padding: 4px; }
             .current-engine { padding: 10px 15px; font-size: 0.9rem; }
+            .current-engine span { display: none; } /* 手机端隐藏引擎文字 */
             .search-input { font-size: 1rem; padding: 0 10px; }
 
             /* 弹窗全屏 */
@@ -366,9 +366,9 @@
                         <i class="ri-arrow-down-s-line arrow-icon"></i>
                     </div>
                     <div class="group-content">
-                        <div class="toggle-item"><span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span><label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label></div>
-                        <div class="toggle-item"><span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span><label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label></div>
                         <div class="toggle-item"><span class="toggle-label"><span class="y-icon" style="transform:scale(0.8)">Y</span> Yandex</span><label class="switch"><input type="checkbox" id="toggleYandex" checked><span class="slider"></span></label></div>
+                        <div class="toggle-item"><span class="toggle-label"><i class="ri-microsoft-fill" style="color:#00a1f1"></i> Bing</span><label class="switch"><input type="checkbox" id="toggleBing" checked><span class="slider"></span></label></div>
+                        <div class="toggle-item"><span class="toggle-label"><i class="ri-google-fill" style="color:#4285f4"></i> Google</span><label class="switch"><input type="checkbox" id="toggleGoogle" checked><span class="slider"></span></label></div>
                     </div>
                 </div>
 
@@ -399,17 +399,17 @@
             <div class="search-container">
                 <div class="engine-selector" id="engineSelector">
                     <div class="current-engine" id="currentEngine">
-                        <i class="ri-google-fill"></i>
-                        <span>Google</span>
+                        <em class="y-icon">Y</em>
+                        <span>Yandex</span>
                         <i class="ri-arrow-down-s-line"></i>
                     </div>
                     <div class="engine-list" id="engineList">
-                        <div class="engine-item" id="optGoogle" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
-                        <div class="engine-item" id="optBing" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
                         <div class="engine-item" id="optYandex" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em><label>Yandex</label></div>
+                        <div class="engine-item" id="optBing" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
+                        <div class="engine-item" id="optGoogle" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
                     </div>
                 </div>
-                <input type="text" class="search-input" id="searchInput" placeholder="在 Google 中搜索..." autocomplete="off">
+                <input type="text" class="search-input" id="searchInput" placeholder="在 Yandex 中搜索..." autocomplete="off">
                 <div class="site-jump-btn" id="siteJumpBtn" title="前往网站首页">
                     <i class="ri-external-link-line"></i>
                 </div>
@@ -469,15 +469,17 @@
             renderManageList(); 
         }
 
-        const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || { engines: { google: true, bing: true, yandex: true }, theme: 'aurora', opacity: 0.9 };
+        const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || { engines: { yandex: true, bing: true, google: true }, theme: 'aurora', opacity: 0.9 };
 
         function applyConfig() {
-            document.getElementById('optGoogle').style.display = savedConfig.engines.google ? 'flex' : 'none';
-            document.getElementById('optBing').style.display = savedConfig.engines.bing ? 'flex' : 'none';
             document.getElementById('optYandex').style.display = savedConfig.engines.yandex ? 'flex' : 'none';
-            document.getElementById('toggleGoogle').checked = savedConfig.engines.google;
-            document.getElementById('toggleBing').checked = savedConfig.engines.bing;
+            document.getElementById('optBing').style.display = savedConfig.engines.bing ? 'flex' : 'none';
+            document.getElementById('optGoogle').style.display = savedConfig.engines.google ? 'flex' : 'none';
+            
             document.getElementById('toggleYandex').checked = savedConfig.engines.yandex;
+            document.getElementById('toggleBing').checked = savedConfig.engines.bing;
+            document.getElementById('toggleGoogle').checked = savedConfig.engines.google;
+            
             setTheme(savedConfig.theme, false);
             document.documentElement.style.setProperty('--glass-opacity', savedConfig.opacity);
             document.getElementById('opacitySlider').value = savedConfig.opacity;
@@ -485,10 +487,10 @@
         }
         function saveConfig() { localStorage.setItem('myHubConfig', JSON.stringify(savedConfig)); }
 
-        // ================= 搜索逻辑 =================
-        let currentMode = 'google'; // 默认改为 Google
-        const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
-        const homepages = { google: "https://www.google.com", bing: "https://bing.com", yandex: "https://yandex.com" };
+        // ================= 搜索逻辑 (Local 移除，默认 Yandex) =================
+        let currentMode = 'yandex'; // 默认 Yandex
+        const searchEngines = { yandex: "https://yandex.com/search/?text=", bing: "https://www.bing.com/search?q=", google: "https://www.google.com/search?q=" };
+        const homepages = { yandex: "https://yandex.com", bing: "https://bing.com", google: "https://www.google.com" };
         
         const jumpBtn = document.getElementById('siteJumpBtn');
         const engineList = document.getElementById('engineList');
@@ -522,6 +524,8 @@
             });
         });
 
+        // 移除原有的 local input 过滤事件
+        // 只保留回车搜索
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const val = searchInput.value;
@@ -563,7 +567,7 @@
             if (save) { savedConfig.theme = themeName; saveConfig(); }
         }
 
-        ['Google', 'Bing', 'Yandex'].forEach(name => {
+        ['Yandex', 'Bing', 'Google'].forEach(name => {
             document.getElementById('toggle' + name).addEventListener('change', (e) => {
                 savedConfig.engines[name.toLowerCase()] = e.target.checked;
                 saveConfig();
