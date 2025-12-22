@@ -13,7 +13,7 @@
             --glass-bg: rgba(255, 255, 255, var(--glass-opacity));
             --menu-hover: #f1f5f9;
             --text-main: #1f2937;
-            --engine-color: #4a90e2; 
+            --engine-color: #4285f4; /* 默认为 Google 蓝 */
             --theme-transition: background 0.5s ease, color 0.3s ease;
         }
 
@@ -40,7 +40,7 @@
             --menu-hover: rgba(255,255,255,0.1);
         }
         
-        /* 深色模式下的特殊覆盖 */
+        /* 深色模式适配 */
         body.theme-midnight .card { border-color: rgba(255,255,255,0.1); }
         body.theme-midnight .search-container { background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.1); }
         body.theme-midnight .search-input { color: #fff; }
@@ -109,7 +109,7 @@
         }
         .current-engine:active { transform: scale(0.96); }
 
-        /* Yandex 图标修复样式 - 已添加 font-style: normal */
+        /* Yandex 图标样式 */
         .y-icon {
             display: inline-flex; 
             align-items: center; 
@@ -124,7 +124,7 @@
             font-size: 13px;
             font-family: Arial, sans-serif; 
             font-weight: bold; 
-            font-style: normal; /* 关键修复：防止 em 标签导致的倾斜 */
+            font-style: normal;
             line-height: 1; 
             flex-shrink: 0;
             padding-bottom: 2px;
@@ -150,7 +150,7 @@
         .search-input { flex: 1; border: none; background: transparent; padding: 0 15px; font-size: 1.1rem; outline: none; color: var(--text-main); font-weight: 500; }
 
         .site-jump-btn {
-            display: none;
+            display: flex;
             align-items: center; justify-content: center;
             padding: 0 16px; height: 40px; color: #94a3b8; cursor: pointer;
             border-left: 1px solid #e2e8f0; transition: color 0.3s; margin-right: 5px;
@@ -174,6 +174,7 @@
         .category-title { font-weight: 700; font-size: 1.1rem; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
+        
         .grid:empty::after {
             content: "暂无内容，请在设置中添加"; display: block; grid-column: 1 / -1;
             text-align: center; color: #999; font-size: 0.9rem; padding: 10px 0;
@@ -305,15 +306,22 @@
             .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
             .category-section { padding: 20px 12px; border-radius: 20px; }
             
-            /* 强制4列布局 */
-            .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            /* Grid 布局自适应优化:
+               - auto-fit: 当元素不足以填满一行时，自动拉伸填满。
+               - minmax(22%, 1fr): 每个元素最小占宽约22%（也就是一行4个），最大自由拉伸。
+               - 结果: 1个元素占满，2个元素各50%，3个元素各33.3%，4个及以上每行4个。
+            */
+            .grid { 
+                grid-template-columns: repeat(auto-fit, minmax(22%, 1fr)); 
+                gap: 8px; 
+            }
+            
             .card { height: 90px; padding: 0 4px; border-radius: 16px; }
             .card i { font-size: 1.6rem; margin-bottom: 4px; }
             .card span { font-size: 0.75rem; transform: scale(0.95); }
             
             .search-container { padding: 4px; }
             .current-engine { padding: 10px 15px; font-size: 0.9rem; }
-            .current-engine span { display: none; } /* 手机端隐藏引擎文字 */
             .search-input { font-size: 1rem; padding: 0 10px; }
 
             /* 弹窗全屏 */
@@ -391,18 +399,17 @@
             <div class="search-container">
                 <div class="engine-selector" id="engineSelector">
                     <div class="current-engine" id="currentEngine">
-                        <i class="ri-search-eye-line"></i>
-                        <span>本地搜索</span>
+                        <i class="ri-google-fill"></i>
+                        <span>Google</span>
                         <i class="ri-arrow-down-s-line"></i>
                     </div>
                     <div class="engine-list" id="engineList">
-                        <div class="engine-item" data-engine="local" data-color="#4a90e2"><i class="ri-search-eye-line"></i><label>本地搜索</label></div>
                         <div class="engine-item" id="optGoogle" data-engine="google" data-color="#4285f4"><i class="ri-google-fill"></i><label>Google</label></div>
                         <div class="engine-item" id="optBing" data-engine="bing" data-color="#00a1f1"><i class="ri-microsoft-fill"></i><label>Bing</label></div>
                         <div class="engine-item" id="optYandex" data-engine="yandex" data-color="#fc3f1d"><em class="y-icon">Y</em><label>Yandex</label></div>
                     </div>
                 </div>
-                <input type="text" class="search-input" id="searchInput" placeholder="搜索本地收藏..." autocomplete="off">
+                <input type="text" class="search-input" id="searchInput" placeholder="在 Google 中搜索..." autocomplete="off">
                 <div class="site-jump-btn" id="siteJumpBtn" title="前往网站首页">
                     <i class="ri-external-link-line"></i>
                 </div>
@@ -479,10 +486,8 @@
         function saveConfig() { localStorage.setItem('myHubConfig', JSON.stringify(savedConfig)); }
 
         // ================= 搜索逻辑 =================
-        let currentMode = 'local';
+        let currentMode = 'google'; // 默认改为 Google
         const searchEngines = { google: "https://www.google.com/search?q=", bing: "https://www.bing.com/search?q=", yandex: "https://yandex.com/search/?text=" };
-        
-        // Bing 的首页跳转链接已修正为 bing.com
         const homepages = { google: "https://www.google.com", bing: "https://bing.com", yandex: "https://yandex.com" };
         
         const jumpBtn = document.getElementById('siteJumpBtn');
@@ -490,7 +495,7 @@
         const currentEngineShow = document.getElementById('currentEngine');
         const searchInput = document.getElementById('searchInput');
 
-        jumpBtn.addEventListener('click', () => { if (currentMode !== 'local' && homepages[currentMode]) window.open(homepages[currentMode], '_blank'); });
+        jumpBtn.addEventListener('click', () => { if (homepages[currentMode]) window.open(homepages[currentMode], '_blank'); });
 
         currentEngineShow.addEventListener('click', (e) => { e.stopPropagation(); engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; });
         
@@ -511,34 +516,16 @@
                 // 更新显示
                 currentEngineShow.innerHTML = iconEl.outerHTML + '<span>' + name + '</span><i class="ri-arrow-down-s-line"></i>';
                 
-                if (mode === 'local') {
-                    searchInput.placeholder = "搜索本地收藏...";
-                    jumpBtn.style.display = 'none';
-                    renderNav(navData);
-                } else {
-                    searchInput.placeholder = "在 " + name + " 中搜索...";
-                    jumpBtn.style.display = 'flex';
-                }
+                searchInput.placeholder = "在 " + name + " 中搜索...";
                 engineList.style.display = 'none';
                 searchInput.focus();
             });
         });
 
-        searchInput.addEventListener('input', (e) => {
-            if (currentMode === 'local') {
-                const val = e.target.value.toLowerCase();
-                const filteredData = navData.map(cat => ({
-                    ...cat,
-                    items: cat.items.filter(item => item.name.toLowerCase().includes(val) || item.url.toLowerCase().includes(val))
-                })).filter(cat => cat.items.length > 0);
-                renderNav(filteredData);
-            }
-        });
-
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const val = searchInput.value;
-                if (currentMode !== 'local' && val) {
+                if (val) {
                     window.open(searchEngines[currentMode] + encodeURIComponent(val), '_blank');
                     searchInput.value = '';
                 }
