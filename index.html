@@ -167,9 +167,9 @@
         .card i { font-size: 2.2rem; margin-bottom: 8px; color: var(--theme-color); }
         .card span { font-size: 0.9rem; font-weight: 500; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
-        /* ================= 响应式设置页核心代码 ================= */
+        /* ================= 响应式设置页 ================= */
         
-        /* 遮罩层 (通用) */
+        /* 遮罩层 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
@@ -178,14 +178,13 @@
         }
         .modal-overlay.open { visibility: visible; opacity: 1; }
         
-        /* --- PC端 / 平板 (默认弹窗样式) --- */
+        /* PC端 / 平板 (弹窗样式) */
         .modal {
             position: fixed;
             top: 50%; left: 50%;
-            /* 居中定位 */
             transform: translate(-50%, -50%) scale(0.95);
-            width: 550px; /* 固定宽度 */
-            max-height: 85vh; /* 限制高度，防止超出屏幕 */
+            width: 550px; 
+            max-height: 85vh; 
             background: white;
             border-radius: 20px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -204,7 +203,7 @@
             display: flex; justify-content: space-between; align-items: center; 
             padding: 15px 20px; border-bottom: 1px solid #f1f5f9;
             background: rgba(255,255,255,0.95);
-            border-radius: 20px 20px 0 0; /* PC端只有上边有圆角 */
+            border-radius: 20px 20px 0 0;
             z-index: 10; flex-shrink: 0;
         }
         .modal-header h3 { font-size: 1.1rem; color: #333; font-weight: 700; }
@@ -217,29 +216,18 @@
             padding: 15px 20px;
         }
         
-        /* --- 手机端 (全屏样式覆盖) --- */
+        /* 手机端 (全屏样式) */
         @media (max-width: 600px) {
             .modal {
-                top: 0; left: 0; bottom: 0; right: 0; /* 撑满屏幕 */
+                top: 0; left: 0; bottom: 0; right: 0;
                 width: 100%; height: 100%; max-height: 100%;
-                border-radius: 0; /* 去除圆角 */
-                transform: translateY(100%); /* 初始状态在底部 */
-                opacity: 1; /* 手机端不需要淡入，只需要滑入 */
+                border-radius: 0; 
+                transform: translateY(100%); 
+                opacity: 1; 
             }
-            
-            .modal-overlay.open .modal {
-                transform: translateY(0); /* 滑入屏幕 */
-            }
-            
-            .modal-header {
-                border-radius: 0; /* 去除头部圆角 */
-                padding: 15px; /* 稍微减小内边距 */
-            }
-            
-            .modal-content-scroll {
-                padding: 15px;
-                padding-bottom: 80px; /* 底部留白，防止被手机手势条遮挡 */
-            }
+            .modal-overlay.open .modal { transform: translateY(0); }
+            .modal-header { border-radius: 0; padding: 15px; }
+            .modal-content-scroll { padding: 15px; padding-bottom: 80px; }
         }
         
         /* --- 折叠面板样式 --- */
@@ -347,22 +335,6 @@
         .sub-btn-edit { color: #4a90e2; }
         .sub-btn-del { color: #94a3b8; }
         .sub-btn-del:hover { color: #ef4444; }
-
-        @media (max-width: 600px) {
-            .container { padding: 20px 10px; }
-            .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
-            .settings-btn { top: 15px; right: 15px; width: 40px; height: 40px; }
-            .search-container { padding: 4px; }
-            .current-engine { padding: 10px 14px; gap: 6px; }
-            .current-engine span { display: none; }
-            .search-input { padding: 0 10px; font-size: 1rem; }
-            .site-jump-btn { padding: 0 10px; }
-            .category-section { padding: 15px 12px; border-radius: 20px; margin-bottom: 15px; }
-            .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-            .card { height: 90px; border-radius: 16px; padding: 0 4px; }
-            .card i { font-size: 1.8rem; margin-bottom: 6px; }
-            .card span { font-size: 0.8rem; }
-        }
     </style>
 </head>
 <body>
@@ -481,12 +453,14 @@
             {
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
-                    { name: "ChatGPT", url: "https://chat.openai.com", icon: "ri-openai-fill" },
-                    { name: "Claude", url: "https://claude.ai", icon: "ri-brain-fill" },
-                    { name: "DeepSeek", url: "https://www.deepseek.com", icon: "ri-shining-fill" },
-                    { name: "Kimi", url: "https://kimi.moonshot.cn", icon: "ri-shining-2-fill" },
-                    { name: "Midjourney", url: "https://www.midjourney.com", icon: "ri-image-fill" },
-                    { name: "Perplexity", url: "https://www.perplexity.ai", icon: "ri-search-2-fill" }
+                    { name: "ChatGPT", url: "https://chatgpt.com", icon: "ri-openai-fill" },
+                    { name: "Grok", url: "https://grok.x.ai", icon: "ri-twitter-x-fill" },
+                    { name: "AI Studio", url: "https://aistudio.google.com", icon: "ri-google-fill" },
+                    { name: "硅基流动", url: "https://cloud.siliconflow.cn", icon: "ri-cpu-line" },
+                    { name: "云雾API", url: "https://api.wlai.vip", icon: "ri-cloud-windy-line" },
+                    { name: "HappyAPI", url: "https://cn.happyapi.org", icon: "ri-emotion-happy-line" },
+                    { name: "OpenRouter", url: "https://openrouter.ai", icon: "ri-router-line" },
+                    { name: "Lobe Chat", url: "https://chat-preview.lobehub.com", icon: "ri-chat-smile-3-line" }
                 ]
             },
             {
@@ -510,7 +484,6 @@
             renderManageList(); 
         }
 
-        // ================= 配置读取 =================
         const savedConfig = JSON.parse(localStorage.getItem('myHubConfig')) || { engines: { google: true, bing: true, yandex: true }, theme: 'aurora', opacity: 0.9 };
 
         function applyConfig() {
@@ -677,25 +650,24 @@
             setTimeout(() => toggleSubItems(gIdx), 50); 
         };
 
-        // --- 准备添加：点击加号 ---
         window.prepareAddItem = function(gIdx) {
             const group = navData[gIdx];
             document.getElementById('newCatTitle').value = group.category;
             document.getElementById('newCatColor').value = group.themeColor;
             
-            // 清空网址输入
             document.getElementById('newItemName').value = '';
             document.getElementById('newItemUrl').value = '';
             
-            // 界面反馈
             document.getElementById('group-add').classList.add('active');
-            document.getElementById('group-add').scrollIntoView({ behavior: 'smooth' });
             
-            // 聚焦到网址名称，方便直接输入
+            // 滚动到顶部，确保添加表单可见
+            const formElement = document.getElementById('group-add');
+            // 如果是手机全屏，scrollIntoView 效果更好
+            formElement.scrollIntoView({ behavior: 'smooth' });
+            
             setTimeout(() => document.getElementById('newItemName').focus(), 300);
         }
 
-        // --- 编辑逻辑 ---
         window.startEditItem = function(gIdx, iIdx) {
             const item = navData[gIdx].items[iIdx];
             const group = navData[gIdx];
@@ -728,7 +700,6 @@
             document.getElementById('formTip').innerText = "* 仅填写板块名称可创建空板块";
         }
 
-        // --- 核心：添加/保存逻辑 ---
         document.getElementById('addNavBtn').addEventListener('click', () => {
             const title = document.getElementById('newCatTitle').value.trim();
             const color = document.getElementById('newCatColor').value;
@@ -737,7 +708,6 @@
 
             if (!title) { alert('请输入板块名称！'); return; }
 
-            // 检查：是否正在尝试添加网址但信息不全
             if ((itemName && !itemUrl) || (!itemName && itemUrl)) {
                 alert('若要添加网址，请同时填写名称和链接。\n若仅需创建空板块，请清空网址信息。');
                 return;
@@ -745,7 +715,6 @@
 
             if (itemUrl && !itemUrl.startsWith('http://') && !itemUrl.startsWith('https://')) itemUrl = 'https://' + itemUrl;
 
-            // 模式 1: 编辑现有网址
             if (editingState) {
                 const { gIdx, iIdx } = editingState;
                 
@@ -768,7 +737,6 @@
                 alert('修改保存成功！');
                 resetEditMode();
             } 
-            // 模式 2: 新增
             else {
                 const existingCategory = navData.find(c => c.category === title);
                 const hasItem = itemName && itemUrl;
