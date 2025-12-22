@@ -93,11 +93,16 @@
         }
         .current-engine:active { background: #dbeafe; transform: scale(0.96); border-radius: 40px; }
 
+        /* --- 修改点：修复图标扭曲问题 --- */
         .y-icon {
             display: inline-flex; align-items: center; justify-content: center;
             width: 20px; height: 20px; background-color: #fc3f1d;
             color: white; border-radius: 50%; font-size: 13px;
-            font-family: Arial, sans-serif; font-weight: bold; line-height: 1; flex-shrink: 0;
+            font-family: Arial, sans-serif; 
+            font-weight: bold; 
+            line-height: 1; 
+            flex-shrink: 0;
+            font-style: normal; /* 关键修改：取消斜体，防止Y歪斜 */
         }
 
         .engine-list {
@@ -482,6 +487,7 @@
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
                     { name: "ChatGPT", url: "https://chatgpt.com", icon: "ri-openai-fill" },
+                    { name: "Gemini", url: "https://gemini.google.com/", icon: "ri-google-fill" }, /* --- 修改点：增加 Gemini --- */
                     { name: "Grok", url: "https://grok.com", icon: "ri-twitter-x-fill" },
                     { name: "AI Studio", url: "https://aistudio.google.com", icon: "ri-google-fill" },
                     { name: "硅基流动", url: "https://cloud.siliconflow.cn", icon: "ri-cpu-line" },
@@ -567,261 +573,277 @@
                 } else {
                     currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
                 }
-                
-                searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
+
+                if (mode === 'local') {
+                    searchInput.placeholder = "搜索本地收藏...";
+                    jumpBtn.style.display = 'none';
+                } else {
+                    searchInput.placeholder = `在 ${name} 中搜索...`;
+                    jumpBtn.style.display = 'flex';
+                }
                 engineList.style.display = 'none';
-                if (mode === 'local') { jumpBtn.style.display = 'none'; } 
-                else { jumpBtn.style.display = 'flex'; jumpBtn.setAttribute('title', `前往 ${name} 首页`); }
-                searchInput.focus();
             });
         });
 
+        document.addEventListener('click', (e) => { if (!currentEngineShow.contains(e.target)) engineList.style.display = 'none'; });
+
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                const query = searchInput.value.trim();
-                if (query && currentMode !== 'local') window.open(searchEngines[currentMode] + encodeURIComponent(query), '_blank');
-            }
-        });
-
-        searchInput.addEventListener('input', (e) => {
-            if (currentMode !== 'local') return;
-            const val = e.target.value.toLowerCase();
-            const filtered = navData.map(group => ({ ...group, items: group.items.filter(i => i.name.toLowerCase().includes(val)) })).filter(g => g.items.length > 0);
-            renderNav(filtered);
-        });
-
-        // ================= 设置面板逻辑 =================
-        const modalOverlay = document.getElementById('modalOverlay');
-        document.getElementById('openSettings').addEventListener('click', () => {
-            modalOverlay.classList.add('open');
-            renderManageList(); 
-        });
-        document.getElementById('closeSettings').addEventListener('click', () => {
-            modalOverlay.classList.remove('open');
-            cancelEdit();
-        });
-        // 手机端全屏不需要遮罩点击关闭，防止误触
-
-        function updateEngineState(key, isChecked) { savedConfig.engines[key] = isChecked; applyConfig(); saveConfig(); }
-        document.getElementById('toggleGoogle').addEventListener('change', (e) => updateEngineState('google', e.target.checked));
-        document.getElementById('toggleBing').addEventListener('change', (e) => updateEngineState('bing', e.target.checked));
-        document.getElementById('toggleYandex').addEventListener('change', (e) => updateEngineState('yandex', e.target.checked));
-
-        window.setTheme = function(themeName, save = true) {
-            document.body.classList.remove('theme-aurora', 'theme-midnight', 'theme-morning');
-            document.body.classList.add(`theme-${themeName}`);
-            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.bg-${themeName}`).classList.add('active');
-            if (save) { savedConfig.theme = themeName; saveConfig(); }
-        };
-
-        document.getElementById('opacitySlider').addEventListener('input', (e) => {
-            const val = e.target.value;
-            document.documentElement.style.setProperty('--glass-opacity', val);
-            savedConfig.opacity = val;
-            saveConfig();
-        });
-
-        // ================= 新：内联管理逻辑 =================
-
-        // 1. 新建板块
-        window.createNewCategory = function() {
-            const name = document.getElementById('newCatNameInput').value.trim();
-            const color = document.getElementById('newCatColorInput').value;
-            if(!name) { alert('请输入板块名称'); return; }
-            
-            navData.unshift({ category: name, themeColor: color, icon: 'ri-folder-fill', items: [] });
-            document.getElementById('newCatNameInput').value = '';
-            saveNavData();
-        }
-
-        // 2. 渲染管理列表
-        function renderManageList() {
-            const listContainer = document.getElementById('manageList');
-            listContainer.innerHTML = navData.map((group, gIdx) => {
-                let itemsHtml = '';
-                
-                // 渲染已有项目
-                if(group.items.length === 0) {
-                     itemsHtml += '<div style="text-align:center;color:#ccc;font-size:0.8rem;padding:5px;">暂无网址</div>';
+                const val = searchInput.value.trim();
+                if (!val) return;
+                if (currentMode === 'local') {
+                    // 本地搜索逻辑：高亮并滚动
+                    findAndScroll(val);
                 } else {
-                    itemsHtml += group.items.map((item, iIdx) => {
-                        // 检查是否正在编辑该行
-                        if (currentEditState && currentEditState.type === 'edit' && currentEditState.gIdx === gIdx && currentEditState.iIdx === iIdx) {
-                            return `
-                                <div class="inline-form">
-                                    <input type="text" id="edit-name-${gIdx}-${iIdx}" class="inline-input" value="${item.name}" placeholder="名称">
-                                    <input type="text" id="edit-url-${gIdx}-${iIdx}" class="inline-input" value="${item.url}" placeholder="网址">
-                                    <button class="inline-btn btn-save" onclick="saveEditItem(${gIdx}, ${iIdx})">保存</button>
-                                    <button class="inline-btn btn-cancel" onclick="cancelEdit()">取消</button>
-                                </div>
-                            `;
-                        }
-                        return `
-                            <div class="sub-item-row">
-                                <div class="sub-item-info">
-                                    <span class="sub-item-name">${item.name}</span>
-                                    <span class="sub-item-url">${item.url}</span>
-                                </div>
-                                <div class="sub-actions">
-                                    <i class="ri-edit-line sub-btn sub-btn-edit" onclick="setEditState('edit', ${gIdx}, ${iIdx})"></i>
-                                    <i class="ri-close-circle-line sub-btn sub-btn-del" onclick="deleteItem(${gIdx}, ${iIdx})"></i>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
+                    window.open(searchEngines[currentMode] + encodeURIComponent(val), '_blank');
+                    searchInput.value = '';
                 }
-
-                // 检查是否正在该板块底部添加
-                if (currentEditState && currentEditState.type === 'add' && currentEditState.gIdx === gIdx) {
-                    itemsHtml += `
-                        <div class="inline-form">
-                            <input type="text" id="add-name-${gIdx}" class="inline-input" placeholder="名称">
-                            <input type="text" id="add-url-${gIdx}" class="inline-input" placeholder="网址">
-                            <button class="inline-btn btn-save" onclick="saveNewItem(${gIdx})">确定</button>
-                            <button class="inline-btn btn-cancel" onclick="cancelEdit()">取消</button>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="manage-item">
-                        <div class="manage-header">
-                            <input type="color" class="manage-color-picker" value="${group.themeColor}" onchange="updateCatColor(${gIdx}, this.value)">
-                            <input type="text" class="manage-title-input" value="${group.category}" onchange="updateCatTitle(${gIdx}, this.value)">
-                            <div class="manage-btn-group">
-                                <div class="manage-icon-btn btn-add-item" title="添加网址" onclick="setEditState('add', ${gIdx})"><i class="ri-add-line"></i></div>
-                                <div class="manage-icon-btn" onclick="toggleSubItems(${gIdx})"><i class="ri-arrow-down-s-line" id="arrow-${gIdx}"></i></div>
-                                <div class="manage-icon-btn btn-delete-cat" onclick="deleteCategory(${gIdx})"><i class="ri-delete-bin-line"></i></div>
-                            </div>
-                        </div>
-                        <div class="manage-subitems ${ (currentEditState && currentEditState.gIdx === gIdx) ? 'open' : '' }" id="sub-${gIdx}">
-                            ${itemsHtml}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 3. 状态控制
-        window.setEditState = function(type, gIdx, iIdx = null) {
-            currentEditState = { type, gIdx, iIdx };
-            renderManageList();
-            
-            // 自动展开列表
-            const sub = document.getElementById(`sub-${gIdx}`);
-            const arrow = document.getElementById(`arrow-${gIdx}`);
-            if(sub) sub.classList.add('open');
-            if(arrow) arrow.style.transform = 'rotate(180deg)';
-        }
-
-        window.cancelEdit = function() {
-            currentEditState = null;
-            renderManageList();
-        }
-
-        // 4. 保存新项目
-        window.saveNewItem = function(gIdx) {
-            const name = document.getElementById(`add-name-${gIdx}`).value.trim();
-            let url = document.getElementById(`add-url-${gIdx}`).value.trim();
-            
-            if(!name || !url) { alert('请填写完整信息'); return; }
-            if(!url.startsWith('http')) url = 'https://' + url;
-
-            navData[gIdx].items.push({ name, url, icon: 'ri-link' });
-            currentEditState = null; 
-            saveNavData();
-        }
-
-        // 5. 保存编辑
-        window.saveEditItem = function(gIdx, iIdx) {
-            const name = document.getElementById(`edit-name-${gIdx}-${iIdx}`).value.trim();
-            let url = document.getElementById(`edit-url-${gIdx}-${iIdx}`).value.trim();
-
-            if(!name || !url) { alert('请填写完整信息'); return; }
-            if(!url.startsWith('http')) url = 'https://' + url;
-
-            navData[gIdx].items[iIdx].name = name;
-            navData[gIdx].items[iIdx].url = url;
-            currentEditState = null;
-            saveNavData();
-        }
-
-        // 基础操作
-        window.toggleSubItems = function(idx) {
-            const sub = document.getElementById(`sub-${idx}`);
-            const arrow = document.getElementById(`arrow-${idx}`);
-            if (sub.classList.contains('open')) {
-                sub.classList.remove('open');
-                arrow.style.transform = 'rotate(0deg)';
-            } else {
-                sub.classList.add('open');
-                arrow.style.transform = 'rotate(180deg)';
-            }
-        };
-
-        window.updateCatTitle = function(idx, newTitle) {
-            if(!newTitle.trim()) return;
-            navData[idx].category = newTitle;
-            saveNavData();
-        };
-
-        window.updateCatColor = function(idx, newColor) {
-            navData[idx].themeColor = newColor;
-            saveNavData();
-        };
-
-        window.deleteCategory = function(idx) {
-            if(confirm(`确定要删除板块 "${navData[idx].category}" 吗？`)) {
-                navData.splice(idx, 1);
-                saveNavData();
-            }
-        };
-
-        window.deleteItem = function(gIdx, iIdx) {
-            navData[gIdx].items.splice(iIdx, 1);
-            saveNavData();
-        };
-
-        document.getElementById('resetNavBtn').addEventListener('click', () => {
-            if(confirm('确定要清空所有自定义数据，恢复到初始状态吗？此操作不可撤销。')) {
-                localStorage.removeItem('myHubNavData');
-                navData = JSON.parse(JSON.stringify(defaultNavData));
-                saveNavData();
-                document.getElementById('resetNavBtn').style.display = 'none';
-                cancelEdit();
-                alert('已重置');
             }
         });
 
+        function findAndScroll(query) {
+            // 简单实现：查找第一个匹配项
+            const allCards = document.querySelectorAll('.card');
+            let found = false;
+            allCards.forEach(card => {
+                card.style.transform = 'scale(1)'; card.style.background = 'var(--glass-bg)';
+                if (!found && card.innerText.toLowerCase().includes(query.toLowerCase())) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.style.transform = 'scale(1.1)';
+                    card.style.background = '#fff';
+                    setTimeout(() => { card.style.transform = 'scale(1)'; card.style.background = 'var(--glass-bg)'; }, 2000);
+                    found = true;
+                }
+            });
+            if(!found) alert('未找到相关应用');
+        }
+
+        // ================= 渲染主页 =================
+        const app = document.getElementById('app');
         function renderNav(data) {
-            const app = document.getElementById('app');
-            if (data.length === 0) {
-                app.innerHTML = '<div style="text-align:center;padding:50px;color:#666">未找到结果</div>';
-                return;
-            }
-            app.innerHTML = data.map((group, idx) => `
-                <div class="category-section" style="transition-delay: ${idx * 0.1}s">
+            app.innerHTML = '';
+            data.forEach((group, index) => {
+                const section = document.createElement('div');
+                section.className = 'category-section';
+                section.innerHTML = `
                     <div class="category-header">
-                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon || 'ri-folder-fill'}"></i></div>
+                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon}"></i></div>
                         <div class="category-title" style="color:${group.themeColor}">${group.category}</div>
                     </div>
                     <div class="grid">
                         ${group.items.map(item => `
-                            <a href="${item.url}" class="card" target="_blank" style="--theme-color:${group.themeColor}">
-                                <i class="${item.icon || 'ri-link'}"></i>
-                                <span title="${item.name}">${item.name}</span>
+                            <a href="${item.url}" target="_blank" class="card" style="--theme-color:${group.themeColor}">
+                                <i class="${item.icon}"></i>
+                                <span>${item.name}</span>
                             </a>
                         `).join('')}
                     </div>
-                </div>
-            `).join('');
-            setTimeout(() => { document.querySelectorAll('.category-section').forEach(el => el.classList.add('visible')); }, 50);
+                `;
+                app.appendChild(section);
+                setTimeout(() => section.classList.add('visible'), 100 * index);
+            });
         }
 
-        document.addEventListener('click', () => engineList.style.display = 'none');
+        // ================= 管理逻辑 =================
+        const manageListEl = document.getElementById('manageList');
+        
+        function renderManageList() {
+            if (!manageListEl) return;
+            manageListEl.innerHTML = navData.map((group, gIdx) => `
+                <div class="manage-item">
+                    <div class="manage-header">
+                        <input type="color" class="manage-color-picker" value="${group.themeColor}" onchange="updateCatColor(${gIdx}, this.value)">
+                        <input type="text" class="manage-title-input" value="${group.category}" onchange="updateCatName(${gIdx}, this.value)">
+                        
+                        <div class="manage-btn-group">
+                            <div class="manage-icon-btn btn-add-item" onclick="toggleSubItems(${gIdx})"><i class="ri-add-line"></i></div>
+                            <div class="manage-icon-btn btn-delete-cat" onclick="deleteCategory(${gIdx})"><i class="ri-delete-bin-line"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="manage-subitems" id="sub-group-${gIdx}">
+                         <div id="inline-editor-${gIdx}"></div>
+                         
+                         ${group.items.map((item, iIdx) => `
+                            <div class="sub-item-row">
+                                <div class="sub-item-info">
+                                    <i class="${item.icon}" style="color:#aaa;"></i>
+                                    <span class="sub-item-name">${item.name}</span>
+                                    <span class="sub-item-url">${item.url}</span>
+                                </div>
+                                <div class="sub-actions">
+                                    <i class="ri-edit-line sub-btn sub-btn-edit" onclick="startEditItem(${gIdx}, ${iIdx})"></i>
+                                    <i class="ri-close-circle-line sub-btn sub-btn-del" onclick="deleteItem(${gIdx}, ${iIdx})"></i>
+                                </div>
+                            </div>
+                            <div id="inline-editor-${gIdx}-${iIdx}"></div> 
+                         `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            // 恢复展开状态
+            // 简单处理：如果正在编辑某个组，就展开它
+            if (currentEditState) {
+                const el = document.getElementById(`sub-group-${currentEditState.gIdx}`);
+                if (el) el.classList.add('open');
+                
+                // 恢复编辑框
+                if (currentEditState.type === 'add') {
+                    showInlineAddForm(currentEditState.gIdx);
+                } else if (currentEditState.type === 'edit') {
+                    showInlineEditForm(currentEditState.gIdx, currentEditState.iIdx);
+                }
+            }
+        }
+
+        function toggleSubItems(gIdx) {
+            const el = document.getElementById(`sub-group-${gIdx}`);
+            el.classList.toggle('open');
+            // 如果打开了，显示添加框
+            if (el.classList.contains('open')) {
+                showInlineAddForm(gIdx);
+            } else {
+                currentEditState = null;
+                renderManageList();
+            }
+        }
+
+        // --- 内联表单生成器 ---
+        function createInlineFormHTML(nameVal, urlVal, iconVal, saveFnName, cancelFnName) {
+            return `
+                <div class="inline-form">
+                    <input type="text" class="inline-input" placeholder="名称" value="${nameVal}" id="edit-name">
+                    <input type="text" class="inline-input" placeholder="URL" value="${urlVal}" id="edit-url">
+                    <input type="text" class="inline-input" placeholder="图标class" value="${iconVal}" id="edit-icon">
+                    <button class="inline-btn btn-save" onclick="${saveFnName}">保存</button>
+                    <button class="inline-btn btn-cancel" onclick="${cancelFnName}">取消</button>
+                </div>
+            `;
+        }
+
+        // --- 添加模式 ---
+        function showInlineAddForm(gIdx) {
+            currentEditState = { type: 'add', gIdx };
+            // 先清空所有编辑器防止冲突（简单粗暴重绘会导致闪烁，这里局部操作DOM更好，但为了逻辑简单，配合renderManageList使用）
+            // 这里我们假设 renderManageList 已经根据 currentEditState 渲染了结构，或者手动插入
+            // 重新渲染太重了，直接DOM操作
+            
+            // 关闭其他所有
+            document.querySelectorAll('[id^="inline-editor-"]').forEach(e => e.innerHTML = '');
+            
+            const container = document.getElementById(`inline-editor-${gIdx}`);
+            if(container) {
+                container.innerHTML = createInlineFormHTML('', '', 'ri-link', `confirmAddItem(${gIdx})`, `cancelEdit()`);
+                document.getElementById(`sub-group-${gIdx}`).classList.add('open');
+            }
+        }
+
+        function confirmAddItem(gIdx) {
+            const name = document.querySelector('#edit-name').value;
+            const url = document.querySelector('#edit-url').value;
+            const icon = document.querySelector('#edit-icon').value || 'ri-link';
+            
+            if (name && url) {
+                navData[gIdx].items.unshift({ name, url, icon });
+                cancelEdit(); // 清除状态
+                saveNavData();
+            } else {
+                alert('请填写名称和网址');
+            }
+        }
+
+        // --- 编辑模式 ---
+        function startEditItem(gIdx, iIdx) {
+            currentEditState = { type: 'edit', gIdx, iIdx };
+            document.querySelectorAll('[id^="inline-editor-"]').forEach(e => e.innerHTML = '');
+            
+            const item = navData[gIdx].items[iIdx];
+            const container = document.getElementById(`inline-editor-${gIdx}-${iIdx}`);
+            if(container) {
+                 container.innerHTML = createInlineFormHTML(item.name, item.url, item.icon, `confirmEditItem(${gIdx}, ${iIdx})`, `cancelEdit()`);
+                 // 隐藏原来的显示行？ 或者仅仅在下方显示编辑框
+            }
+        }
+
+        function confirmEditItem(gIdx, iIdx) {
+            const name = document.querySelector('#edit-name').value;
+            const url = document.querySelector('#edit-url').value;
+            const icon = document.querySelector('#edit-icon').value;
+            
+            if(name && url) {
+                navData[gIdx].items[iIdx] = { name, url, icon };
+                cancelEdit();
+                saveNavData();
+            }
+        }
+
+        function cancelEdit() {
+            currentEditState = null;
+            renderManageList(); // 恢复原状
+        }
+
+        // --- 其他管理操作 ---
+        function createNewCategory() {
+            const name = document.getElementById('newCatNameInput').value;
+            const color = document.getElementById('newCatColorInput').value;
+            if(name) {
+                navData.unshift({ category: name, themeColor: color, icon: 'ri-folder-fill', items: [] });
+                document.getElementById('newCatNameInput').value = '';
+                saveNavData();
+            }
+        }
+        function deleteCategory(index) { if(confirm('确定删除整个板块吗？')) { navData.splice(index, 1); saveNavData(); } }
+        function deleteItem(gIdx, iIdx) { if(confirm('删除此项？')) { navData[gIdx].items.splice(iIdx, 1); saveNavData(); } }
+        function updateCatName(index, val) { navData[index].category = val; saveNavData(); }
+        function updateCatColor(index, val) { navData[index].themeColor = val; saveNavData(); }
+        
+        document.getElementById('resetNavBtn').onclick = () => {
+             if(confirm('确定重置所有数据到初始状态吗？所有自定义更改将丢失。')) {
+                 localStorage.removeItem('myHubNavData');
+                 location.reload();
+             }
+        };
+
+        // ================= 设置弹窗 =================
+        const modal = document.getElementById('modalOverlay');
+        document.getElementById('openSettings').onclick = () => { 
+            modal.classList.add('open'); 
+            renderManageList(); 
+        };
+        document.getElementById('closeSettings').onclick = () => modal.classList.remove('open');
+        modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
+
+        // 问候语
+        const hour = new Date().getHours();
+        const greeting = hour < 6 ? 'Good Night' : hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+        document.getElementById('greeting').innerText = greeting;
+
+        // 主题切换
+        function setTheme(themeName, save = true) {
+            document.body.className = `theme-${themeName}`;
+            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.bg-${themeName}`).classList.add('active');
+            if (save) { savedConfig.theme = themeName; saveConfig(); }
+        }
+        
+        // 搜索引擎开关
+        document.getElementById('toggleGoogle').onchange = (e) => { savedConfig.engines.google = e.target.checked; saveConfig(); applyConfig(); };
+        document.getElementById('toggleBing').onchange = (e) => { savedConfig.engines.bing = e.target.checked; saveConfig(); applyConfig(); };
+        document.getElementById('toggleYandex').onchange = (e) => { savedConfig.engines.yandex = e.target.checked; saveConfig(); applyConfig(); };
+        
+        // 透明度
+        document.getElementById('opacitySlider').oninput = (e) => {
+            const val = e.target.value;
+            document.documentElement.style.setProperty('--glass-opacity', val);
+            savedConfig.opacity = val;
+            saveConfig();
+        };
+
+        // 初始化
         applyConfig();
         renderNav(navData);
+
     </script>
 </body>
 </html>
