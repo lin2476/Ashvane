@@ -454,23 +454,37 @@
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
                     { name: "ChatGPT", url: "https://chatgpt.com", icon: "ri-openai-fill" },
-                    { name: "Grok", url: "https://grok.com/", icon: "ri-twitter-x-fill" },
+                    { name: "Grok", url: "https://grok.x.ai", icon: "ri-twitter-x-fill" },
                     { name: "AI Studio", url: "https://aistudio.google.com", icon: "ri-google-fill" },
                     { name: "硅基流动", url: "https://cloud.siliconflow.cn", icon: "ri-cpu-line" },
                     { name: "云雾API", url: "https://api.wlai.vip", icon: "ri-cloud-windy-line" },
                     { name: "HappyAPI", url: "https://cn.happyapi.org", icon: "ri-emotion-happy-line" },
                     { name: "OpenRouter", url: "https://openrouter.ai", icon: "ri-router-line" },
-                    { name: "Lobe Chat", url: "https://lobechat.com/chat", icon: "ri-chat-smile-3-line" }
+                    { name: "Lobe Chat", url: "https://chat-preview.lobehub.com", icon: "ri-chat-smile-3-line" }
                 ]
             },
             {
-                category: "社交娱乐", icon: "ri-movie-fill", themeColor: "#f43f5e",
+                category: "视听娱乐",
+                icon: "ri-film-fill",
+                themeColor: "#ff6b6b", 
                 items: [
                     { name: "Bilibili", url: "https://bilibili.com", icon: "ri-bilibili-fill" },
                     { name: "YouTube", url: "https://youtube.com", icon: "ri-youtube-fill" },
+                    { name: "TikTok", url: "https://www.tiktok.com", icon: "ri-tiktok-fill" },
+                    { name: "二矿动漫", url: "https://www.2rk.cc", icon: "ri-movie-line" },
+                    { name: "Hanimei", url: "https://hanime1.me", icon: "ri-play-circle-line" } 
+                ]
+            },
+            {
+                category: "社区工具",
+                icon: "ri-tools-fill",
+                themeColor: "#4a90e2", 
+                items: [
                     { name: "GitHub", url: "https://github.com", icon: "ri-github-fill" },
-                    { name: "Steam", url: "https://store.steampowered.com", icon: "ri-steam-fill" },
-                    { name: "Netflix", url: "https://netflix.com", icon: "ri-movie-2-fill" }
+                    { name: "TouchGal", url: "https://www.touchgal.us", icon: "ri-gamepad-line" },
+                    { name: "Discord", url: "https://discord.com", icon: "ri-discord-fill" },
+                    { name: "iKuuu VPN", url: "https://ikuuu.one/user", icon: "ri-shield-keyhole-fill" },
+                    { name: "Z-Library", url: "https://singlelogin.re", icon: "ri-book-2-fill" } 
                 ]
             }
         ];
@@ -660,9 +674,7 @@
             
             document.getElementById('group-add').classList.add('active');
             
-            // 滚动到顶部，确保添加表单可见
             const formElement = document.getElementById('group-add');
-            // 如果是手机全屏，scrollIntoView 效果更好
             formElement.scrollIntoView({ behavior: 'smooth' });
             
             setTimeout(() => document.getElementById('newItemName').focus(), 300);
