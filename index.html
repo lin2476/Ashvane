@@ -343,6 +343,42 @@
         .sub-btn-del:hover { color: #ef4444; }
 
         .reset-btn { width: 100%; padding: 12px; background: #fee2e2; color: #ef4444; margin-top: 15px; border: none; border-radius: 10px; cursor: pointer; }
+
+        /* ==================== 移动端特别优化 (一行4个) ==================== */
+        @media (max-width: 768px) {
+            .container { padding: 30px 10px; } /* 减少两边留白 */
+            .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
+            .category-section { padding: 20px 12px; border-radius: 20px; } /* 减少卡片内边距 */
+            
+            /* 强制网格为4列 */
+            .grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 8px; /* 间距缩小，以便挤下4个 */
+            }
+            
+            /* 卡片样式调整 */
+            .card { 
+                height: 90px; /* 高度减小 */
+                padding: 0 4px; /* 极小内边距 */
+                border-radius: 16px;
+            }
+            
+            .card i { 
+                font-size: 1.6rem; /* 图标缩小 */
+                margin-bottom: 4px; 
+            }
+            
+            .card span { 
+                font-size: 0.75rem; /* 字体缩小至约12px */
+                transform: scale(0.95); /* 稍微再压一点防止换行 */
+            }
+            
+            /* 搜索框调整 */
+            .search-container { padding: 4px; }
+            .current-engine { padding: 10px 15px; font-size: 0.9rem; }
+            .current-engine span { display: none; } /* 手机端隐藏“本地搜索”文字只留图标，省空间 */
+            .search-input { font-size: 1rem; padding: 0 10px; }
+        }
     </style>
 </head>
 <body>
@@ -524,7 +560,14 @@
                 const iconHtml = (item.querySelector('i') || item.querySelector('.y-icon')).outerHTML;
                 currentMode = mode;
                 document.documentElement.style.setProperty('--engine-color', color);
-                currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
+                
+                // 手机端优化：如果是在手机上，可能只显示图标
+                if(window.innerWidth <= 768) {
+                    currentEngineShow.innerHTML = `${iconHtml}<i class="ri-arrow-down-s-line"></i>`;
+                } else {
+                    currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
+                }
+                
                 searchInput.placeholder = mode === 'local' ? "搜索本地收藏..." : `在 ${name} 中搜索...`;
                 engineList.style.display = 'none';
                 if (mode === 'local') { jumpBtn.style.display = 'none'; } 
