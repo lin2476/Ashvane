@@ -93,16 +93,14 @@
         }
         .current-engine:active { background: #dbeafe; transform: scale(0.96); border-radius: 40px; }
 
-        /* --- 修改点：修复图标扭曲问题 --- */
+        /* 修复 Y图标 样式 */
         .y-icon {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 20px; height: 20px; background-color: #fc3f1d;
+            width: 20px; height: 20px; min-width: 20px; min-height: 20px; 
+            background-color: #fc3f1d;
             color: white; border-radius: 50%; font-size: 13px;
-            font-family: Arial, sans-serif; 
-            font-weight: bold; 
-            line-height: 1; 
-            flex-shrink: 0;
-            font-style: normal; /* 关键修改：取消斜体，防止Y歪斜 */
+            font-family: Arial, sans-serif; font-weight: bold; line-height: 1; flex-shrink: 0;
+            font-style: normal;
         }
 
         .engine-list {
@@ -182,7 +180,6 @@
         }
         .modal-overlay.open { visibility: visible; opacity: 1; }
         
-        /* PC端 / 平板 (弹窗样式) */
         .modal {
             position: fixed;
             top: 50%; left: 50%;
@@ -199,7 +196,6 @@
         
         .modal-overlay.open .modal { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         
-        /* 顶部固定栏 */
         .modal-header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 15px 20px; border-bottom: 1px solid #f1f5f9;
@@ -211,13 +207,11 @@
         .close-btn { font-size: 1.6rem; padding: 5px; cursor: pointer; color: #666; transition: color 0.2s; }
         .close-btn:hover { color: #333; }
 
-        /* 内容滚动区 */
         .modal-content-scroll {
             flex: 1; overflow-y: auto; overflow-x: hidden;
             padding: 15px 20px;
         }
         
-        /* 手机端 (全屏样式) */
         @media (max-width: 600px) {
             .modal {
                 top: 0; left: 0; bottom: 0; right: 0;
@@ -231,7 +225,6 @@
             .modal-content-scroll { padding: 15px; padding-bottom: 80px; }
         }
         
-        /* --- 折叠面板样式 --- */
         .setting-group { margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
         .setting-group:last-child { border-bottom: none; }
         
@@ -253,7 +246,6 @@
         
         @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 开关和滑块 */
         .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .toggle-label { font-size: 0.95rem; color: #333; display: flex; align-items: center; gap: 8px; }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -271,7 +263,6 @@
         .range-slider { width: 100%; height: 6px; background: #eee; border-radius: 5px; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4a90e2; }
 
-        /* --- 新建板块区域 --- */
         .create-cat-box {
             display: flex; gap: 8px; margin-bottom: 20px; background: #f1f5f9;
             padding: 10px; border-radius: 12px; align-items: center;
@@ -284,7 +275,6 @@
             border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
         }
 
-        /* --- 板块管理列表 --- */
         #manageList { display: flex; flex-direction: column; gap: 12px; }
         .manage-item { 
             background: #f8fafc; border-radius: 14px; padding: 10px 12px; border: 1px solid #eee;
@@ -313,13 +303,12 @@
         }
         .manage-subitems.open { display: block; }
         
-        /* 内联输入框样式 */
         .inline-form {
             display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;
             background: #fff; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid #e2e8f0;
         }
         .inline-input {
-            flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; outline: none; width: 0; /* 允许收缩 */
+            flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; outline: none; width: 0;
         }
         .inline-input:focus { border-color: #4a90e2; }
         .inline-btn {
@@ -328,7 +317,6 @@
         .btn-save { background: #4a90e2; color: white; }
         .btn-cancel { background: #f1f5f9; color: #666; }
 
-        /* 列表项 */
         .sub-item-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
         .sub-item-info { display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1; }
         .sub-item-name { color: #333; font-weight: 500; white-space: nowrap; }
@@ -349,39 +337,35 @@
 
         .reset-btn { width: 100%; padding: 12px; background: #fee2e2; color: #ef4444; margin-top: 15px; border: none; border-radius: 10px; cursor: pointer; }
 
-        /* ==================== 移动端特别优化 (一行4个) ==================== */
         @media (max-width: 768px) {
-            .container { padding: 30px 10px; } /* 减少两边留白 */
+            .container { padding: 30px 10px; }
             .title-area h1 { font-size: 1.8rem; margin-bottom: 20px; }
-            .category-section { padding: 20px 12px; border-radius: 20px; } /* 减少卡片内边距 */
+            .category-section { padding: 20px 12px; border-radius: 20px; } 
             
-            /* 强制网格为4列 */
             .grid { 
                 grid-template-columns: repeat(4, 1fr); 
-                gap: 8px; /* 间距缩小，以便挤下4个 */
+                gap: 8px; 
             }
             
-            /* 卡片样式调整 */
             .card { 
-                height: 90px; /* 高度减小 */
-                padding: 0 4px; /* 极小内边距 */
+                height: 90px; 
+                padding: 0 4px; 
                 border-radius: 16px;
             }
             
             .card i { 
-                font-size: 1.6rem; /* 图标缩小 */
+                font-size: 1.6rem; 
                 margin-bottom: 4px; 
             }
             
             .card span { 
-                font-size: 0.75rem; /* 字体缩小至约12px */
-                transform: scale(0.95); /* 稍微再压一点防止换行 */
+                font-size: 0.75rem; 
+                transform: scale(0.95); 
             }
             
-            /* 搜索框调整 */
             .search-container { padding: 4px; }
             .current-engine { padding: 10px 15px; font-size: 0.9rem; }
-            .current-engine span { display: none; } /* 手机端隐藏“本地搜索”文字只留图标，省空间 */
+            .current-engine span { display: none; } 
             .search-input { font-size: 1rem; padding: 0 10px; }
         }
     </style>
@@ -410,8 +394,7 @@
                             <button class="create-cat-btn" onclick="createNewCategory()">新建板块</button>
                         </div>
 
-                        <div id="manageList">
-                            </div>
+                        <div id="manageList"></div>
                         <button id="resetNavBtn" class="reset-btn" style="display:none;">重置所有数据</button>
                     </div>
                 </div>
@@ -487,7 +470,7 @@
                 category: "智能 AI", icon: "ri-robot-fill", themeColor: "#10a37f",
                 items: [
                     { name: "ChatGPT", url: "https://chatgpt.com", icon: "ri-openai-fill" },
-                    { name: "Gemini", url: "https://gemini.google.com/", icon: "ri-google-fill" }, /* --- 修改点：增加 Gemini --- */
+                    { name: "Gemini", url: "https://gemini.google.com/", icon: "ri-sparkling-fill" },
                     { name: "Grok", url: "https://grok.com", icon: "ri-twitter-x-fill" },
                     { name: "AI Studio", url: "https://aistudio.google.com", icon: "ri-google-fill" },
                     { name: "硅基流动", url: "https://cloud.siliconflow.cn", icon: "ri-cpu-line" },
@@ -520,8 +503,6 @@
         ];
 
         let navData = JSON.parse(localStorage.getItem('myHubNavData')) || JSON.parse(JSON.stringify(defaultNavData));
-        
-        // 状态管理：用于内联编辑 { type: 'edit'|'add', gIdx: 0, iIdx: 1 }
         let currentEditState = null;
 
         function saveNavData() {
@@ -544,6 +525,7 @@
             document.getElementById('opacitySlider').value = savedConfig.opacity;
             if (localStorage.getItem('myHubNavData')) document.getElementById('resetNavBtn').style.display = 'block';
         }
+
         function saveConfig() { localStorage.setItem('myHubConfig', JSON.stringify(savedConfig)); }
 
         // ================= 搜索逻辑 =================
@@ -557,293 +539,29 @@
 
         jumpBtn.addEventListener('click', () => { if (currentMode !== 'local' && homepages[currentMode]) window.open(homepages[currentMode], '_blank'); });
 
-        currentEngineShow.addEventListener('click', (e) => { e.stopPropagation(); engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; });
+        currentEngineShow.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            engineList.style.display = engineList.style.display === 'flex' ? 'none' : 'flex'; 
+        });
+
+        document.addEventListener('click', () => { engineList.style.display = 'none'; });
+
         document.querySelectorAll('.engine-item').forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
                 const mode = item.getAttribute('data-engine');
                 const color = item.getAttribute('data-color');
                 const name = item.querySelector('label').innerText;
                 const iconHtml = (item.querySelector('i') || item.querySelector('.y-icon')).outerHTML;
+                
                 currentMode = mode;
                 document.documentElement.style.setProperty('--engine-color', color);
                 
-                // 手机端优化：如果是在手机上，可能只显示图标
-                if(window.innerWidth <= 768) {
-                    currentEngineShow.innerHTML = `${iconHtml}<i class="ri-arrow-down-s-line"></i>`;
-                } else {
-                    currentEngineShow.innerHTML = `${iconHtml}<span>${name}</span><i class="ri-arrow-down-s-line"></i>`;
-                }
-
-                if (mode === 'local') {
+                // 补全渲染
+                currentEngineShow.innerHTML = `${iconHtml} <span>${name}</span> <i class="ri-arrow-down-s-line"></i>`;
+                
+                if(mode === 'local') {
                     searchInput.placeholder = "搜索本地收藏...";
                     jumpBtn.style.display = 'none';
                 } else {
                     searchInput.placeholder = `在 ${name} 中搜索...`;
-                    jumpBtn.style.display = 'flex';
-                }
-                engineList.style.display = 'none';
-            });
-        });
-
-        document.addEventListener('click', (e) => { if (!currentEngineShow.contains(e.target)) engineList.style.display = 'none'; });
-
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const val = searchInput.value.trim();
-                if (!val) return;
-                if (currentMode === 'local') {
-                    // 本地搜索逻辑：高亮并滚动
-                    findAndScroll(val);
-                } else {
-                    window.open(searchEngines[currentMode] + encodeURIComponent(val), '_blank');
-                    searchInput.value = '';
-                }
-            }
-        });
-
-        function findAndScroll(query) {
-            // 简单实现：查找第一个匹配项
-            const allCards = document.querySelectorAll('.card');
-            let found = false;
-            allCards.forEach(card => {
-                card.style.transform = 'scale(1)'; card.style.background = 'var(--glass-bg)';
-                if (!found && card.innerText.toLowerCase().includes(query.toLowerCase())) {
-                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    card.style.transform = 'scale(1.1)';
-                    card.style.background = '#fff';
-                    setTimeout(() => { card.style.transform = 'scale(1)'; card.style.background = 'var(--glass-bg)'; }, 2000);
-                    found = true;
-                }
-            });
-            if(!found) alert('未找到相关应用');
-        }
-
-        // ================= 渲染主页 =================
-        const app = document.getElementById('app');
-        function renderNav(data) {
-            app.innerHTML = '';
-            data.forEach((group, index) => {
-                const section = document.createElement('div');
-                section.className = 'category-section';
-                section.innerHTML = `
-                    <div class="category-header">
-                        <div class="category-icon" style="background:${group.themeColor}"><i class="${group.icon}"></i></div>
-                        <div class="category-title" style="color:${group.themeColor}">${group.category}</div>
-                    </div>
-                    <div class="grid">
-                        ${group.items.map(item => `
-                            <a href="${item.url}" target="_blank" class="card" style="--theme-color:${group.themeColor}">
-                                <i class="${item.icon}"></i>
-                                <span>${item.name}</span>
-                            </a>
-                        `).join('')}
-                    </div>
-                `;
-                app.appendChild(section);
-                setTimeout(() => section.classList.add('visible'), 100 * index);
-            });
-        }
-
-        // ================= 管理逻辑 =================
-        const manageListEl = document.getElementById('manageList');
-        
-        function renderManageList() {
-            if (!manageListEl) return;
-            manageListEl.innerHTML = navData.map((group, gIdx) => `
-                <div class="manage-item">
-                    <div class="manage-header">
-                        <input type="color" class="manage-color-picker" value="${group.themeColor}" onchange="updateCatColor(${gIdx}, this.value)">
-                        <input type="text" class="manage-title-input" value="${group.category}" onchange="updateCatName(${gIdx}, this.value)">
-                        
-                        <div class="manage-btn-group">
-                            <div class="manage-icon-btn btn-add-item" onclick="toggleSubItems(${gIdx})"><i class="ri-add-line"></i></div>
-                            <div class="manage-icon-btn btn-delete-cat" onclick="deleteCategory(${gIdx})"><i class="ri-delete-bin-line"></i></div>
-                        </div>
-                    </div>
-
-                    <div class="manage-subitems" id="sub-group-${gIdx}">
-                         <div id="inline-editor-${gIdx}"></div>
-                         
-                         ${group.items.map((item, iIdx) => `
-                            <div class="sub-item-row">
-                                <div class="sub-item-info">
-                                    <i class="${item.icon}" style="color:#aaa;"></i>
-                                    <span class="sub-item-name">${item.name}</span>
-                                    <span class="sub-item-url">${item.url}</span>
-                                </div>
-                                <div class="sub-actions">
-                                    <i class="ri-edit-line sub-btn sub-btn-edit" onclick="startEditItem(${gIdx}, ${iIdx})"></i>
-                                    <i class="ri-close-circle-line sub-btn sub-btn-del" onclick="deleteItem(${gIdx}, ${iIdx})"></i>
-                                </div>
-                            </div>
-                            <div id="inline-editor-${gIdx}-${iIdx}"></div> 
-                         `).join('')}
-                    </div>
-                </div>
-            `).join('');
-            
-            // 恢复展开状态
-            // 简单处理：如果正在编辑某个组，就展开它
-            if (currentEditState) {
-                const el = document.getElementById(`sub-group-${currentEditState.gIdx}`);
-                if (el) el.classList.add('open');
-                
-                // 恢复编辑框
-                if (currentEditState.type === 'add') {
-                    showInlineAddForm(currentEditState.gIdx);
-                } else if (currentEditState.type === 'edit') {
-                    showInlineEditForm(currentEditState.gIdx, currentEditState.iIdx);
-                }
-            }
-        }
-
-        function toggleSubItems(gIdx) {
-            const el = document.getElementById(`sub-group-${gIdx}`);
-            el.classList.toggle('open');
-            // 如果打开了，显示添加框
-            if (el.classList.contains('open')) {
-                showInlineAddForm(gIdx);
-            } else {
-                currentEditState = null;
-                renderManageList();
-            }
-        }
-
-        // --- 内联表单生成器 ---
-        function createInlineFormHTML(nameVal, urlVal, iconVal, saveFnName, cancelFnName) {
-            return `
-                <div class="inline-form">
-                    <input type="text" class="inline-input" placeholder="名称" value="${nameVal}" id="edit-name">
-                    <input type="text" class="inline-input" placeholder="URL" value="${urlVal}" id="edit-url">
-                    <input type="text" class="inline-input" placeholder="图标class" value="${iconVal}" id="edit-icon">
-                    <button class="inline-btn btn-save" onclick="${saveFnName}">保存</button>
-                    <button class="inline-btn btn-cancel" onclick="${cancelFnName}">取消</button>
-                </div>
-            `;
-        }
-
-        // --- 添加模式 ---
-        function showInlineAddForm(gIdx) {
-            currentEditState = { type: 'add', gIdx };
-            // 先清空所有编辑器防止冲突（简单粗暴重绘会导致闪烁，这里局部操作DOM更好，但为了逻辑简单，配合renderManageList使用）
-            // 这里我们假设 renderManageList 已经根据 currentEditState 渲染了结构，或者手动插入
-            // 重新渲染太重了，直接DOM操作
-            
-            // 关闭其他所有
-            document.querySelectorAll('[id^="inline-editor-"]').forEach(e => e.innerHTML = '');
-            
-            const container = document.getElementById(`inline-editor-${gIdx}`);
-            if(container) {
-                container.innerHTML = createInlineFormHTML('', '', 'ri-link', `confirmAddItem(${gIdx})`, `cancelEdit()`);
-                document.getElementById(`sub-group-${gIdx}`).classList.add('open');
-            }
-        }
-
-        function confirmAddItem(gIdx) {
-            const name = document.querySelector('#edit-name').value;
-            const url = document.querySelector('#edit-url').value;
-            const icon = document.querySelector('#edit-icon').value || 'ri-link';
-            
-            if (name && url) {
-                navData[gIdx].items.unshift({ name, url, icon });
-                cancelEdit(); // 清除状态
-                saveNavData();
-            } else {
-                alert('请填写名称和网址');
-            }
-        }
-
-        // --- 编辑模式 ---
-        function startEditItem(gIdx, iIdx) {
-            currentEditState = { type: 'edit', gIdx, iIdx };
-            document.querySelectorAll('[id^="inline-editor-"]').forEach(e => e.innerHTML = '');
-            
-            const item = navData[gIdx].items[iIdx];
-            const container = document.getElementById(`inline-editor-${gIdx}-${iIdx}`);
-            if(container) {
-                 container.innerHTML = createInlineFormHTML(item.name, item.url, item.icon, `confirmEditItem(${gIdx}, ${iIdx})`, `cancelEdit()`);
-                 // 隐藏原来的显示行？ 或者仅仅在下方显示编辑框
-            }
-        }
-
-        function confirmEditItem(gIdx, iIdx) {
-            const name = document.querySelector('#edit-name').value;
-            const url = document.querySelector('#edit-url').value;
-            const icon = document.querySelector('#edit-icon').value;
-            
-            if(name && url) {
-                navData[gIdx].items[iIdx] = { name, url, icon };
-                cancelEdit();
-                saveNavData();
-            }
-        }
-
-        function cancelEdit() {
-            currentEditState = null;
-            renderManageList(); // 恢复原状
-        }
-
-        // --- 其他管理操作 ---
-        function createNewCategory() {
-            const name = document.getElementById('newCatNameInput').value;
-            const color = document.getElementById('newCatColorInput').value;
-            if(name) {
-                navData.unshift({ category: name, themeColor: color, icon: 'ri-folder-fill', items: [] });
-                document.getElementById('newCatNameInput').value = '';
-                saveNavData();
-            }
-        }
-        function deleteCategory(index) { if(confirm('确定删除整个板块吗？')) { navData.splice(index, 1); saveNavData(); } }
-        function deleteItem(gIdx, iIdx) { if(confirm('删除此项？')) { navData[gIdx].items.splice(iIdx, 1); saveNavData(); } }
-        function updateCatName(index, val) { navData[index].category = val; saveNavData(); }
-        function updateCatColor(index, val) { navData[index].themeColor = val; saveNavData(); }
-        
-        document.getElementById('resetNavBtn').onclick = () => {
-             if(confirm('确定重置所有数据到初始状态吗？所有自定义更改将丢失。')) {
-                 localStorage.removeItem('myHubNavData');
-                 location.reload();
-             }
-        };
-
-        // ================= 设置弹窗 =================
-        const modal = document.getElementById('modalOverlay');
-        document.getElementById('openSettings').onclick = () => { 
-            modal.classList.add('open'); 
-            renderManageList(); 
-        };
-        document.getElementById('closeSettings').onclick = () => modal.classList.remove('open');
-        modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
-
-        // 问候语
-        const hour = new Date().getHours();
-        const greeting = hour < 6 ? 'Good Night' : hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-        document.getElementById('greeting').innerText = greeting;
-
-        // 主题切换
-        function setTheme(themeName, save = true) {
-            document.body.className = `theme-${themeName}`;
-            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.bg-${themeName}`).classList.add('active');
-            if (save) { savedConfig.theme = themeName; saveConfig(); }
-        }
-        
-        // 搜索引擎开关
-        document.getElementById('toggleGoogle').onchange = (e) => { savedConfig.engines.google = e.target.checked; saveConfig(); applyConfig(); };
-        document.getElementById('toggleBing').onchange = (e) => { savedConfig.engines.bing = e.target.checked; saveConfig(); applyConfig(); };
-        document.getElementById('toggleYandex').onchange = (e) => { savedConfig.engines.yandex = e.target.checked; saveConfig(); applyConfig(); };
-        
-        // 透明度
-        document.getElementById('opacitySlider').oninput = (e) => {
-            const val = e.target.value;
-            document.documentElement.style.setProperty('--glass-opacity', val);
-            savedConfig.opacity = val;
-            saveConfig();
-        };
-
-        // 初始化
-        applyConfig();
-        renderNav(navData);
-
-    </script>
-</body>
-</html>
+               
