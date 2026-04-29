@@ -133,20 +133,23 @@ html,body{
 .rbody{padding:8px 12px;font-size:12px;line-height:1.5;color:var(--text-secondary);background:var(--bg-tertiary);border-top:1px solid rgba(128,128,128,.08);max-height:180px;overflow-y:auto;display:none;font-style:italic;white-space:pre-wrap}
 .rbody.open{display:block}
 
-/* AI 消息操作栏：模型名称在右下角，按钮 hover 可见 */
+/* AI 消息操作栏：模型名称左对齐，按钮右对齐 */
 .msg.ai .msg-actions{
-  display:flex;justify-content:flex-end;align-items:center;gap:6px;
+  display:flex;justify-content:space-between;align-items:center;gap:6px;
   opacity:1;padding-right:2px;
 }
 .msg.ai .msg-actions .badge{
   font-size:10px;color:var(--text-secondary);opacity:.55;letter-spacing:.3px;
   white-space:nowrap;
 }
-.msg.ai .msg-actions button{
+.msg.ai .msg-actions .actions-right{
+  display:flex;gap:2px;
+}
+.msg.ai .msg-actions .actions-right button{
   opacity:0;transition:opacity .2s;
 }
-.msg.ai:hover .msg-actions button,
-.msg.ai .msg-actions.show button{opacity:1}
+.msg.ai:hover .msg-actions .actions-right button,
+.msg.ai .msg-actions.show .actions-right button{opacity:1}
 
 .msg.user .msg-actions{
   display:flex;justify-content:flex-end;gap:2px;margin-top:2px;padding-right:2px;
@@ -197,10 +200,70 @@ html,body{
 .bubble p{margin:4px 0}.bubble p:first-child{margin-top:0}.bubble p:last-child{margin-bottom:0}
 .bubble ul,.bubble ol{padding-left:18px;margin:4px 0}.bubble li{margin:2px 0}
 .bubble code{background:var(--bg-tertiary);padding:2px 5px;border-radius:3px;font-family:var(--mono);font-size:.86em}
-.bubble pre{background:#1a1a26;border-radius:var(--radius-sm);padding:12px;overflow-x:auto;margin:8px 0;position:relative}
-.bubble pre code{background:none;padding:0;color:#d4d4d4;font-size:12.5px;line-height:1.5}
-.copy-btn{position:absolute;top:6px;right:8px;padding:4px 10px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#aaa;font-size:11px;cursor:pointer;transition:all var(--tr)}
-.copy-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* Code Block Wrapper */
+.code-block-wrapper{
+  border-radius:var(--radius-sm);
+  margin:8px 0;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.05);
+}
+.code-block-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 8px;
+  background:rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(128,128,128,0.1);
+}
+.code-lang{
+  font-size:11px;
+  color:#9ca3af;
+  text-transform:uppercase;
+  font-weight:500;
+}
+.code-btns{
+  display:flex;gap:4px;
+}
+.code-btn{
+  padding:2px 8px;
+  border:none;
+  border-radius:4px;
+  background:rgba(255,255,255,0.1);
+  color:#aaa;
+  font-size:10px;
+  cursor:pointer;
+  transition:all var(--tr);
+}
+.code-btn:hover{
+  background:rgba(255,255,255,0.2);
+  color:#fff;
+}
+/* 折叠状态：默认折叠，显示部分高度 */
+.code-block-wrapper.collapsed pre{
+  max-height:100px;
+  overflow:hidden;
+  position:relative;
+}
+.code-block-wrapper.collapsed pre::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:30px;
+  background:linear-gradient(to bottom, transparent, #1a1a26);
+  pointer-events:none;
+}
+
+/* 强制代码块背景为深色，避免白色背景 */
+.bubble .code-block-wrapper pre,
+.bubble .code-block-wrapper pre code {
+  background: #1a1a26 !important;
+  color: #d4d4d4;
+}
+.bubble .code-block-wrapper pre {
+  padding:12px;
+  overflow-x:auto;
+  margin:0;
+}
+
 .bubble blockquote{border-left:2px solid var(--accent);padding-left:12px;margin:6px 0;color:var(--text-secondary);opacity:.85}
 .bubble table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
 .bubble th,.bubble td{border:1px solid rgba(128,128,128,.15);padding:5px 8px;text-align:left}
@@ -226,12 +289,12 @@ html,body{
 #model-chip-btn:active,#reasoning-btn:active{transform:scale(.95);border-color:var(--accent)}
 #model-chip-btn .micon{font-size:16px}
 
-/* 发送/停止按钮融入状态栏 */
+/* 发送/停止按钮 */
 #send-btn,#stop-btn{
   width:36px;height:36px;border-radius:50%;border:none;
   font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   flex-shrink:0;transition:all var(--tr);
-  margin-left:auto; /* 推到右侧 */
+  margin-left:auto;
 }
 #send-btn{background:var(--accent);color:#fff}
 #stop-btn{background:transparent;border:2px solid var(--danger);color:var(--danger);display:none}
@@ -309,7 +372,18 @@ html,body{
 .field .hint{font-size:10px;color:var(--text-secondary);margin-top:3px}
 .field .hint a{color:var(--accent)}
 
-/* System Prompt Toolbar (仅全屏编辑) */
+/* 全屏编辑按钮融入样式 */
+.icon-btn{
+  width:32px;height:32px;border-radius:8px;
+  border:1px solid rgba(128,128,128,.15);
+  background:var(--bg-tertiary);color:var(--text-secondary);
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all var(--tr);
+}
+.icon-btn:hover{background:var(--accent-light);color:var(--accent)}
+.icon-btn:active{transform:scale(.92)}
+
+/* System Prompt Toolbar */
 .prompt-toolbar{display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
 .prompt-toolbar button{width:30px;height:28px;border-radius:6px;border:1px solid rgba(128,128,128,.15);background:var(--bg-tertiary);color:var(--text-secondary);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:all var(--tr);font-family:var(--mono)}
 .prompt-toolbar button:active{background:var(--accent-light);color:var(--accent)}
@@ -350,13 +424,6 @@ html,body{
 .data-actions button{flex:1;padding:8px 8px;border-radius:12px;border:1.5px solid rgba(128,128,128,.12);background:var(--bg-tertiary);color:var(--text-primary);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--tr)}
 .data-actions button:active{border-color:var(--accent)}
 
-/* Install Banner */
-.install-banner{display:none;align-items:center;gap:10px;padding:12px 16px;background:var(--bg-secondary);border:1.5px solid var(--accent);border-radius:var(--radius-md);margin:10px 12px;animation:fadeIn .3s}
-.install-banner.show{display:flex}
-.install-banner span{flex:1;font-size:13px;font-weight:600}
-.install-banner button{padding:6px 16px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.install-banner button:active{opacity:.85}
-.install-banner .install-dismiss{width:24px;height:24px;border-radius:50%;border:none;background:transparent;color:var(--text-secondary);font-size:14px;cursor:pointer;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -370,11 +437,6 @@ html,body{
     <button class="nav-btn accent" id="add-ast-btn">＋</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch">
-    <div class="install-banner" id="install-banner">
-      <span>📲 安装到手机桌面</span>
-      <button id="install-btn">安装</button>
-      <button class="install-dismiss" id="install-dismiss">✕</button>
-    </div>
     <div class="ast-grid" id="ast-list"></div>
   </div>
 </div>
@@ -404,7 +466,7 @@ html,body{
   </div>
 </div>
 
-<!-- EDIT MODAL (无预览) -->
+<!-- EDIT MODAL -->
 <div class="edit-overlay" id="edit-overlay">
   <div class="edit-card">
     <div class="edit-card-body">
@@ -445,7 +507,7 @@ html,body{
   </div>
 </div>
 
-<!-- FULLSCREEN PROMPT EDITOR (带工具栏) -->
+<!-- FULLSCREEN PROMPT EDITOR -->
 <div class="fs-prompt-overlay" id="fs-prompt-overlay">
   <div class="fs-prompt-head">
     <span>✏️ 编辑系统提示词</span>
@@ -553,11 +615,40 @@ function getModel(id) {
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2,8); }
 function esc(t){ var d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 function toast(m,d){
-  d=d||2000; var t=$('toast');
+  d=d||2000; var t=$1('toast');
   t.textContent=m; t.classList.add('show');
   clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); },d);
 }
-function $1(s){ return document.getElementById(s); } // 避免与模板冲突，用 $1
+function $1(s){ return document.getElementById(s); }
+
+// ==================== 通用复制函数（修复失败） ====================
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(function(err) {
+      // 回退到传统方法
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+    return Promise.resolve();
+  }
+}
+
+function fallbackCopy(text) {
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    toast('已复制');
+  } catch (err) {
+    toast('复制失败，请手动复制');
+  }
+  document.body.removeChild(textarea);
+}
 
 // ==================== PWA MANIFEST ====================
 function setupPWA() {
@@ -636,40 +727,194 @@ function renderChatPage() {
 // ==================== MESSAGES ====================
 marked.setOptions({ breaks:true, gfm:true });
 function md(t){ if(!t) return ''; try{ return marked.parse(t); }catch(e){ return esc(t).replace(/\n/g,'<br>'); } }
-function hlCode(el){
-  var bs=el.querySelectorAll('pre code');
-  for(var i=0;i<bs.length;i++){ if(!bs[i].dataset.hl){ try{ hljs.highlightElement(bs[i]); bs[i].dataset.hl='1'; }catch(e){} } }
-}
-function addCopy(el){
-  var ps=el.querySelectorAll('pre');
-  for(var i=0;i<ps.length;i++){
-    if(ps[i].querySelector('.copy-btn')) continue;
-    var btn=document.createElement('button'); btn.className='copy-btn'; btn.textContent='复制';
-    (function(p,b){ btn.addEventListener('click',function(e){ e.stopPropagation(); var cd=(p.querySelector('code')||{}).textContent||''; navigator.clipboard.writeText(cd).then(function(){ b.textContent='✓'; setTimeout(function(){ b.textContent='复制'; },1200); }); }); })(ps[i],btn);
-    ps[i].appendChild(btn);
+
+/* 增强代码块：添加语言标签、复制/折叠按钮，默认折叠 */
+function enhanceCodeBlocks(container) {
+  var pres = container.querySelectorAll('pre');
+  for (var i = 0; i < pres.length; i++) {
+    (function(pre) {
+      if (pre.parentNode.classList.contains('code-block-wrapper')) return;
+      var code = pre.querySelector('code');
+      var lang = '';
+      if (code && code.className) {
+        var match = code.className.match(/language-(\w+)/);
+        if (match) lang = match[1];
+      }
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-block-wrapper collapsed';
+
+      var header = document.createElement('div');
+      header.className = 'code-block-header';
+
+      var langSpan = document.createElement('span');
+      langSpan.className = 'code-lang';
+      langSpan.textContent = lang || 'code';
+      header.appendChild(langSpan);
+
+      var btnGroup = document.createElement('div');
+      btnGroup.className = 'code-btns';
+
+      // 复制按钮（使用通用复制函数）
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'code-btn';
+      copyBtn.textContent = '复制';
+      copyBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var text = (code ? code.textContent : pre.textContent) || '';
+        copyText(text).then(function() {
+          copyBtn.textContent = '✓';
+          setTimeout(function() { copyBtn.textContent = '复制'; }, 1200);
+        });
+      });
+      btnGroup.appendChild(copyBtn);
+
+      // 折叠/展开按钮
+      var foldBtn = document.createElement('button');
+      foldBtn.className = 'code-btn fold-btn';
+      foldBtn.textContent = '展开';
+      foldBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        wrapper.classList.toggle('collapsed');
+        foldBtn.textContent = wrapper.classList.contains('collapsed') ? '展开' : '折叠';
+      });
+      btnGroup.appendChild(foldBtn);
+
+      header.appendChild(btnGroup);
+      pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(header);
+      wrapper.appendChild(pre);
+
+      if (code && !code.dataset.hl) {
+        try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {}
+      }
+    })(pres[i]);
   }
 }
 
-function makeMsg(msg,idx,conv){
-  var d=document.createElement('div'); d.className='msg '+(msg.role==='user'?'user':'ai'); d.dataset.index=idx;
-  var bub=document.createElement('div'); bub.className='bubble';
-  if(msg.reasoning){ var rb=document.createElement('div'); rb.className='rblock'; rb.innerHTML='<button class="rhead" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">🧠 思考过程 <span class="arr">▶</span></button><div class="rbody">'+esc(msg.reasoning)+'</div>'; bub.appendChild(rb); }
-  var ct=document.createElement('div'); ct.className='markdown-body'; ct.innerHTML=msg.role==='user'?esc(msg.content).replace(/\n/g,'<br>'):md(msg.content); bub.appendChild(ct);
-  if(msg.role==='assistant'){ hlCode(bub); addCopy(bub); } d.appendChild(bub);
+function makeMsg(msg, idx, conv){
+  var d=document.createElement('div');
+  d.className='msg '+(msg.role==='user'?'user':'ai');
+  d.dataset.index=idx;
 
-  var act=document.createElement('div'); act.className='msg-actions';
-  // 助手消息：模型名称在动作栏内（右下方）
+  var bub=document.createElement('div');
+  bub.className='bubble';
+
+  if(msg.reasoning){
+    var rb=document.createElement('div');
+    rb.className='rblock';
+    rb.innerHTML='<button class="rhead" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">🧠 思考过程 <span class="arr">▶</span></button><div class="rbody">'+esc(msg.reasoning)+'</div>';
+    bub.appendChild(rb);
+  }
+
+  var ct=document.createElement('div');
+  ct.className='markdown-body';
+  ct.innerHTML = md(msg.content);
+  bub.appendChild(ct);
+  enhanceCodeBlocks(bub);
+
+  d.appendChild(bub);
+
+  // 操作栏
+  var act=document.createElement('div');
+  act.className='msg-actions';
+
   if(msg.role==='assistant'){
-    var m=getModel(msg.modelId||(getActiveAst()||{}).modelId);
-    var badge=document.createElement('span'); badge.className='badge'; badge.textContent=m.icon+' '+m.name;
+    var m = getModel(msg.modelId || (getActiveAst()||{}).modelId);
+    var badge = document.createElement('span');
+    badge.className='badge';
+    badge.textContent = m.icon+' '+m.name;
     act.appendChild(badge);
+
+    var right = document.createElement('div');
+    right.className='actions-right';
+    // 四个按钮：复制、编辑、删除、重新生成
+    right.innerHTML = '<button data-a="cp">📋</button><button data-a="ed">✏️</button><button data-a="del">🗑</button><button data-a="re">🔄</button>';
+    act.appendChild(right);
+  } else {
+    // 用户消息四个按钮：复制、编辑、删除、重新发送
+    var right = document.createElement('div');
+    right.className='actions-right';
+    right.innerHTML = '<button data-a="cp">📋</button><button data-a="ed">✏️</button><button data-a="del">🗑</button><button data-a="re">↩️</button>';
+    act.appendChild(right);
   }
-  act.innerHTML+='<button data-a="cp">📋</button> '+(msg.role==='assistant'?'<button data-a="re">🔄</button> ':'')+'<button data-a="ed">✏️</button>';
-  // 重新绑定事件（因为innerHTML会覆盖，这里先构建结构再绑定）
-  act.querySelector('[data-a="cp"]').addEventListener('click',function(e){ e.stopPropagation(); navigator.clipboard.writeText(msg.content).then(function(){ toast('已复制'); }); });
-  if(msg.role==='assistant') act.querySelector('[data-a="re"]').addEventListener('click',function(e){ e.stopPropagation(); retryLast(); });
-  act.querySelector('[data-a="ed"]').addEventListener('click',function(e){ e.stopPropagation(); openEditModal(msg,idx,conv); });
-  d.appendChild(act); return d;
+
+  // 绑定事件
+  var cpBtn = act.querySelector('[data-a="cp"]');
+  if(cpBtn) cpBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    copyText(msg.content).then(function() { toast('已复制'); });
+  });
+
+  var edBtn = act.querySelector('[data-a="ed"]');
+  if(edBtn) edBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    openEditModal(msg, idx, conv);
+  });
+
+  var delBtn = act.querySelector('[data-a="del"]');
+  if(delBtn) delBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    deleteMessage(idx);
+  });
+
+  var reBtn = act.querySelector('[data-a="re"]');
+  if(reBtn) reBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(msg.role==='assistant'){
+      regenerateMessage(idx);
+    } else {
+      resendUserMessage(idx);
+    }
+  });
+
+  d.appendChild(act);
+  return d;
+}
+
+// 删除单条消息
+function deleteMessage(idx) {
+  var conv = getActiveConv();
+  if (!conv || idx < 0 || idx >= conv.messages.length) return;
+  conv.messages.splice(idx, 1);
+  saveState();
+  renderMessages();
+  scrollBottom(false);
+}
+
+// 重新生成（从指定 AI 消息位置重发上一条用户消息）
+function regenerateMessage(idx) {
+  if (streaming) return;
+  var conv = getActiveConv();
+  if (!conv || idx < 0 || idx >= conv.messages.length) return;
+  if (conv.messages[idx].role !== 'assistant') return;
+  conv.messages.splice(idx);
+  if (conv.messages.length === 0 || conv.messages[conv.messages.length - 1].role !== 'user') {
+    toast('无法重新生成：缺少用户消息');
+    renderMessages();
+    return;
+  }
+  var lastUser = conv.messages.pop();
+  $1('user-input').value = lastUser.content;
+  saveState();
+  renderMessages();
+  sendMessage();
+}
+
+// 重新发送用户消息（用原内容重新发送）
+function resendUserMessage(idx) {
+  if (streaming) return;
+  var conv = getActiveConv();
+  if (!conv || idx < 0 || idx >= conv.messages.length) return;
+  var msg = conv.messages[idx];
+  if (msg.role !== 'user') return;
+  // 删除该用户消息以及之后所有消息
+  conv.messages.splice(idx);
+  // 将原内容填入输入框并触发发送
+  $1('user-input').value = msg.content;
+  saveState();
+  renderMessages();
+  sendMessage();
 }
 
 function renderMessages() {
@@ -770,45 +1015,37 @@ function renderSettings() {
   var a = getActiveAst(); if (!a) return;
   var h = '';
 
-  // 助手设置
   h += '<div class="section"><div class="section-title">📌 助手设置</div>';
   h += '<div class="field"><label>助手名称</label><input type="text" id="s-name" value="' + esc(a.name) + '"></div>';
 
-  // 系统提示词 + 全屏编辑按钮
   h += '<div class="field"><label>系统提示词</label>';
+  h += '<div style="position:relative;">';
   h += '<textarea id="s-prompt" rows="4">' + esc(a.systemPrompt) + '</textarea>';
-  h += '<button class="btn-primary" id="s-prompt-fs-btn" style="margin-top:6px;width:auto;display:inline-block;padding:6px 16px;font-size:12px;">⛶ 全屏编辑</button>';
-  h += '</div>';
+  h += '<button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute; top:4px; right:4px;">⛶</button>';
+  h += '</div></div>';
 
-  // Temperature
   h += '<div class="field"><label>温度 Temperature：<strong id="s-tval">' + a.temperature.toFixed(2) + '</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="' + a.temperature + '"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>';
 
-  // Top P
   h += '<div class="field"><label>Top P：<strong id="s-pval">' + a.topP.toFixed(2) + '</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="' + a.topP + '"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>';
   h += '<div class="hint" style="margin-top:-8px;margin-bottom:10px;">⚠️ 思考模式（high/max）下 temperature/top_p 不生效</div>';
   h += '</div>';
 
-  // API
   h += '<div class="section"><div class="section-title">🔑 DeepSeek API</div><div class="field"><label>API Key</label><input type="password" id="s-dskey" value="' + esc(state.deepseekKey) + '" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div></div>';
 
-  // 外观
   h += '<div class="section"><div class="section-title">🎨 外观</div><div class="t-row"><span id="theme-label">' + (state.darkMode ? '🌙 暗色' : '☀️ 亮色') + '</span><div class="tsw' + (state.darkMode ? ' active' : '') + '" id="s-theme"></div></div></div>';
 
-  // 数据管理
   h += '<div class="section"><div class="section-title">💾 数据管理</div><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div><input type="file" id="import-file" accept=".json" style="display:none;"></div>';
 
   h += '<button class="btn-primary" id="s-save" style="margin-top:8px">💾 保存设置</button>';
 
   $1('settings-body').innerHTML = h;
 
-  // 全屏编辑按钮
   $1('s-prompt-fs-btn').addEventListener('click', function() {
     $1('fs-prompt-textarea').value = $1('s-prompt').value;
     $1('fs-prompt-overlay').classList.add('show');
     $1('fs-prompt-textarea').focus();
   });
 
-  // Sliders
   $1('s-temp').addEventListener('input', function() { $1('s-tval').textContent = parseFloat(this.value).toFixed(2); });
   $1('s-topp').addEventListener('input', function() { $1('s-pval').textContent = parseFloat(this.value).toFixed(2); });
   $1('s-theme').addEventListener('click', function() {
@@ -816,7 +1053,6 @@ function renderSettings() {
     $1('theme-label').textContent = this.classList.contains('active') ? '🌙 暗色' : '☀️ 亮色';
   });
 
-  // Export/Import
   $1('data-export').addEventListener('click', function() {
     var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
@@ -845,7 +1081,6 @@ function renderSettings() {
     reader.readAsText(file); e.target.value = '';
   });
 
-  // Save
   $1('s-save').addEventListener('click', function() {
     var a = getActiveAst(); if (!a) return;
     a.name = $1('s-name').value.trim() || a.name;
@@ -891,20 +1126,16 @@ function showDropdown(anchor, items, onSelect) {
     });
     dd.appendChild(div);
   });
-  // 定位在按钮上方
   var rect = anchor.getBoundingClientRect();
   dd.style.bottom = 'auto';
   dd.style.top = 'auto';
-  // 计算位置：相对于视口
   var spaceBelow = window.innerHeight - rect.bottom;
   var spaceAbove = rect.top;
-  var ddHeight = Math.min(items.length * 36 + 8, 200); // 估算
+  var ddHeight = Math.min(items.length * 36 + 8, 200);
   if (spaceBelow < ddHeight && spaceAbove > ddHeight) {
-    // 显示在上方
     dd.style.top = rect.top - ddHeight - 4 + 'px';
     dd.style.left = rect.left + 'px';
   } else {
-    // 显示在下方
     dd.style.top = rect.bottom + 4 + 'px';
     dd.style.left = rect.left + 'px';
   }
@@ -951,8 +1182,6 @@ $1('reasoning-btn').addEventListener('click', function(e) {
     toast({ off:'推理已关闭', high:'推理深度：High', max:'推理深度：Max' }[val]||'');
   });
 });
-
-// 点击其他地方关闭 dropdown（已通过 once 事件处理）
 
 // ==================== CHAT LOGIC ====================
 async function sendMessage() {
@@ -1043,10 +1272,13 @@ function updateLive(idx, msg) {
   if (rb && msg.reasoning) { var rc = rb.querySelector('.rbody'); if (rc) rc.textContent = msg.reasoning; }
   var mc = bub.querySelector('.markdown-body');
   if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
-  mc.innerHTML = md(msg.content); hlCode(bub); scrollBottom();
+  mc.innerHTML = md(msg.content);
+  enhanceCodeBlocks(bub);
+  scrollBottom();
 }
 
 function stopStream() { if (abortCtrl) abortCtrl.abort(); }
+
 function retryLast() {
   if (streaming) return;
   var c = getActiveConv(); if (!c || !c.messages.length) return;
@@ -1056,6 +1288,7 @@ function retryLast() {
   $1('user-input').value = um.content; c.messages.pop();
   saveState(); renderMessages(); sendMessage();
 }
+
 function updateConvTitle(c) {
   if (c.title === '新话题' && c.messages.length > 0) {
     for (var i = 0; i < c.messages.length; i++) {
@@ -1091,34 +1324,7 @@ $1('close-topics').addEventListener('click', closeAll);
 $1('close-settings').addEventListener('click', closeAll);
 $1('overlay').addEventListener('click', closeAll);
 
-// ==================== PWA INSTALL ====================
-var deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  deferredPrompt = e;
-  $1('install-banner').classList.add('show');
-});
-
-$1('install-btn').addEventListener('click', function() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(r) {
-      if (r.outcome === 'accepted') toast('✅ 已添加到桌面');
-      deferredPrompt = null;
-      $1('install-banner').classList.remove('show');
-    });
-  } else {
-    toast('📲 请在浏览器菜单中选择"添加到主屏幕"');
-    $1('install-banner').classList.remove('show');
-  }
-});
-
-$1('install-dismiss').addEventListener('click', function() { $1('install-banner').classList.remove('show'); });
-
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  $1('install-banner') && $1('install-banner').classList.remove('show');
-}
-
+// 移除 PWA 安装弹窗相关代码（弹窗 HTML 已删除）
 function scrollBottom(s) {
   if (s === undefined) s = true;
   requestAnimationFrame(function() {
