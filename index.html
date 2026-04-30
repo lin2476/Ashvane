@@ -29,8 +29,8 @@
   <style>
     :root {
       --bg-primary: #f0f0f5; --bg-secondary: #fafafa; --bg-tertiary: #eaeaef;
-      --bg-bubble-user: #e2e8e4; --bg-bubble-ai: transparent;
-      --text-primary: #1a1a2e; --text-secondary: #8e8e9a; --text-user: #1a1a2e; --text-ai: #1a1a2e;
+      --bg-bubble-user: #e2e8e4;
+      --text-primary: #1a1a2e; --text-secondary: #8e8e9a;
       --accent: #4f46e5; --accent-light: #eef2ff; --danger: #ef4444; --success: #10b981;
       --radius-sm: 8px; --radius-md: 14px; --radius-lg: 20px;
       --header-h: 52px; --safe-b: env(safe-area-inset-bottom, 16px);
@@ -41,7 +41,7 @@
     }
     [data-theme="dark"] {
       --bg-primary: #0a0a10; --bg-secondary: #111118; --bg-tertiary: #1a1a26;
-      --bg-bubble-user: #2a362f; --text-primary: #e4e4ed; --text-user: #e4e4ed; --text-ai: #e4e4ed;
+      --bg-bubble-user: #2a362f; --text-primary: #e4e4ed;
       --accent-light: #1e1b4b; --code-bg: #1a1a26; --code-header-bg: rgba(255,255,255,0.05);
     }
 
@@ -50,28 +50,27 @@
     html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
     #app { display:flex; flex-direction:column; height:100%; max-width:700px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg-primary); }
 
-    /* Flex Alignments Commonalities */
-    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .msg-actions, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap { display:flex; align-items:center; }
+    /* Flex Alignments */
+    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap { display:flex; align-items:center; }
     .navbar, .drawer-head, .t-row, .code-block-header, .fs-prompt-head { justify-content:space-between; }
     
-    /* Common Buttons & Interactives */
+    /* Common Buttons */
     .nav-btn, #send-btn, #stop-btn, .topic-btn, .ast-del, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
     .nav-btn:active, .icon-btn:active, #stop-btn:active, #send-btn:not(:disabled):active { transform:scale(.9); }
     .ast-card:active, .welcome-hint:active { transform:scale(.97); }
     .btn-primary, .confirm-actions button, .edit-card-foot button, .data-actions button { cursor:pointer; transition:all var(--tr); font-weight:600; border:none; }
 
-    /* Inputs Commonalities */
-    .field input, .field textarea, .field select, .topic-rename-input { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
+    /* Inputs */
+    .field input, .field textarea, .field select, .topic-rename-input { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:inherit; font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
     .field input:focus, .field textarea:focus, .field select:focus, .topic-rename-input:focus { border-color:var(--accent); }
 
-    /* Overlays and Modals Commonalities */
+    /* Overlays & Modals */
     .edit-overlay, .confirm-overlay, .fs-prompt-overlay, .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none; }
     .fs-prompt-overlay { background:var(--bg-secondary); z-index:400; flex-direction:column; }
-    .edit-overlay { z-index:250; flex-direction:column; overscroll-behavior:none; } /* Prevent background bounce */
+    .edit-overlay { z-index:250; flex-direction:column; overscroll-behavior:none; }
     .confirm-overlay { z-index:500; align-items:center; justify-content:center; }
     .overlay { opacity:0; pointer-events:none; transition:opacity .3s; display:block; }
-    .edit-overlay.show, .confirm-overlay.show, .fs-prompt-overlay.show { display:flex; }
-    .overlay.show { opacity:1; pointer-events:auto; }
+    .edit-overlay.show, .confirm-overlay.show, .fs-prompt-overlay.show, .overlay.show { opacity:1; pointer-events:auto; display:flex; }
 
     /* NAVBAR & TOKENS */
     .navbar { padding:6px 10px; background:var(--bg-secondary); border-bottom:0.5px solid var(--border-subtle); z-index:100; height:var(--header-h); flex-shrink:0; gap:4px; }
@@ -82,13 +81,12 @@
     .nav-center .topic-row:active { background:var(--bg-tertiary); }
     .nav-center .topic-name { font-size:10px; color:var(--text-secondary); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .nav-center .topic-arr { font-size:8px; color:var(--text-secondary); }
-    .nav-btn { width:34px; height:34px; background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; }
+    .nav-btn { width:34px; height:34px; background:var(--bg-tertiary); color:inherit; font-size:15px; }
     .nav-btn.accent { background:var(--accent); color:#fff; }
-    
     .nav-tokens { font-size:9px; background:rgba(128,128,128,0.12); padding:2px 5px; border-radius:8px; color:var(--text-secondary); font-family:var(--mono); margin-left:4px; font-weight:600; line-height:1; }
 
     /* CHAT */
-    #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
+    #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px; scroll-behavior:smooth; }
     #messages { display:flex; flex-direction:column; gap:8px; max-width:100%; }
 
     .welcome { flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 20px; text-align:center; opacity:0; animation:fadeIn .4s .1s forwards; }
@@ -107,8 +105,9 @@
     .msg.user { align-self:flex-end; }
     .msg.ai { align-self:flex-start; width:100%; max-width:100%; }
     .msg .bubble { padding:10px 14px; border-radius:var(--radius-lg); font-size:14.5px; line-height:1.65; word-break:break-word; position:relative; }
-    .msg.user .bubble { background:var(--bg-bubble-user); color:var(--text-user); border-bottom-right-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-block; max-width:100%; }
-    .msg.ai .bubble { background:transparent; color:var(--text-ai); border-bottom-left-radius:6px; padding-left:2px; padding-right:2px; }
+    .msg.user .bubble { background:var(--bg-bubble-user); border-bottom-right-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-block; max-width:100%; }
+    .msg.ai .bubble { background:transparent; border-bottom-left-radius:6px; padding:10px 2px; }
+    
     .rblock { margin-bottom:8px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
     .rhead { gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
     .rhead .arr { transition:transform var(--tr); font-size:9px; margin-left:auto; }
@@ -118,40 +117,22 @@
     .rbody.open { display:block; }
 
     /* MESSAGE ACTIONS */
-    .msg-actions { gap:6px; padding-right:2px; }
-    .msg.user .msg-actions { justify-content:flex-end; }
-    .msg.ai .msg-actions { justify-content:space-between; }
-    .msg-actions .badge { font-size:10px; color:var(--text-secondary); opacity:.55; letter-spacing:.3px; white-space:nowrap; }
-    .actions-right { gap:2px; }
+    .msg-actions { display:flex; align-items:center; justify-content:space-between; width:100%; padding-top:4px; gap:4px; }
+    .actions-left, .actions-right { flex:1; display:flex; min-width:0; }
+    .actions-left { justify-content:flex-start; }
+    .actions-right { justify-content:flex-end; gap:2px; }
+    .msg-tokens { font-size:10px; color:var(--text-secondary); opacity:0.65; font-family:var(--mono); white-space:nowrap; }
+    .actions-left .badge { font-size:10px; color:var(--text-secondary); opacity:.55; letter-spacing:.3px; white-space:nowrap; }
+    
     .actions-right button { opacity:0; transition:opacity .2s; }
     .msg:hover .actions-right button, .msg-actions.show .actions-right button { opacity:1; }
-    .msg-actions button { padding:3px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:11px; cursor:pointer; transition:background var(--tr), color var(--tr); font-weight:500; }
+    .msg-actions button { padding:3px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:11px; cursor:pointer; transition:all var(--tr); font-weight:500; }
     .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
     /* EDIT MODAL */
-    .edit-card { 
-      position:absolute; 
-      top:12vh; /* Use Viewport Height to lock positioning */
-      height:75vh; /* Lock height so keyboard won't dynamically squash the modal */
-      left:6px; right:6px; /* Widened to almost fill screen laterally */
-      background:var(--bg-secondary); 
-      display:flex; flex-direction:column; 
-      border-radius:var(--radius-lg); 
-      box-shadow:0 10px 30px rgba(0,0,0,0.2); 
-      overflow:hidden; 
-      animation:msgIn .3s ease-out; 
-    }
-    .edit-card-body { 
-      flex:1; display:flex; padding:12px; 
-      overflow:hidden; /* Prevents the double (outer) scrollbar */
-    }
-    .edit-card-body textarea { 
-      flex:1; width:100%; border:none; background:transparent; 
-      color:var(--text-primary); font-size:15px; font-family:inherit; 
-      line-height:1.7; resize:none; outline:none; 
-      overflow-y:auto; /* The only scrolling element */
-      -webkit-overflow-scrolling:touch; 
-    }
+    .edit-card { position:absolute; top:12vh; height:75vh; left:6px; right:6px; background:var(--bg-secondary); display:flex; flex-direction:column; border-radius:var(--radius-lg); box-shadow:0 10px 30px rgba(0,0,0,0.2); overflow:hidden; animation:msgIn .3s ease-out; }
+    .edit-card-body { flex:1; display:flex; padding:12px; overflow:hidden; }
+    .edit-card-body textarea { flex:1; width:100%; border:none; background:transparent; color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; overflow-y:auto; }
     .edit-card-foot { display:flex; gap:10px; padding:14px 16px; border-top:0.5px solid var(--border-subtle); background:var(--bg-secondary); }
     .edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; font-size:14px; }
     .edit-save-btn { background:var(--accent); color:#fff; }
@@ -176,7 +157,7 @@
     .code-btn { padding:2px 8px; border:none; border-radius:4px; background:rgba(128,128,128,.15); color:var(--text-secondary); font-size:10px; cursor:pointer; transition:background var(--tr); }
     .code-btn:hover { background:rgba(128,128,128,.25); }
     .code-block-wrapper.collapsed pre { max-height:100px; overflow-y:hidden; overflow-x:auto; position:relative; }
-    .bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background:var(--code-bg) !important; color:var(--text-primary); }
+    .bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background:var(--code-bg) !important; color:inherit; }
     .bubble .code-block-wrapper pre { padding:12px; overflow-x:auto; margin:0; scrollbar-width:none; }
     .bubble .code-block-wrapper pre::-webkit-scrollbar { display:none; }
     .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
@@ -188,25 +169,27 @@
 
     /* INPUT */
     #input-bar { align-items:flex-end; padding:6px 10px 2px; background:var(--bg-secondary); border-top:0.5px solid var(--border-soft); z-index:100; flex-shrink:0; }
-    .inp-wrap { flex:1; display:flex; align-items:flex-end; background:var(--bg-tertiary); border-radius:24px; padding:3px 6px 3px 14px; border:1.5px solid transparent; transition:border var(--tr), box-shadow var(--tr); }
+    .inp-wrap { flex:1; display:flex; align-items:flex-end; background:var(--bg-tertiary); border-radius:24px; padding:3px 6px 3px 14px; border:1.5px solid transparent; transition:all var(--tr); }
     .inp-wrap:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
-    #input-bar textarea { flex:1; border:none; background:transparent; color:var(--text-primary); font-size:14.5px; line-height:1.4; resize:none; outline:none; padding:7px 0; max-height:220px; font-family:inherit; -webkit-appearance:none; }
+    #input-bar textarea { flex:1; border:none; background:transparent; color:inherit; font-size:14.5px; line-height:1.4; resize:none; outline:none; padding:7px 0; max-height:220px; font-family:inherit; }
     #input-bar textarea::placeholder { color:var(--text-secondary); opacity:.5; }
 
     /* BOTTOM BAR */
     #bottom-bar { gap:6px; padding:2px 10px 3px; padding-bottom:calc(3px + var(--safe-b)); background:var(--bg-secondary); flex-shrink:0; position:relative; }
-    #model-chip-btn, #reasoning-btn { gap:5px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all var(--tr); flex-shrink:0; }
+    #model-chip-btn, #reasoning-btn { gap:5px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all var(--tr); flex-shrink:0; }
     #model-chip-btn:active, #reasoning-btn:active { transform:scale(.95); border-color:var(--accent); }
     #model-chip-btn .micon { font-size:16px; }
     #send-btn, #stop-btn { width:36px; height:36px; font-size:18px; }
     #send-btn { background:var(--accent); color:#fff; }
 
     /* DROPDOWN */
-    .dropdown-menu { position:fixed; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(0,0,0,.15); z-index:500; min-width:140px; padding:4px; display:none; }
+    .dropdown-menu { position:fixed; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(0,0,0,.15); z-index:500; min-width:140px; padding:4px; display:none; max-height:40vh; overflow-y:auto; }
     .dropdown-menu.show { display:block; }
-    .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); gap:8px; color:var(--text-primary); transition:background .15s; }
+    .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); gap:8px; color:inherit; transition:background .15s; }
     .dropdown-menu .dropdown-item:hover, .dropdown-menu .dropdown-item.selected { background:var(--bg-tertiary); }
     .dropdown-menu .dropdown-item .check { margin-left:auto; color:var(--accent); font-weight:700; }
+    .dropdown-menu .dropdown-header { padding:8px 12px 4px; font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; pointer-events:none; }
+    .dropdown-menu .dropdown-header:not(:first-child) { border-top:1px solid var(--border-soft); margin-top:4px; }
 
     /* DRAWER & SHEET */
     .drawer { position:fixed; top:0; bottom:0; width:320px; max-width:86vw; background:var(--bg-secondary); z-index:300; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 0 40px rgba(0,0,0,.15); }
@@ -214,7 +197,7 @@
     .drawer-right.open { transform:translateX(0); }
     .drawer-head { padding:14px 16px; border-bottom:0.5px solid rgba(128,128,128,.1); }
     .drawer-head h3 { font-size:15px; font-weight:700; }
-    .drawer-body { flex:1; overflow-y:auto; padding:14px; -webkit-overflow-scrolling:touch; }
+    .drawer-body { flex:1; overflow-y:auto; padding:14px; }
     .sheet { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:700px; max-height:70vh; background:var(--bg-secondary); z-index:350; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 -4px 20px rgba(0,0,0,.2); }
     .sheet.open { transform:translateX(-50%) translateY(0); }
     .sheet-handle { width:32px; height:4px; border-radius:2px; background:rgba(128,128,128,.2); margin:10px auto 6px; flex-shrink:0; }
@@ -240,8 +223,8 @@
     .ttitle-wrap { margin-bottom:2px; }
     .topic-item .ttitle { font-size:13px; font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .topic-item .tmeta { font-size:10px; color:var(--text-secondary); }
-    .topic-item .tact { gap:16px; } /* Increased gap for fewer misclicks */
-    .topic-btn { width:32px; height:32px; font-size:14px; } /* Slightly larger touch area */
+    .topic-item .tact { gap:16px; } 
+    .topic-btn { width:32px; height:32px; font-size:14px; } 
     
     .topic-rename-input { padding:5px 8px; flex:1; min-width:0; font-weight:600; }
     .new-topic-btn { width:100%; padding:10px; border:2px dashed rgba(128,128,128,.2); border-radius:var(--radius-md); background:transparent; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:10px; transition:all var(--tr); }
@@ -268,12 +251,11 @@
     .prompt-toolbar button:active { background:var(--accent-light); color:var(--accent); }
 
     .fs-prompt-head { padding:12px 14px; border-bottom:0.5px solid rgba(128,128,128,.1); flex-shrink:0; }
-    .fs-prompt-head span { font-size:14px; font-weight:700; }
     .fs-prompt-body { flex:1; display:flex; flex-direction:column; padding:14px; overflow:hidden; }
-    .fs-prompt-body textarea { flex:1; width:100%; padding:14px; border:2px solid var(--accent); border-radius:var(--radius-md); background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
+    .fs-prompt-body textarea { flex:1; width:100%; padding:14px; border:2px solid var(--accent); border-radius:var(--radius-md); background:var(--bg-tertiary); color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
 
     .slider-row { gap:10px; }
-    .slider-row input[type="range"] { flex:1; -webkit-appearance:none; height:4px; border-radius:2px; background:var(--border-subtle); outline:none; padding:0; border:none; }
+    .slider-row input[type="range"] { flex:1; height:4px; border-radius:2px; background:var(--border-subtle); outline:none; padding:0; border:none; }
     .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.2); }
 
     .t-row { padding:9px 12px; background:var(--bg-tertiary); border-radius:var(--radius-sm); }
@@ -284,7 +266,7 @@
     .tsw.active::after { transform:translateX(18px); }
 
     .confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
-    .confirm-msg { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:18px; line-height:1.5; }
+    .confirm-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; }
     .confirm-actions { display:flex; gap:10px; justify-content:center; }
     .confirm-actions button { flex:1; padding:10px 0; border-radius:14px; font-size:14px; }
     .confirm-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
@@ -294,7 +276,7 @@
 
     .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:9px 18px; border-radius:18px; font-size:12px; z-index:500; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.3); }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .scroll-down { position:fixed; bottom:140px; right:16px; width:34px; height:34px; border:1px solid var(--border-subtle); background:var(--bg-secondary); color:var(--text-primary); font-size:14px; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; }
+    .scroll-down { position:fixed; bottom:140px; right:16px; width:34px; height:34px; border:1px solid var(--border-subtle); background:var(--bg-secondary); font-size:14px; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; }
     .scroll-down.show { display:flex; }
     .btn-primary { padding:10px 20px; border-radius:18px; background:var(--accent); color:#fff; font-size:13px; width:100%; }
     .btn-primary:active { transform:scale(.97); opacity:.85; }
@@ -302,7 +284,7 @@
     .page, .chat-page { display:none; flex-direction:column; height:100%; }
     .page.active, .chat-page.active { display:flex; }
     .data-actions { gap:6px; }
-    .data-actions button { flex:1; padding:8px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:11px; }
+    .data-actions button { flex:1; padding:8px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); font-size:11px; }
     .data-actions button:active { border-color:var(--accent); }
   </style>
 </head>
@@ -315,7 +297,7 @@
       <div class="nav-center"><span class="asst-name">AI Chat</span></div>
       <button class="nav-btn accent" id="add-ast-btn">＋</button>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch">
+    <div style="flex:1;overflow-y:auto;padding:10px 12px;">
       <div class="ast-grid" id="ast-list"></div>
     </div>
   </div>
@@ -350,12 +332,10 @@
   <!-- EDIT MODAL -->
   <div class="edit-overlay" id="edit-overlay">
     <div class="edit-card">
-      <div class="edit-card-body">
-        <textarea id="edit-textarea" placeholder="输入消息内容…"></textarea>
-      </div>
+      <div class="edit-card-body"><textarea id="edit-textarea" placeholder="输入消息内容…"></textarea></div>
       <div class="edit-card-foot">
         <button class="edit-cancel-btn" id="edit-cancel-btn">取消</button>
-        <button class="edit-save-btn" id="edit-save-btn">💾 保存</button>
+        <button class="edit-save-btn" id="edit-save-btn">保存</button>
       </div>
     </div>
   </div>
@@ -404,7 +384,7 @@
   <!-- FULLSCREEN PROMPT EDITOR -->
   <div class="fs-prompt-overlay" id="fs-prompt-overlay">
     <div class="fs-prompt-head">
-      <span>✏️ 编辑系统提示词</span>
+      <span style="font-size:14px;font-weight:700">✏️ 编辑系统提示词</span>
       <button class="nav-btn" id="fs-prompt-close">✕</button>
     </div>
     <div class="fs-prompt-body">
@@ -435,30 +415,33 @@
 const $1 = s => document.getElementById(s);
 const on = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.addEventListener(evt, cb); };
 const off = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.removeEventListener(evt, cb); };
-const genId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
 
 // ==================== TOKENS CALCULATION ====================
 const estimateTokens = str => {
   if (!str) return 0;
-  const zh = str.match(/[\u4e00-\u9fa5]/g);
-  const zhCnt = zh ? zh.length : 0;
-  return Math.ceil(zhCnt * 1 + (str.length - zhCnt) * 0.25);
+  const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) ||[]).length;
+  return Math.ceil(zhCnt + (str.length - zhCnt) * 0.25);
 };
-const calcConvTokens = (c, p) => { let t = estimateTokens(p); c.messages.forEach(m => t += estimateTokens(m.content) + estimateTokens(m.reasoning)); return t; };
+const calcConvTokens = (c, p) => c.messages.reduce((t, m) => t + estimateTokens(m.content) + estimateTokens(m.reasoning), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t/1000).toFixed(1) + 'k';
 
-// ==================== STATE ====================
+// ==================== STATE & MODELS ====================
 const STORAGE_KEY = 'ai_chat_v8';
 let state = loadState();
 let abortCtrl = null, streaming = false;
 let editingMsg = null, editingIdx = -1, editingConv = null;
 const reasoningTimers = {};
 
-const DS_MODELS = [
-  { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎', desc: '最强推理' },
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '⚡', desc: '快速响应' }
+const DS_MODELS =[
+  { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎' },
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '⚡' }
 ];
+
+const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '✨', name: id, custom: true };
+const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
+const getCustomModels = () => (state.geminiModels || '').split(',').map(s => s.trim()).filter(Boolean);
 
 function loadState() {
   try {
@@ -466,44 +449,47 @@ function loadState() {
     if (r) {
       const p = JSON.parse(r);
       return {
-        assistants: (p.assistants || []).map(fixAsst),
+        assistants: (p.assistants ||[]).map(fixAsst),
         activeAstId: p.activeAstId || null,
         deepseekKey: p.deepseekKey || '',
+        geminiKey: p.geminiKey || '',
+        geminiBaseUrl: p.geminiBaseUrl || 'https://generativelanguage.googleapis.com',
+        geminiModels: p.geminiModels || 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp',
         darkMode: !!p.darkMode
       };
     }
   } catch(e){}
-  return { assistants:[], activeAstId:null, deepseekKey:'', darkMode:false };
+  return { 
+    assistants:[], activeAstId:null, deepseekKey:'', geminiKey:'', 
+    geminiBaseUrl:'https://generativelanguage.googleapis.com', 
+    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode:false 
+  };
 }
 
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e) { toast('⚠️ 存储空间不足'); }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) { toast('⚠️ 存储空间不足'); }
 }
 
 function fixAsst(a) {
+  let modelId = a.modelId || 'deepseek-v4-pro';
+  if (a.provider === 'gemini' && a.geminiModel) { modelId = a.geminiModel; delete a.provider; delete a.geminiModel; }
   return {
-    id: a.id || genId(), name: a.name || '未命名助手',
-    systemPrompt: a.systemPrompt || '你是一个有帮助的AI助手。',
-    temperature: a.temperature ?? 1.0, topP: a.topP ?? 1.0,
-    modelId: a.modelId || 'deepseek-v4-pro', reasoningEffort: a.reasoningEffort || 'off',
-    conversations: (a.conversations || []).map(c => ({
-      id: c.id || genId(), title: c.title || '新话题', messages: c.messages || []
-    })),
+    id: a.id || genId(), name: a.name || '未命名助手', systemPrompt: a.systemPrompt || '你是一个有帮助的AI助手。',
+    temperature: a.temperature ?? 1.0, topP: a.topP ?? 1.0, modelId, reasoningEffort: a.reasoningEffort || 'off',
+    conversations: (a.conversations ||[]).map(c => ({ id: c.id || genId(), title: c.title || '新话题', messages: c.messages ||[] })),
     activeConvId: a.activeConvId || null
   };
 }
 
 const getActiveAst = () => state.assistants.find(a => a.id === state.activeAstId) || null;
-const getActiveConv = () => { const a = getActiveAst(); return a ? a.conversations.find(c => c.id === a.activeConvId) : null; };
-const getModel = id => DS_MODELS.find(m => m.id === id) || DS_MODELS[0];
-
+const getActiveConv = (a = getActiveAst()) => a ? a.conversations.find(c => c.id === a.activeConvId) : null;
 function ensureConv(a) {
-  if (!a.activeConvId || !getActiveConv()) {
-    const c = { id: genId(), title: '新话题', messages: [] };
+  let c = getActiveConv(a);
+  if (!c) {
+    c = { id: genId(), title: '新话题', messages:[] };
     a.conversations.unshift(c); a.activeConvId = c.id; saveState();
   }
-  return getActiveConv();
+  return c;
 }
 
 function toast(m, d = 2000) {
@@ -511,43 +497,33 @@ function toast(m, d = 2000) {
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), d);
 }
 
-// ==================== COPY ====================
+// ==================== COPY & CONFIRM ====================
 async function copyText(text) {
   try { if (navigator.clipboard?.writeText) return await navigator.clipboard.writeText(text); } catch(e) {}
   const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
   document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); toast('已复制'); } catch (err) { toast('复制失败，请手动复制'); }
+  try { document.execCommand('copy'); } catch(e) {}
   document.body.removeChild(ta);
 }
 
-// ==================== CONFIRM DIALOG ====================
 function showConfirm(msg) {
   return new Promise(resolve => {
-    $1('confirm-msg').textContent = msg;
-    $1('confirm-overlay').classList.add('show');
-    const onOk = () => { cleanup(); resolve(true); };
-    const onCancel = () => { cleanup(); resolve(false); };
-    const cleanup = () => {
-      $1('confirm-overlay').classList.remove('show');
-      off('confirm-ok', 'click', onOk);
-      off('confirm-cancel', 'click', onCancel);
-    };
-    on('confirm-ok', 'click', onOk);
-    on('confirm-cancel', 'click', onCancel);
+    $1('confirm-msg').textContent = msg; $1('confirm-overlay').classList.add('show');
+    const cleanup = () => { $1('confirm-overlay').classList.remove('show'); off('confirm-ok', 'click', onOk); off('confirm-cancel', 'click', onCancel); };
+    const onOk = () => { cleanup(); resolve(true); }; const onCancel = () => { cleanup(); resolve(false); };
+    on('confirm-ok', 'click', onOk); on('confirm-cancel', 'click', onCancel);
   });
 }
 
 // ==================== PWA & THEME ====================
 function setupPWA() {
   const manifest = {
-    name: 'AI Chat', short_name: 'AI Chat', description: 'DeepSeek AI 聊天助手',
+    name: 'AI Chat', short_name: 'AI Chat', description: 'DeepSeek & Gemini AI 聊天助手',
     start_url: location.href.split('?')[0], display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
-    icons: [
-      { src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }
-    ]
+    icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
   };
-  $1('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{ type:'application/json' }));
+  $1('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
 }
 
 function applyTheme() {
@@ -563,32 +539,32 @@ function goToChat(id) { state.activeAstId = id; saveState(); $1('ast-page').clas
 // ==================== ASSISTANT LIST ====================
 function renderAstList() {
   const l = $1('ast-list');
-  if (!state.assistants.length) { l.innerHTML = '<div class="empty">还没有助手，点击 ＋ 创建</div>'; return; }
+  if (!state.assistants.length) return l.innerHTML = '<div class="empty">还没有助手，点击 ＋ 创建</div>';
   l.innerHTML = state.assistants.map(a => {
-    const m = getModel(a.modelId);
+    const m = getModelInfo(a.modelId);
     return `<div class="ast-card" data-id="${a.id}">
       <span class="ast-icon">${m.icon}</span>
       <div class="ast-info">
         <div class="ast-name">${esc(a.name)}</div>
-        <div class="ast-meta"><span>${m.icon} ${m.name}</span><span>${a.conversations.length} 个话题</span></div>
+        <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span>${a.conversations.length} 个话题</span></div>
         <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
       </div>
-      <button class="ast-del" data-del="${a.id}">🗑</button>
+      <button class="ast-del">🗑</button>
     </div>`;
   }).join('');
 }
 
 on('ast-list', 'click', async e => {
-  const delBtn = e.target.closest('.ast-del');
-  if (delBtn) {
-    e.stopPropagation();
-    if (!await showConfirm('确定要删除此助手吗？')) return;
-    state.assistants = state.assistants.filter(a => a.id !== delBtn.dataset.del);
-    if (state.activeAstId === delBtn.dataset.del) state.activeAstId = null;
+  const card = e.target.closest('.ast-card'); if (!card) return;
+  const id = card.dataset.id;
+  
+  if (e.target.closest('.ast-del')) {
+    e.stopPropagation(); if (!await showConfirm('确定要删除此助手吗？')) return;
+    state.assistants = state.assistants.filter(a => a.id !== id);
+    if (state.activeAstId === id) state.activeAstId = null;
     saveState(); renderAstList(); return;
   }
-  const card = e.target.closest('.ast-card');
-  if (card) goToChat(card.dataset.id);
+  goToChat(id);
 });
 
 on('add-ast-btn', 'click', () => openSheet('add-ast-sheet'));
@@ -597,7 +573,7 @@ on('create-ast', 'click', () => {
   state.assistants.unshift({
     id: genId(), name: n, systemPrompt: $1('new-ast-prompt').value.trim(),
     temperature: 1.0, topP: 1.0, modelId: 'deepseek-v4-pro', reasoningEffort: 'off',
-    conversations: [], activeConvId: null
+    conversations:[], activeConvId: null
   });
   saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('✅ 已创建');
 });
@@ -605,13 +581,18 @@ on('create-ast', 'click', () => {
 // ==================== CHAT PAGE ====================
 function renderChatPage() {
   const a = getActiveAst(); if (!a) return goToAsts();
-  const c = getActiveConv(), m = getModel(a.modelId);
-  $1('chat-asst-name').textContent = `${a.name}${a.conversations.length > 0 ? ` (${a.conversations.length})` : ''}`;
+  const c = getActiveConv(a);
+  const m = getModelInfo(a.modelId);
+  
+  $1('chat-asst-name').textContent = `${a.name}${a.conversations.length ? ` (${a.conversations.length})` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = c ? formatK(calcConvTokens(c, a.systemPrompt)) : formatK(estimateTokens(a.systemPrompt));
   $1('model-chip-label').textContent = m.name;
   $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
-  $1('reasoning-label').textContent = `推理：${{ off:'关闭', high:'High', max:'Max' }[a.reasoningEffort || 'off']}`;
+
+  const R_LABELS = { off: '关闭', low: 'Low', high: 'High', max: 'Max' };
+  $1('reasoning-label').textContent = `推理：${R_LABELS[a.reasoningEffort] || a.reasoningEffort}`;
+  
   renderMessages();
 }
 
@@ -620,8 +601,7 @@ marked.setOptions({ breaks: true, gfm: true });
 const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { return esc(t).replace(/\n/g, '<br>'); } };
 
 function enhanceCodeBlocks(container) {
-  container.querySelectorAll('pre').forEach(pre => {
-    if (pre.parentNode.classList.contains('code-block-wrapper')) return;
+  container.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
     const code = pre.querySelector('code');
     const lang = code?.className.match(/language-(\w+)/)?.[1] || 'code';
 
@@ -635,22 +615,27 @@ function enhanceCodeBlocks(container) {
       e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { e.target.textContent = '✓'; setTimeout(() => e.target.textContent = '复制', 1200); });
     });
     on(wrapper.querySelector('.fold-btn'), 'click', e => {
-      e.stopPropagation(); wrapper.classList.toggle('collapsed'); e.target.textContent = wrapper.classList.contains('collapsed') ? '展开' : '折叠';
+      e.stopPropagation(); const isCol = wrapper.classList.toggle('collapsed'); e.target.textContent = isCol ? '展开' : '折叠';
     });
     if (code && !code.dataset.hl) { try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} }
   });
 }
 
-function makeMsg(msg, idx, conv) {
+function makeMsg(msg, idx) {
   const d = document.createElement('div'); d.className = `msg ${msg.role === 'user' ? 'user' : 'ai'}`; d.dataset.index = idx;
+  const isAi = msg.role === 'assistant';
 
-  let reasoningHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time">${msg.reasoningTime ? `⏱ ${msg.reasoningTime}s` : ''}</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time">${msg.reasoningTime ? `⏱ ${msg.reasoningTime}s` : ''}</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
+  const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
+  const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
 
-  const actions = msg.role === 'assistant' 
-    ? `<span class="badge">${getModel(msg.modelId || getActiveAst()?.modelId).icon} ${getModel(msg.modelId || getActiveAst()?.modelId).name}</span><div class="actions-right"><button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="重新生成">🔄</button></div>`
-    : `<div class="actions-right"><button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="重新发送">↩️</button></div>`;
-
-  d.innerHTML = `<div class="bubble">${reasoningHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions">${actions}</div>`;
+  d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
+    <div class="msg-actions">
+      <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>` : ''}</div>
+      <div class="msg-tokens">${estimateTokens(msg.content) + estimateTokens(msg.reasoning)} tokens</div>
+      <div class="actions-right">${buttonsHtml}</div>
+    </div>`;
   enhanceCodeBlocks(d); return d;
 }
 
@@ -668,16 +653,16 @@ on('messages', 'click', async e => {
     const conv = getActiveConv(); const msg = conv.messages[idx];
     const act = btn.dataset.a;
     if (act === 'cp') copyText(msg.content).then(() => toast('已复制'));
-    if (act === 'ed') openEditModal(msg, idx, conv);
-    if (act === 'del') deleteMessage(idx);
-    if (act === 're') msg.role === 'assistant' ? regenerateMessage(idx) : resendUserMessage(idx);
+    else if (act === 'ed') openEditModal(msg, idx, conv);
+    else if (act === 'del') deleteMessage(idx);
+    else if (act === 're') msg.role === 'assistant' ? regenerateMessage(idx) : resendUserMessage(idx);
   }
 });
 
 async function deleteMessage(idx) {
   const conv = getActiveConv(); if (!conv || idx < 0 || idx >= conv.messages.length) return;
   if (!await showConfirm('确定要删除这条消息吗？')) return;
-  conv.messages.splice(idx, 1); saveState(); renderMessages(); renderChatPage(); // Update tokens
+  conv.messages.splice(idx, 1); saveState(); renderMessages(); renderChatPage();
 }
 
 async function regenerateMessage(idx) {
@@ -686,8 +671,7 @@ async function regenerateMessage(idx) {
   if (!await showConfirm('确定要重新生成此回复吗？')) return;
   conv.messages.splice(idx);
   if (!conv.messages.length || conv.messages[conv.messages.length - 1].role !== 'user') return toast('无法重新生成：缺少用户消息');
-  $1('user-input').value = conv.messages.pop().content;
-  saveState(); renderMessages(); sendMessage();
+  $1('user-input').value = conv.messages.pop().content; saveState(); renderMessages(); sendMessage();
 }
 
 async function resendUserMessage(idx) {
@@ -695,8 +679,7 @@ async function resendUserMessage(idx) {
   const conv = getActiveConv(); if (!conv || conv.messages[idx]?.role !== 'user') return;
   if (!await showConfirm('确定要重新发送这条消息吗？')) return;
   const msg = conv.messages[idx]; conv.messages.splice(idx);
-  $1('user-input').value = msg.content;
-  saveState(); renderMessages(); sendMessage();
+  $1('user-input').value = msg.content; saveState(); renderMessages(); sendMessage();
 }
 
 function renderMessages() {
@@ -705,7 +688,7 @@ function renderMessages() {
     msgs.innerHTML = `<div class="welcome" style="display:flex"><div class="emoji">✨</div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算">🔬 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗">📝 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏">🐍 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划">💪 健身计划</div></div></div>`;
     return;
   }
-  c.messages.forEach((m, i) => msgs.appendChild(makeMsg(m, i, c)));
+  c.messages.forEach((m, i) => msgs.appendChild(makeMsg(m, i)));
 }
 
 // ==================== EDIT MODAL ====================
@@ -719,8 +702,7 @@ function saveEdit() {
   const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
   editingMsg.content = val; saveState(); renderMessages(); closeEditModal(); renderChatPage(); toast('✅ 已保存');
 }
-on('edit-cancel-btn', 'click', closeEditModal);
-on('edit-save-btn', 'click', saveEdit);
+on('edit-cancel-btn', 'click', closeEditModal); on('edit-save-btn', 'click', saveEdit);
 on('edit-textarea', 'keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
 
 // ==================== TOPIC LIST ====================
@@ -734,16 +716,10 @@ function renderTopicList() {
     return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
       <span>💬</span>
       <div class="tinfo">
-        <div class="ttitle-wrap">
-          <div class="ttitle">${esc(c.title)}</div>
-          <span class="nav-tokens">${formatK(tok)}</span>
-        </div>
+        <div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
         <div class="tmeta">${c.messages.length} 条消息</div>
       </div>
-      <div class="tact">
-        <button class="topic-btn" data-edit="${c.id}" title="重命名">✏️</button>
-        <button class="topic-btn del" data-dc="${c.id}" title="删除">🗑</button>
-      </div>
+      <div class="tact"><button class="topic-btn" data-edit title="重命名">✏️</button><button class="topic-btn del" title="删除">🗑</button></div>
     </div>`;
   }).join('');
   $1('drawer-total-tokens').textContent = formatK(totalTokens);
@@ -751,17 +727,18 @@ function renderTopicList() {
 
 on('topic-list', 'click', async e => {
   const a = getActiveAst(); if (!a) return;
-  const delBtn = e.target.closest('[data-dc]');
-  if (delBtn) {
+  const item = e.target.closest('.topic-item'); if (!item) return;
+  const cid = item.dataset.cid;
+
+  if (e.target.closest('.del')) {
     e.stopPropagation(); if (!await showConfirm('确定删除此话题？')) return;
-    a.conversations = a.conversations.filter(c => c.id !== delBtn.dataset.dc);
-    if (a.activeConvId === delBtn.dataset.dc) a.activeConvId = a.conversations[0]?.id || null;
+    a.conversations = a.conversations.filter(c => c.id !== cid);
+    if (a.activeConvId === cid) a.activeConvId = a.conversations[0]?.id || null;
     saveState(); renderTopicList(); renderChatPage(); return;
   }
-  const editBtn = e.target.closest('[data-edit]');
-  if (editBtn) { e.stopPropagation(); return startRename(editBtn.dataset.edit); }
-  const item = e.target.closest('.topic-item');
-  if (item) { a.activeConvId = item.dataset.cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); }
+  if (e.target.closest('[data-edit]')) { e.stopPropagation(); return startRename(cid); }
+  
+  a.activeConvId = cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); 
 });
 
 function startRename(cid) {
@@ -770,8 +747,7 @@ function startRename(cid) {
   tinfo.innerHTML = `<input class="topic-rename-input" value="${esc(conv.title)}" maxlength="40">`;
   const inp = tinfo.querySelector('input'); inp.focus(); inp.select();
   const finish = () => { const nt = inp.value.trim(); if (nt && nt !== conv.title) { conv.title = nt; saveState(); renderChatPage(); } renderTopicList(); };
-  on(inp, 'blur', finish);
-  on(inp, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
+  on(inp, 'blur', finish); on(inp, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
 }
 on('new-topic', 'click', () => { const a = getActiveAst(); if (!a) return; a.activeConvId = null; saveState(); closeAll(); renderChatPage(); });
 
@@ -785,18 +761,28 @@ function renderSettings() {
         <div class="settings-fold-body">
           <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
           <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
-          <div class="hint" style="margin-top:4px;">⚠️ 思考模式（high/max）下参数不生效</div>
+          <div class="hint" style="margin-top:4px;">⚠️ 思考模式（high/max）下部分参数可能不生效</div>
         </div>
       </div>
     </div>
     <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
-    <div class="section"><div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div></div>
+    <div class="section">
+      <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:8px;">API 密钥与模型列表</label>
+      <div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."><div class="hint">Endpoint: api.deepseek.com</div></div>
+      <div class="settings-fold">
+        <button class="settings-fold-head">🔌 第三方 API 设置 <span class="arr">▶</span></button>
+        <div class="settings-fold-body">
+          <div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}" placeholder="sk-... / AIza..."><div class="hint">第三方中转或官方 Key</div></div>
+          <div class="field"><label>第三方 API 地址</label><input type="text" id="s-gmurl" value="${esc(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com')}" placeholder="https://generativelanguage.googleapis.com"><div class="hint">请填入官方地址或中转域名</div></div>
+          <div class="field"><label>第三方模型列表 (英文逗号分隔)</label><input type="text" id="s-gmmodels" value="${esc(state.geminiModels || 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp')}" placeholder="gemini-2.5-pro, ..."><div class="hint">在此添加的模型将在聊天页面顶部的模型菜单中可选</div></div>
+        </div>
+      </div>
+    </div>
     <div class="section"><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div></div>
-    <button class="btn-primary" id="s-save" style="margin-top:8px">💾 保存设置</button>
+    <button class="btn-primary" id="s-save" style="margin-top:8px">保存设置</button>
   `;
 }
 
-// 代理所有 Settings UI 的交互以实现无副作用渲染
 on('settings-body', 'click', e => {
   if (e.target.id === 'data-export') exportData();
   else if (e.target.id === 'data-import-btn') $1('import-file').click();
@@ -816,12 +802,18 @@ on('settings-body', 'input', e => {
 
 function applyAndSaveSettings() {
   const a = getActiveAst(); if (!a) return;
-  const val = id => { const e = $1(id); return e ? e.value : null; };
+  const val = id => $1(id)?.value ?? null;
+  
   if (val('s-name') !== null) a.name = val('s-name').trim() || a.name;
   if (val('s-prompt') !== null) a.systemPrompt = val('s-prompt').trim();
   if (val('s-temp') !== null) a.temperature = parseFloat(val('s-temp'));
   if (val('s-topp') !== null) a.topP = parseFloat(val('s-topp'));
+  
   if (val('s-dskey') !== null) state.deepseekKey = val('s-dskey').trim();
+  if (val('s-gmkey') !== null) state.geminiKey = val('s-gmkey').trim();
+  if (val('s-gmurl') !== null) state.geminiBaseUrl = val('s-gmurl').trim();
+  if (val('s-gmmodels') !== null) state.geminiModels = val('s-gmmodels').trim() || 'gemini-2.5-pro';
+
   if ($1('s-theme')) state.darkMode = $1('s-theme').classList.contains('active');
   saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('✅ 设置已保存');
 }
@@ -843,9 +835,11 @@ on('import-file', 'change', e => {
           const fixed = fixAsst(importedA); const idx = state.assistants.findIndex(a => a.id === fixed.id);
           if (idx > -1) state.assistants[idx] = fixed; else state.assistants.push(fixed);
         });
-        if (data.activeAstId) state.activeAstId = data.activeAstId;
-        if (data.deepseekKey) state.deepseekKey = data.deepseekKey;
-        if (data.darkMode !== undefined) state.darkMode = !!data.darkMode;
+        Object.assign(state, {
+          activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey,
+          geminiKey: data.geminiKey ?? state.geminiKey, geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl,
+          geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode
+        });
         saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); toast('✅ 数据已合并');
       }
     } catch(err) { toast('❌ 文件格式错误'); }
@@ -856,21 +850,29 @@ on('import-file', 'change', e => {
 // FULLSCREEN PROMPT EDITOR
 const setupPromptToolbar = ta => {
   const insert = (p, s = '') => {
-    const selStart = ta.selectionStart, selEnd = ta.selectionEnd, selText = ta.value.substring(selStart, selEnd);
-    ta.value = ta.value.substring(0, selStart) + p + selText + s + ta.value.substring(selEnd);
-    const newPos = selStart + p.length + (selText ? selText.length + s.length : 0);
-    ta.setSelectionRange(newPos, newPos); ta.focus(); ta.dispatchEvent(new Event('input'));
+    ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end');
+    ta.focus(); ta.dispatchEvent(new Event('input'));
   };
   return { bold: () => insert('**', '**'), italic: () => insert('*', '*'), code: () => insert('`', '`'), heading: () => insert('## '), list: () => insert('- '), quote: () => insert('> ') };
 };
 const ptb = setupPromptToolbar($1('fs-prompt-textarea'));
 on('fs-prompt-tb', 'click', e => { const btn = e.target.closest('button[data-md]'); if (btn && ptb[btn.dataset.md]) ptb[btn.dataset.md](); });
-on('fs-prompt-save', 'click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; applyAndSaveSettings(); $1('fs-prompt-overlay').classList.remove('show'); });
-on('fs-prompt-close', 'click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; $1('fs-prompt-overlay').classList.remove('show'); });
+const closeFsPrompt = (save) => {
+  if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; 
+  if (save) applyAndSaveSettings(); 
+  $1('fs-prompt-overlay').classList.remove('show');
+};
+on('fs-prompt-save', 'click', () => closeFsPrompt(true));
+on('fs-prompt-close', 'click', () => closeFsPrompt(false));
 
 // ==================== DROPDOWN ====================
 function showDropdown(anchor, items, onSelect) {
-  const dd = $1('dropdown-menu'); dd.innerHTML = items.map((item, idx) => `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<span class="check">✓</span>' : ''}</div>`).join('');
+  const dd = $1('dropdown-menu'); 
+  dd.innerHTML = items.map((item, idx) => item.isHeader 
+    ? `<div class="dropdown-header">${item.label}</div>`
+    : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<span class="check">✓</span>' : ''}</div>`
+  ).join('');
+  
   dd.style.display = 'block'; dd.style.visibility = 'hidden';
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4;
@@ -878,29 +880,81 @@ function showDropdown(anchor, items, onSelect) {
   dd.style.top = `${top}px`; dd.style.left = `${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
   dd.style.visibility = 'visible'; dd.classList.add('show');
   
-  const clickHandler = e => { const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
+  const clickHandler = e => { 
+    if (e.target.closest('.dropdown-header')) return; 
+    const item = e.target.closest('.dropdown-item'); 
+    if (item) onSelect(items[item.dataset.idx].value); 
+    hideDropdown(); off(document, 'click', clickHandler); 
+  };
   setTimeout(() => on(document, 'click', clickHandler), 10);
 }
 function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
 
 on('model-chip-btn', 'click', e => {
   e.stopPropagation(); const ast = getActiveAst();
-  showDropdown(e.currentTarget, DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })), id => { if (ast) { ast.modelId = id; saveState(); renderChatPage(); toast('已切换模型'); } });
+  const items =[
+      { isHeader: true, label: 'DeepSeek API' },
+      ...DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })),
+      { isHeader: true, label: '第三方 API' },
+      ...getCustomModels().map(name => ({ label: `✨ ${name}`, value: name, selected: ast?.modelId === name }))
+  ];
+  showDropdown(e.currentTarget, items, id => { if (ast) { ast.modelId = id; saveState(); renderChatPage(); toast('已切换模型'); } });
 });
+
 on('reasoning-btn', 'click', e => {
   e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off';
-  showDropdown(e.currentTarget, [{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}].map(o => ({ ...o, selected: o.value === cur })), val => { if (ast) { ast.reasoningEffort = val; saveState(); renderChatPage(); toast({ off:'推理已关闭', high:'推理深度：High', max:'推理深度：Max' }[val] || ''); } });
+  const isDs = isDeepSeek(ast?.modelId);
+  const opts = isDs 
+    ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}]
+    :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
+
+  showDropdown(e.currentTarget, opts.map(o => ({ ...o, selected: o.value === cur })), val => { 
+      if (ast) { ast.reasoningEffort = val; saveState(); renderChatPage(); toast({ off:'推理已关闭', low:'推理深度：Low', high:'推理深度：High', max:'推理深度：Max' }[val] || ''); } 
+  });
 });
 
 // ==================== CHAT LOGIC ====================
 const scrollBottom = (force) => force && requestAnimationFrame(() => $1('chat-container').scrollTo({ top: $1('chat-container').scrollHeight, behavior: 'smooth' }));
 const setStreamingUI = stream => { $1('send-btn').style.display = stream ? 'none' : 'flex'; $1('stop-btn').style.display = stream ? 'flex' : 'none'; };
 
+function startReasoningTimer(idx, am) {
+  if (am.reasoningStartTime) return;
+  am.reasoningStartTime = Date.now();
+  reasoningTimers[idx] = setInterval(() => {
+    const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .reasoning-time`);
+    if (el) el.textContent = `${((Date.now() - am.reasoningStartTime) / 1000).toFixed(1)}s`;
+  }, 200);
+}
+
+function updateLive(idx, msg) {
+  const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
+  if (msg.reasoning) { 
+      let rb = bub.querySelector('.rblock');
+      if (!rb) { 
+          rb = document.createElement('div'); rb.className = 'rblock'; 
+          rb.innerHTML = '<button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody"></div>'; 
+          bub.insertBefore(rb, bub.firstChild); 
+      }
+      rb.querySelector('.rbody').textContent = msg.reasoning;
+  }
+  let mc = bub.querySelector('.markdown-body');
+  if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
+  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
+
+  const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
+  if (tokensEl) tokensEl.textContent = `${estimateTokens(msg.content) + estimateTokens(msg.reasoning)} tokens`;
+}
+
 async function sendMessage() {
   if (streaming) return;
   const txt = $1('user-input').value.trim(); if (!txt) return;
   const a = getActiveAst(); if (!a) return;
-  if (!state.deepseekKey) return toast('请先设置 API Key') || openSettings();
+  
+  if (isDeepSeek(a.modelId)) {
+      if (!state.deepseekKey) return toast('请先设置 DeepSeek API Key') || openSettings();
+  } else {
+      if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings();
+  }
   
   $1('user-input').value = ''; $1('user-input').style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
@@ -911,17 +965,43 @@ async function sendMessage() {
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
 
-  // Initialize rolling token count
   let currentTokens = calcConvTokens(c, a.systemPrompt);
   $1('chat-nav-tokens').textContent = formatK(currentTokens);
 
-  const body = { model: a.modelId, stream: true, messages: [{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))] };
-  if (a.reasoningEffort === 'off') { Object.assign(body, { temperature: a.temperature, top_p: a.topP }); body.thinking = { type: 'disabled' }; }
-  else { Object.assign(body, { reasoning_effort: a.reasoningEffort }); body.thinking = { type: 'enabled' }; }
+  let body = {}, url = '', headers = {};
+  if (!isDeepSeek(a.modelId)) {
+      url = `${(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '')}/v1beta/models/${a.modelId}:streamGenerateContent?alt=sse`;
+      headers = { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiKey };
+      if (state.geminiKey.startsWith('sk-') || state.geminiKey.startsWith('Bearer ')) headers['Authorization'] = state.geminiKey.startsWith('Bearer ') ? state.geminiKey : `Bearer ${state.geminiKey}`;
+      
+      let contents =[];
+      for (const m of c.messages.slice(0, -1)) {
+          const role = m.role === 'user' ? 'user' : 'model';
+          const parts = (m.thoughtSignatures ||[]).map(sig => ({ thoughtSignature: sig }));
+          parts.push({ text: m.content || ' ' });
+          if (contents.length > 0 && contents[contents.length - 1].role === role) contents[contents.length - 1].parts.push(...parts);
+          else contents.push({ role, parts });
+      }
+      
+      body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
+      if (a.systemPrompt) body.systemInstruction = { role: "system", parts:[{ text: a.systemPrompt }] };
+      if (a.reasoningEffort !== 'off') {
+          const isV3 = a.modelId.includes('gemini-3');
+          body.generationConfig.thinkingConfig = isV3 
+              ? { includeThoughts: true, thinkingLevel: a.reasoningEffort === 'low' ? 'LOW' : 'HIGH' }
+              : { includeThoughts: true, thinkingBudget: a.reasoningEffort === 'low' ? 1024 : 8192 };
+      }
+  } else {
+      url = 'https://api.deepseek.com/chat/completions';
+      headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.deepseekKey}` };
+      body = { model: a.modelId, stream: true, messages:[{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))] };
+      if (a.reasoningEffort === 'off') Object.assign(body, { temperature: a.temperature, top_p: a.topP, thinking: { type: 'disabled' } });
+      else Object.assign(body, { reasoning_effort: a.reasoningEffort, thinking: { type: 'enabled' } });
+  }
 
   abortCtrl = new AbortController();
   try {
-    const resp = await fetch('https://api.deepseek.com/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.deepseekKey}` }, body: JSON.stringify(body), signal: abortCtrl.signal });
+    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
     if (!resp.ok) { let em = `HTTP ${resp.status}`; try { em = (await resp.json()).error?.message || em; } catch(e){} throw new Error(em); }
     
     const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '';
@@ -930,23 +1010,28 @@ async function sendMessage() {
       buf += dec.decode(value, { stream: true }); const lines = buf.split('\n'); buf = lines.pop() || '';
       for (let t of lines) {
         t = t.trim(); if (!t || !t.startsWith('data: ')) continue;
-        const data = t.slice(6); if (data === '[DONE]') continue;
+        const dataStr = t.slice(6); if (dataStr === '[DONE]') continue;
         try {
-          const delta = JSON.parse(data).choices?.[0]?.delta; if (!delta) continue;
-          if (delta.reasoning_content) {
-            currentTokens += estimateTokens(delta.reasoning_content);
-            if (!am.reasoningStartTime) {
-              am.reasoningStartTime = Date.now(); let timeEl = null;
-              reasoningTimers[ai] = setInterval(() => { if(!timeEl) timeEl = document.querySelector(`#messages .msg.ai[data-index="${ai}"] .reasoning-time`); if (timeEl) timeEl.textContent = `${((Date.now() - am.reasoningStartTime) / 1000).toFixed(1)}s`; }, 200);
-            }
-            am.reasoning += delta.reasoning_content;
+          const chunk = JSON.parse(dataStr);
+          if (!isDeepSeek(a.modelId)) {
+              for (const part of (chunk.candidates?.[0]?.content?.parts ||[])) {
+                  if (part.thoughtSignature || part.thought_signature) {
+                      am.thoughtSignatures ??=[];
+                      am.thoughtSignatures.push(part.thoughtSignature || part.thought_signature);
+                  }
+                  if (part.thought === true || String(part.thought) === "true") {
+                      currentTokens += estimateTokens(part.text || ''); startReasoningTimer(ai, am);
+                      am.reasoning += (part.text || '');
+                  } else if (part.text) {
+                      currentTokens += estimateTokens(part.text); am.content += part.text;
+                  }
+              }
+          } else {
+              const delta = chunk.choices?.[0]?.delta; if (!delta) continue;
+              if (delta.reasoning_content) { currentTokens += estimateTokens(delta.reasoning_content); startReasoningTimer(ai, am); am.reasoning += delta.reasoning_content; }
+              if (delta.content) { currentTokens += estimateTokens(delta.content); am.content += delta.content; }
           }
-          if (delta.content) {
-            currentTokens += estimateTokens(delta.content);
-            am.content += delta.content;
-          }
-          $1('chat-nav-tokens').textContent = formatK(currentTokens);
-          updateLive(ai, am);
+          $1('chat-nav-tokens').textContent = formatK(currentTokens); updateLive(ai, am);
         } catch(e) {}
       }
     }
@@ -955,28 +1040,17 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (reasoningTimers[ai]) { clearInterval(reasoningTimers[ai]); delete reasoningTimers[ai]; }
     am.reasoningTime = am.reasoningStartTime ? ((Date.now() - am.reasoningStartTime) / 1000).toFixed(1) : null;
-    delete am.reasoningStartTime; saveState(); renderMessages(); renderChatPage(); // Update tokens fully
+    delete am.reasoningStartTime; saveState(); renderMessages(); renderChatPage();
   }
 }
 
-function updateLive(idx, msg) {
-  const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
-  let rb = bub.querySelector('.rblock');
-  if (msg.reasoning && !rb) { rb = document.createElement('div'); rb.className = 'rblock'; rb.innerHTML = '<button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody"></div>'; bub.insertBefore(rb, bub.firstChild); }
-  if (rb && msg.reasoning) rb.querySelector('.rbody').textContent = msg.reasoning;
-  let mc = bub.querySelector('.markdown-body');
-  if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
-  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
-}
-
-// ==================== SHEET / DRAWER BINDINGS ====================
+// ==================== BINDINGS ====================
 const openSheet = id => { closeDrawers(); $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
 const openDrawer = id => { $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
-const closeDrawers = () => ['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
+const closeDrawers = () =>['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show'); closeDrawers(); };
 const openSettings = () => { renderSettings(); openDrawer('settings-drawer'); };
 
-// ==================== EVENT BINDINGS ====================
 on('send-btn', 'click', sendMessage);
 on('stop-btn', 'click', () => abortCtrl?.abort());
 on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
@@ -990,10 +1064,8 @@ on('close-topics', 'click', closeAll);
 on('close-settings', 'click', closeAll);
 on('overlay', 'click', closeAll);
 
-// ==================== INIT ====================
 setupPWA(); applyTheme(); renderAstList();
 state.activeAstId = null; saveState();
-
 })();
 </script>
 </body>
