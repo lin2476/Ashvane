@@ -1,535 +1,424 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>AI Chat</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AI Chat</title>
 
-<!-- PWA Meta Tags -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="AI Chat">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0a0a10" media="(prefers-color-scheme: dark)">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100' rx='22'/><text x='50' y='68' text-anchor='middle' font-size='52'>🤖</text></svg>">
-<link rel="manifest" id="pwa-manifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="AI Chat">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a10" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100' rx='22'/><text x='50' y='68' text-anchor='middle' font-size='52'>🤖</text></svg>">
+  <link rel="manifest" id="pwa-manifest">
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
-</script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/core.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/javascript.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/python.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/bash.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/json.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/typescript.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/css.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/sql.min.js">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/xml.min.js">
-</script>
-<style>
-:root {
-  --bg-primary: #f0f0f5;
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #eaeaef;
-  --bg-bubble-user: #4f46e5;
-  --bg-bubble-ai: transparent;
-  --text-primary: #1a1a2e;
-  --text-secondary: #8e8e9a;
-  --text-user: #fff;
-  --text-ai: #1a1a2e;
-  --accent: #4f46e5;
-  --accent-light: #eef2ff;
-  --danger: #ef4444;
-  --success: #10b981;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --header-h: 52px;
-  --safe-b: env(safe-area-inset-bottom, 16px);
-  --tr: .25s cubic-bezier(.4, 0, .2, 1);
-  --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-[data-theme="dark"] {
-  --bg-primary: #0a0a10;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1a1a26;
-  --bg-bubble-user: #6366f1;
-  --bg-bubble-ai: transparent;
-  --text-primary: #e4e4ed;
-  --text-secondary: #8e8e9a;
-  --text-user: #fff;
-  --text-ai: #e4e4ed;
-  --accent-light: #1e1b4b;
-}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/sql.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/languages/xml.min.js"></script>
 
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  height:100%;width:100%;overflow:hidden;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
-  background:var(--bg-primary);color:var(--text-primary);
-  -webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;
-}
-#app{display:flex;flex-direction:column;height:100%;max-width:700px;margin:0 auto;position:relative;overflow:hidden;background:var(--bg-primary)}
+  <style>
+    :root {
+      --bg-primary: #f0f0f5;
+      --bg-secondary: #fafafa;
+      --bg-tertiary: #eaeaef;
+      --bg-bubble-user: #4f46e5;
+      --bg-bubble-ai: transparent;
+      --text-primary: #1a1a2e;
+      --text-secondary: #8e8e9a;
+      --text-user: #fff;
+      --text-ai: #1a1a2e;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --header-h: 52px;
+      --safe-b: env(safe-area-inset-bottom, 16px);
+      --tr: .25s cubic-bezier(.4, 0, .2, 1);
+      --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      --border-subtle: rgba(128,128,128,.15);
+      --border-soft: rgba(128,128,128,.08);
+      --code-bg: #f5f5f5;
+      --code-header-bg: rgba(0,0,0,0.03);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #0a0a10;
+      --bg-secondary: #111118;
+      --bg-tertiary: #1a1a26;
+      --bg-bubble-user: #6366f1;
+      --text-primary: #e4e4ed;
+      --text-ai: #e4e4ed;
+      --accent-light: #1e1b4b;
+      --code-bg: #1a1a26;
+      --code-header-bg: rgba(255,255,255,0.05);
+    }
 
-/* NAVBAR */
-.navbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:6px 10px;background:var(--bg-secondary);
-  border-bottom:0.5px solid rgba(128,128,128,.12);z-index:100;
-  height:var(--header-h);flex-shrink:0;gap:4px;
-}
-.nav-left,.nav-right{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.nav-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;text-align:center}
-.nav-center .asst-name{font-size:14px;font-weight:700}
-.nav-center .topic-row{display:flex;align-items:center;gap:4px;cursor:pointer;padding:1px 6px;border-radius:8px;transition:all var(--tr)}
-.nav-center .topic-row:active{background:var(--bg-tertiary)}
-.nav-center .topic-name{font-size:10px;color:var(--text-secondary);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nav-center .topic-arr{font-size:8px;color:var(--text-secondary);flex-shrink:0}
-.nav-btn{
-  width:34px;height:34px;border-radius:50%;border:none;
-  background:var(--bg-tertiary);color:var(--text-primary);font-size:15px;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:all var(--tr);
-}
-.nav-btn:active{transform:scale(.9)}
-.nav-btn.accent{background:var(--accent);color:#fff}
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { height:100%; width:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
+    #app { display:flex; flex-direction:column; height:100%; max-width:700px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg-primary); }
 
-/* CHAT */
-#chat-container{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 12px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
-#messages{display:flex;flex-direction:column;gap:8px;max-width:100%}
+    /* NAVBAR */
+    .navbar { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:var(--bg-secondary); border-bottom:0.5px solid var(--border-subtle); z-index:100; height:var(--header-h); flex-shrink:0; gap:4px; }
+    .nav-left, .nav-right { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+    .nav-center { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; text-align:center; }
+    .nav-center .asst-name { font-size:14px; font-weight:700; }
+    .nav-center .topic-row { display:flex; align-items:center; gap:4px; cursor:pointer; padding:1px 6px; border-radius:8px; transition:all var(--tr); }
+    .nav-center .topic-row:active { background:var(--bg-tertiary); }
+    .nav-center .topic-name { font-size:10px; color:var(--text-secondary); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .nav-center .topic-arr { font-size:8px; color:var(--text-secondary); flex-shrink:0; }
+    .nav-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all var(--tr); }
+    .nav-btn:active { transform:scale(.9); }
+    .nav-btn.accent { background:var(--accent); color:#fff; }
 
-.welcome{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:40px 20px;text-align:center;opacity:0;animation:fadeIn .4s .1s forwards}
-@keyframes fadeIn{to{opacity:1}}
-.welcome .emoji{font-size:48px;margin-bottom:10px;animation:float 3s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.welcome h3{font-size:18px;font-weight:700;margin-bottom:4px}
-.welcome p{color:var(--text-secondary);font-size:13px;margin-bottom:18px}
-.welcome-hints{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}
-.welcome-hint{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);font-size:13px;color:var(--text-secondary);cursor:pointer;transition:all var(--tr);text-align:left;line-height:1.4;border:1.5px solid transparent}
-.welcome-hint:active{border-color:var(--accent);transform:scale(.97)}
+    /* CHAT */
+    #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
+    #messages { display:flex; flex-direction:column; gap:8px; max-width:100%; }
 
-/* MESSAGES */
-.msg{display:flex;flex-direction:column;max-width:88%;animation:msgIn .3s ease-out}
-@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{align-self:flex-end}
-.msg.ai{align-self:flex-start;width:100%;max-width:100%}
-.msg .bubble{padding:10px 14px;border-radius:var(--radius-lg);font-size:14.5px;line-height:1.65;word-break:break-word;position:relative}
-.msg.user .bubble{background:var(--bg-bubble-user);color:var(--text-user);border-bottom-right-radius:6px;box-shadow:0 2px 8px rgba(79,70,229,.25)}
-.msg.ai .bubble{background:transparent;color:var(--text-ai);border-bottom-left-radius:6px;padding-left:2px;padding-right:2px}
-.rblock{margin-bottom:8px;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg-tertiary)}
-.rhead{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--bg-tertiary);font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;border:none;width:100%;text-align:left;border-radius:var(--radius-sm)}
-.rhead .arr{transition:transform var(--tr);font-size:9px}
-.rhead.open .arr{transform:rotate(90deg)}
-.rbody{padding:8px 12px;font-size:12px;line-height:1.5;color:var(--text-secondary);background:var(--bg-tertiary);border-top:1px solid rgba(128,128,128,.08);max-height:180px;overflow-y:auto;display:none;font-style:italic;white-space:pre-wrap}
-.rbody.open{display:block}
+    .welcome { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 20px; text-align:center; opacity:0; animation:fadeIn .4s .1s forwards; }
+    @keyframes fadeIn { to { opacity:1; } }
+    .welcome .emoji { font-size:48px; margin-bottom:10px; animation:float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+    .welcome h3 { font-size:18px; font-weight:700; margin-bottom:4px; }
+    .welcome p { color:var(--text-secondary); font-size:13px; margin-bottom:18px; }
+    .welcome-hints { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; max-width:360px; }
+    .welcome-hint { padding:12px; background:var(--bg-secondary); border-radius:var(--radius-md); font-size:13px; color:var(--text-secondary); cursor:pointer; transition:all var(--tr); text-align:left; line-height:1.4; border:1.5px solid transparent; }
+    .welcome-hint:active { border-color:var(--accent); transform:scale(.97); }
 
-/* AI 消息操作栏：模型名称左对齐，按钮右对齐 */
-.msg.ai .msg-actions{
-  display:flex;justify-content:space-between;align-items:center;gap:6px;
-  opacity:1;padding-right:2px;
-}
-.msg.ai .msg-actions .badge{
-  font-size:10px;color:var(--text-secondary);opacity:.55;letter-spacing:.3px;
-  white-space:nowrap;
-}
-.msg.ai .msg-actions .actions-right{
-  display:flex;gap:2px;
-}
-.msg.ai .msg-actions .actions-right button{
-  opacity:0;transition:opacity .2s;
-}
-.msg.ai:hover .msg-actions .actions-right button,
-.msg.ai .msg-actions.show .actions-right button{opacity:1}
+    /* MESSAGES */
+    .msg { display:flex; flex-direction:column; max-width:88%; animation:msgIn .3s ease-out; }
+    @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .msg.user { align-self:flex-end; }
+    .msg.ai { align-self:flex-start; width:100%; max-width:100%; }
+    .msg .bubble { padding:10px 14px; border-radius:var(--radius-lg); font-size:14.5px; line-height:1.65; word-break:break-word; position:relative; }
+    .msg.user .bubble { background:var(--bg-bubble-user); color:var(--text-user); border-bottom-right-radius:6px; box-shadow:0 2px 8px rgba(79,70,229,.25); }
+    .msg.ai .bubble { background:transparent; color:var(--text-ai); border-bottom-left-radius:6px; padding-left:2px; padding-right:2px; }
+    .rblock { margin-bottom:8px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
+    .rhead { display:flex; align-items:center; gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
+    .rhead .arr { transition:transform var(--tr); font-size:9px; margin-left:auto; }
+    .rhead .reasoning-time { margin-left:8px; font-size:11px; font-weight:normal; color:var(--text-secondary); white-space:nowrap; }
+    .rhead.open .arr { transform:rotate(90deg); }
+    .rbody { padding:8px 12px; font-size:12px; line-height:1.5; color:var(--text-secondary); background:var(--bg-tertiary); border-top:1px solid var(--border-soft); max-height:180px; overflow-y:auto; display:none; font-style:italic; white-space:pre-wrap; }
+    .rbody.open { display:block; }
 
-.msg.user .msg-actions{
-  display:flex;justify-content:flex-end;gap:2px;margin-top:2px;padding-right:2px;
-  opacity:0;transition:opacity .2s;
-}
-.msg.user:hover .msg-actions,.msg.user .msg-actions.show{opacity:1}
-.msg-actions button{padding:3px 10px;border:none;border-radius:12px;background:var(--bg-tertiary);color:var(--text-secondary);font-size:11px;cursor:pointer;transition:all var(--tr);font-weight:500}
-.msg-actions button:active{background:var(--accent-light);color:var(--accent)}
-.msg.user .msg-actions button{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7)}
-.msg.user .msg-actions button:active{background:rgba(255,255,255,.2);color:#fff}
+    /* MESSAGE ACTIONS – unified */
+    .msg-actions { display:flex; align-items:center; gap:6px; padding-right:2px; }
+    .msg.user .msg-actions { justify-content:flex-end; }
+    .msg.ai .msg-actions { justify-content:space-between; }
+    .msg-actions .badge { font-size:10px; color:var(--text-secondary); opacity:.55; letter-spacing:.3px; white-space:nowrap; }
+    .actions-right { display:flex; gap:2px; }
+    .actions-right button { opacity:0; transition:opacity .2s; }
+    .msg:hover .actions-right button,
+    .msg-actions.show .actions-right button { opacity:1; }
+    .msg-actions button { padding:3px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:11px; cursor:pointer; transition:all var(--tr); font-weight:500; }
+    .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
-/* EDIT MODAL — 无边框，无预览 */
-.edit-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;
-  display:none;flex-direction:column;
-}
-.edit-overlay.show{display:flex}
-.edit-card{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  background:var(--bg-secondary);display:flex;flex-direction:column;
-  margin-top:var(--header-h);
-}
-.edit-card-body{flex:1;overflow-y:auto;padding:16px}
-.edit-card-body textarea{
-  width:100%;height:100%;min-height:240px;padding:14px;
-  border:none;border-radius:var(--radius-md);
-  background:var(--bg-tertiary);color:var(--text-primary);
-  font-size:15px;font-family:inherit;line-height:1.7;
-  resize:none;outline:none;
-}
-.edit-card-foot{
-  display:flex;gap:10px;padding:14px 16px;
-  padding-bottom:calc(14px + var(--safe-b));
-  border-top:0.5px solid rgba(128,128,128,.1);
-  background:var(--bg-secondary);
-}
-.edit-card-foot button{
-  flex:1;padding:12px 0;border-radius:16px;border:none;
-  font-size:14px;font-weight:600;cursor:pointer;transition:all var(--tr);
-}
-.edit-save-btn{background:var(--accent);color:#fff}
-.edit-save-btn:active{opacity:.85;transform:scale(.98)}
-.edit-cancel-btn{background:var(--bg-tertiary);color:var(--text-secondary)}
-.edit-cancel-btn:active{background:rgba(128,128,128,.12)}
+    /* EDIT MODAL */
+    .edit-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:250; display:none; flex-direction:column; }
+    .edit-overlay.show { display:flex; }
+    .edit-card { position:absolute; top:0; left:0; right:0; bottom:0; background:var(--bg-secondary); display:flex; flex-direction:column; margin-top:var(--header-h); }
+    .edit-card-body { flex:1; overflow-y:auto; padding:16px; }
+    .edit-card-body textarea { width:100%; height:100%; min-height:240px; padding:14px; border:none; border-radius:var(--radius-md); background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
+    .edit-card-foot { display:flex; gap:10px; padding:14px 16px; padding-bottom:calc(14px + var(--safe-b)); border-top:0.5px solid rgba(128,128,128,.1); background:var(--bg-secondary); }
+    .edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .edit-save-btn { background:var(--accent); color:#fff; }
+    .edit-save-btn:active { opacity:.85; transform:scale(.98); }
+    .edit-cancel-btn { background:var(--bg-tertiary); color:var(--text-secondary); }
+    .edit-cancel-btn:active { background:rgba(128,128,128,.12); }
 
-/* MARKDOWN */
-.bubble h1,.bubble h2,.bubble h3{margin:10px 0 4px;font-size:1.05em}
-.bubble p{margin:4px 0}.bubble p:first-child{margin-top:0}.bubble p:last-child{margin-bottom:0}
-.bubble ul,.bubble ol{padding-left:18px;margin:4px 0}.bubble li{margin:2px 0}
-.bubble code{background:var(--bg-tertiary);padding:2px 5px;border-radius:3px;font-family:var(--mono);font-size:.86em}
+    /* MARKDOWN */
+    .bubble :is(h1,h2,h3) { margin:10px 0 4px; font-size:1.05em; }
+    .bubble p { margin:4px 0; }
+    .bubble p:first-child { margin-top:0; }
+    .bubble p:last-child { margin-bottom:0; }
+    .bubble ul, .bubble ol { padding-left:18px; margin:4px 0; }
+    .bubble li { margin:2px 0; }
+    .bubble code { background:var(--bg-tertiary); padding:2px 5px; border-radius:3px; font-family:var(--mono); font-size:.86em; }
 
-/* Code Block Wrapper */
-.code-block-wrapper{
-  border-radius:var(--radius-sm);
-  margin:8px 0;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,0.05);
-}
-.code-block-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:4px 8px;
-  background:rgba(255,255,255,0.05);
-  border-bottom:1px solid rgba(128,128,128,0.1);
-}
-.code-lang{
-  font-size:11px;
-  color:#9ca3af;
-  text-transform:uppercase;
-  font-weight:500;
-}
-.code-btns{
-  display:flex;gap:4px;
-}
-.code-btn{
-  padding:2px 8px;
-  border:none;
-  border-radius:4px;
-  background:rgba(255,255,255,0.1);
-  color:#aaa;
-  font-size:10px;
-  cursor:pointer;
-  transition:all var(--tr);
-}
-.code-btn:hover{
-  background:rgba(255,255,255,0.2);
-  color:#fff;
-}
-/* 折叠状态：默认折叠，显示部分高度 */
-.code-block-wrapper.collapsed pre{
-  max-height:100px;
-  overflow:hidden;
-  position:relative;
-}
-.code-block-wrapper.collapsed pre::after{
-  content:'';
-  position:absolute;
-  bottom:0;left:0;right:0;
-  height:30px;
-  background:linear-gradient(to bottom, transparent, #1a1a26);
-  pointer-events:none;
-}
+    /* CODE BLOCK */
+    .code-block-wrapper { border-radius:var(--radius-sm); overflow:hidden; margin:8px 0; background:var(--code-bg); }
+    .code-block-header { display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:var(--code-header-bg); border-bottom:1px solid var(--border-subtle); }
+    .code-lang { font-size:11px; color:#9ca3af; text-transform:uppercase; font-weight:500; }
+    .code-btns { display:flex; gap:4px; }
+    .code-btn { padding:2px 8px; border:none; border-radius:4px; background:rgba(128,128,128,.15); color:var(--text-secondary); font-size:10px; cursor:pointer; transition:all var(--tr); }
+    .code-btn:hover { background:rgba(128,128,128,.25); }
+    .code-block-wrapper.collapsed pre { max-height:100px; overflow-y:hidden; overflow-x:auto; position:relative; }
+    .code-block-wrapper.collapsed pre::after { content:''; position:absolute; bottom:0; left:0; right:0; height:30px; background:linear-gradient(to bottom, transparent, var(--code-bg)); pointer-events:none; }
+    .bubble .code-block-wrapper pre,
+    .bubble .code-block-wrapper pre code { background:var(--code-bg) !important; color:var(--text-primary); }
+    .bubble .code-block-wrapper pre { padding:12px; overflow-x:auto; margin:0; }
 
-/* 强制代码块背景为深色，避免白色背景 */
-.bubble .code-block-wrapper pre,
-.bubble .code-block-wrapper pre code {
-  background: #1a1a26 !important;
-  color: #d4d4d4;
-}
-.bubble .code-block-wrapper pre {
-  padding:12px;
-  overflow-x:auto;
-  margin:0;
-}
+    .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
+    .bubble table { border-collapse:collapse; width:100%; margin:6px 0; font-size:12px; }
+    .bubble th, .bubble td { border:1px solid var(--border-subtle); padding:5px 8px; text-align:left; }
+    .bubble th { background:var(--bg-tertiary); }
+    .bubble a { color:var(--accent); }
+    .bubble img { max-width:100%; border-radius:var(--radius-sm); }
 
-.bubble blockquote{border-left:2px solid var(--accent);padding-left:12px;margin:6px 0;color:var(--text-secondary);opacity:.85}
-.bubble table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
-.bubble th,.bubble td{border:1px solid rgba(128,128,128,.15);padding:5px 8px;text-align:left}
-.bubble th{background:var(--bg-tertiary)}
-.bubble a{color:var(--accent)}
-.bubble img{max-width:100%;border-radius:var(--radius-sm)}
+    /* INPUT */
+    #input-bar { display:flex; align-items:flex-end; padding:6px 10px 2px; background:var(--bg-secondary); border-top:0.5px solid var(--border-soft); z-index:100; flex-shrink:0; }
+    .inp-wrap { flex:1; display:flex; align-items:flex-end; background:var(--bg-tertiary); border-radius:24px; padding:3px 6px 3px 14px; border:1.5px solid transparent; transition:all var(--tr); }
+    .inp-wrap:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
+    #input-bar textarea { flex:1; border:none; background:transparent; color:var(--text-primary); font-size:14.5px; line-height:1.4; resize:none; outline:none; padding:7px 0; max-height:220px; font-family:inherit; -webkit-appearance:none; }
+    #input-bar textarea::placeholder { color:var(--text-secondary); opacity:.5; }
 
-/* INPUT */
-#input-bar{display:flex;align-items:flex-end;padding:6px 10px 2px;background:var(--bg-secondary);border-top:0.5px solid rgba(128,128,128,.08);z-index:100;flex-shrink:0}
-.inp-wrap{flex:1;display:flex;align-items:flex-end;background:var(--bg-tertiary);border-radius:24px;padding:3px 6px 3px 14px;border:1.5px solid transparent;transition:all var(--tr)}
-.inp-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
-#input-bar textarea{flex:1;border:none;background:transparent;color:var(--text-primary);font-size:14.5px;line-height:1.4;resize:none;outline:none;padding:7px 0;max-height:220px;font-family:inherit;-webkit-appearance:none}
-#input-bar textarea::placeholder{color:var(--text-secondary);opacity:.5}
+    /* BOTTOM BAR */
+    #bottom-bar { display:flex; align-items:center; gap:6px; padding:2px 10px 3px; padding-bottom:calc(3px + var(--safe-b)); background:var(--bg-secondary); flex-shrink:0; position:relative; }
+    #model-chip-btn, #reasoning-btn { display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all var(--tr); flex-shrink:0; }
+    #model-chip-btn:active, #reasoning-btn:active { transform:scale(.95); border-color:var(--accent); }
+    #model-chip-btn .micon { font-size:16px; }
 
-/* BOTTOM BAR */
-#bottom-bar{display:flex;align-items:center;gap:6px;padding:2px 10px 3px;padding-bottom:calc(3px + var(--safe-b));background:var(--bg-secondary);flex-shrink:0;position:relative}
-#model-chip-btn,#reasoning-btn{
-  display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:14px;
-  border:1.5px solid rgba(128,128,128,.12);background:var(--bg-tertiary);
-  color:var(--text-primary);font-size:12px;font-weight:600;cursor:pointer;
-  white-space:nowrap;transition:all var(--tr);flex-shrink:0;
-}
-#model-chip-btn:active,#reasoning-btn:active{transform:scale(.95);border-color:var(--accent)}
-#model-chip-btn .micon{font-size:16px}
+    #send-btn, #stop-btn { width:36px; height:36px; border-radius:50%; border:none; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all var(--tr); margin-left:auto; }
+    #send-btn { background:var(--accent); color:#fff; }
+    #stop-btn { background:transparent; border:2px solid var(--danger); color:var(--danger); display:none; }
+    #send-btn:disabled { opacity:.3; cursor:not-allowed; }
+    #send-btn:not(:disabled):active { transform:scale(.88); }
+    #stop-btn:active { transform:scale(.88); }
 
-/* 发送/停止按钮 */
-#send-btn,#stop-btn{
-  width:36px;height:36px;border-radius:50%;border:none;
-  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:all var(--tr);
-  margin-left:auto;
-}
-#send-btn{background:var(--accent);color:#fff}
-#stop-btn{background:transparent;border:2px solid var(--danger);color:var(--danger);display:none}
-#send-btn:disabled{opacity:.3;cursor:not-allowed}
-#send-btn:not(:disabled):active{transform:scale(.88)}
-#stop-btn:active{transform:scale(.88)}
+    /* DROPDOWN (now positioned fixed by JS) */
+    .dropdown-menu { position:fixed; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(0,0,0,.15); z-index:500; min-width:140px; padding:4px; display:none; }
+    .dropdown-menu.show { display:block; }
+    .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); display:flex; align-items:center; gap:8px; color:var(--text-primary); transition:background .15s; }
+    .dropdown-menu .dropdown-item:hover,
+    .dropdown-menu .dropdown-item.selected { background:var(--bg-tertiary); }
+    .dropdown-menu .dropdown-item .check { margin-left:auto; color:var(--accent); font-weight:700; }
 
-/* DROPDOWN */
-.dropdown-menu{
-  position:absolute;bottom:calc(100% + 6px);left:0;
-  background:var(--bg-secondary);border:1px solid rgba(128,128,128,.15);
-  border-radius:var(--radius-md);box-shadow:0 4px 14px rgba(0,0,0,.15);
-  z-index:500;min-width:140px;padding:4px;display:none;
-}
-.dropdown-menu.show{display:block}
-.dropdown-menu .dropdown-item{
-  padding:8px 12px;font-size:13px;cursor:pointer;
-  border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;
-  color:var(--text-primary);transition:background .15s;
-}
-.dropdown-menu .dropdown-item:hover,.dropdown-menu .dropdown-item.selected{background:var(--bg-tertiary)}
-.dropdown-menu .dropdown-item .check{margin-left:auto;color:var(--accent);font-weight:700}
+    /* OVERLAY / DRAWER / SHEET */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; opacity:0; pointer-events:none; transition:opacity .3s; }
+    .overlay.show { opacity:1; pointer-events:auto; }
+    .drawer { position:fixed; top:0; bottom:0; width:320px; max-width:86vw; background:var(--bg-secondary); z-index:300; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 0 40px rgba(0,0,0,.15); }
+    .drawer-right { right:0; transform:translateX(100%); border-radius:var(--radius-lg) 0 0 var(--radius-lg); }
+    .drawer-right.open { transform:translateX(0); }
+    .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:0.5px solid rgba(128,128,128,.1); }
+    .drawer-head h3 { font-size:15px; font-weight:700; }
+    .drawer-body { flex:1; overflow-y:auto; padding:14px; -webkit-overflow-scrolling:touch; }
+    .sheet { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:700px; max-height:70vh; background:var(--bg-secondary); z-index:350; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 -4px 20px rgba(0,0,0,.2); }
+    .sheet.open { transform:translateX(-50%) translateY(0); }
+    .sheet-handle { width:32px; height:4px; border-radius:2px; background:rgba(128,128,128,.2); margin:10px auto 6px; flex-shrink:0; }
+    .sheet-title { font-size:14px; font-weight:700; text-align:center; padding:4px 0 10px; flex-shrink:0; }
+    .sheet-body { flex:1; overflow-y:auto; padding:0 16px 30px; }
 
-/* OVERLAY / DRAWER / SHEET */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
-.overlay.show{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;bottom:0;width:320px;max-width:86vw;background:var(--bg-secondary);z-index:300;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 0 40px rgba(0,0,0,.15)}
-.drawer-right{right:0;transform:translateX(100%);border-radius:var(--radius-lg) 0 0 var(--radius-lg)}
-.drawer-right.open{transform:translateX(0)}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:0.5px solid rgba(128,128,128,.1)}
-.drawer-head h3{font-size:15px;font-weight:700}
-.drawer-body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
-.sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:700px;max-height:70vh;background:var(--bg-secondary);z-index:350;border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 -4px 20px rgba(0,0,0,.2)}
-.sheet.open{transform:translateX(-50%) translateY(0)}
-.sheet-handle{width:32px;height:4px;border-radius:2px;background:rgba(128,128,128,.2);margin:10px auto 6px;flex-shrink:0}
-.sheet-title{font-size:14px;font-weight:700;text-align:center;padding:4px 0 10px;flex-shrink:0}
-.sheet-body{flex:1;overflow-y:auto;padding:0 16px 30px}
+    /* ASSISTANT CARDS */
+    .ast-grid { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
+    .ast-card { padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); display:flex; align-items:center; gap:12px; border:1.5px solid transparent; }
+    .ast-card:active { transform:scale(.98); border-color:var(--accent); }
+    .ast-card .ast-icon { font-size:32px; flex-shrink:0; }
+    .ast-card .ast-info { flex:1; min-width:0; }
+    .ast-card .ast-name { font-size:15px; font-weight:700; margin-bottom:2px; }
+    .ast-card .ast-meta { font-size:11px; color:var(--text-secondary); display:flex; gap:8px; align-items:center; }
+    .ast-card .ast-prompt { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }
+    .ast-card .ast-del { width:28px; height:28px; border:none; border-radius:50%; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0; transition:all var(--tr); }
+    .ast-card:hover .ast-del { opacity:1; }
+    .ast-card .ast-del:active { background:var(--danger); color:#fff; }
 
-/* ASSISTANT CARDS */
-.ast-grid{display:flex;flex-direction:column;gap:10px;padding:8px 0}
-.ast-card{padding:14px 16px;background:var(--bg-secondary);border-radius:var(--radius-md);cursor:pointer;transition:all var(--tr);display:flex;align-items:center;gap:12px;border:1.5px solid transparent}
-.ast-card:active{transform:scale(.98);border-color:var(--accent)}
-.ast-card .ast-icon{font-size:32px;flex-shrink:0}
-.ast-card .ast-info{flex:1;min-width:0}
-.ast-card .ast-name{font-size:15px;font-weight:700;margin-bottom:2px}
-.ast-card .ast-meta{font-size:11px;color:var(--text-secondary);display:flex;gap:8px;align-items:center}
-.ast-card .ast-prompt{font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
-.ast-card .ast-del{width:28px;height:28px;border:none;border-radius:50%;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:all var(--tr)}
-.ast-card:hover .ast-del{opacity:1}
-.ast-card .ast-del:active{background:var(--danger);color:#fff}
+    /* TOPIC LIST */
+    .topic-item { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
+    .topic-item:hover, .topic-item.active { background:var(--bg-tertiary); }
+    .topic-item.active { border-color:var(--accent-light); }
+    .topic-item .tinfo { flex:1; min-width:0; }
+    .topic-item .ttitle { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .topic-item .tmeta { font-size:10px; color:var(--text-secondary); }
+    .topic-item .tact { display:flex; gap:2px; flex-shrink:0; }
+    .topic-btn { width:26px; height:26px; border:none; border-radius:50%; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; transition:all var(--tr); }
+    .topic-btn:active { background:var(--bg-tertiary); }
+    .topic-btn.del:active { background:var(--danger); color:#fff; }
+    .topic-rename-input { flex:1; padding:5px 8px; border:1.5px solid var(--accent); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-weight:600; font-family:inherit; outline:none; min-width:0; }
+    .new-topic-btn { width:100%; padding:10px; border:2px dashed rgba(128,128,128,.2); border-radius:var(--radius-md); background:transparent; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:10px; transition:all var(--tr); }
+    .new-topic-btn:active { background:var(--accent-light); }
 
-/* TOPIC LIST */
-.topic-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--radius-md);cursor:pointer;transition:all var(--tr);margin-bottom:3px;border:1.5px solid transparent}
-.topic-item:hover,.topic-item.active{background:var(--bg-tertiary)}
-.topic-item.active{border-color:var(--accent-light)}
-.topic-item .tinfo{flex:1;min-width:0}
-.topic-item .ttitle{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topic-item .tmeta{font-size:10px;color:var(--text-secondary)}
-.topic-item .tact{display:flex;gap:2px;flex-shrink:0}
-.topic-btn{width:26px;height:26px;border:none;border-radius:50%;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
-.topic-btn:active{background:var(--bg-tertiary)}
-.topic-btn.del:active{background:var(--danger);color:#fff}
-.topic-rename-input{flex:1;padding:5px 8px;border:1.5px solid var(--accent);border-radius:var(--radius-sm);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;font-weight:600;font-family:inherit;outline:none;min-width:0}
-.new-topic-btn{width:100%;padding:10px;border:2px dashed rgba(128,128,128,.2);border-radius:var(--radius-md);background:transparent;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all var(--tr)}
-.new-topic-btn:active{background:var(--accent-light)}
+    /* SETTINGS (section titles removed) */
+    .section { margin-bottom:22px; }
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px; }
+    .field input, .field textarea, .field select { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--accent); }
+    .field textarea { resize:vertical; min-height:50px; }
+    .field .hint { font-size:10px; color:var(--text-secondary); margin-top:3px; }
+    .field .hint a { color:var(--accent); }
 
-/* SETTINGS */
-.section{margin-bottom:22px}
-.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
-.field input,.field textarea,.field select{width:100%;padding:9px 12px;border:1.5px solid rgba(128,128,128,.12);border-radius:var(--radius-sm);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;font-family:inherit;outline:none;transition:border-color var(--tr)}
-.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
-.field textarea{resize:vertical;min-height:50px}
-.field .hint{font-size:10px;color:var(--text-secondary);margin-top:3px}
-.field .hint a{color:var(--accent)}
+    .icon-btn { width:32px; height:32px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all var(--tr); }
+    .icon-btn:hover { background:var(--accent-light); color:var(--accent); }
+    .icon-btn:active { transform:scale(.92); }
 
-/* 全屏编辑按钮融入样式 */
-.icon-btn{
-  width:32px;height:32px;border-radius:8px;
-  border:1px solid rgba(128,128,128,.15);
-  background:var(--bg-tertiary);color:var(--text-secondary);
-  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all var(--tr);
-}
-.icon-btn:hover{background:var(--accent-light);color:var(--accent)}
-.icon-btn:active{transform:scale(.92)}
+    /* PROMPT TOOLBAR (kept for potential use) */
+    .prompt-toolbar { display:flex; gap:3px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+    .prompt-toolbar button { width:30px; height:28px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; transition:all var(--tr); font-family:var(--mono); }
+    .prompt-toolbar button:active { background:var(--accent-light); color:var(--accent); }
 
-/* System Prompt Toolbar */
-.prompt-toolbar{display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
-.prompt-toolbar button{width:30px;height:28px;border-radius:6px;border:1px solid rgba(128,128,128,.15);background:var(--bg-tertiary);color:var(--text-secondary);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:all var(--tr);font-family:var(--mono)}
-.prompt-toolbar button:active{background:var(--accent-light);color:var(--accent)}
-.prompt-toolbar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-.prompt-toolbar .tb-sep{width:1px;height:20px;background:rgba(128,128,128,.15);margin:0 3px}
+    /* FULLSCREEN PROMPT EDITOR */
+    .fs-prompt-overlay { position:fixed; inset:0; background:var(--bg-secondary); z-index:400; display:none; flex-direction:column; }
+    .fs-prompt-overlay.show { display:flex; }
+    .fs-prompt-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:0.5px solid rgba(128,128,128,.1); flex-shrink:0; }
+    .fs-prompt-head span { font-size:14px; font-weight:700; }
+    .fs-prompt-body { flex:1; display:flex; flex-direction:column; padding:14px; overflow:hidden; }
+    .fs-prompt-body textarea { flex:1; width:100%; padding:14px; border:2px solid var(--accent); border-radius:var(--radius-md); background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
 
-/* Fullscreen Prompt Editor */
-.fs-prompt-overlay{position:fixed;inset:0;background:var(--bg-secondary);z-index:400;display:none;flex-direction:column}
-.fs-prompt-overlay.show{display:flex}
-.fs-prompt-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:0.5px solid rgba(128,128,128,.1);flex-shrink:0}
-.fs-prompt-head span{font-size:14px;font-weight:700}
-.fs-prompt-body{flex:1;display:flex;flex-direction:column;padding:14px;overflow:hidden}
-.fs-prompt-body textarea{flex:1;width:100%;padding:14px;border:2px solid var(--accent);border-radius:var(--radius-md);background:var(--bg-tertiary);color:var(--text-primary);font-size:15px;font-family:inherit;line-height:1.7;resize:none;outline:none}
+    .slider-row { display:flex; align-items:center; gap:10px; }
+    .slider-row input[type="range"] { flex:1; -webkit-appearance:none; height:4px; border-radius:2px; background:var(--border-subtle); outline:none; padding:0; border:none; }
+    .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.2); }
 
-.slider-row{display:flex;align-items:center;gap:10px}
-.slider-row input[type="range"]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(128,128,128,.15);outline:none;padding:0;border:none}
-.slider-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .t-row { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--bg-tertiary); border-radius:var(--radius-sm); }
+    .t-row span { font-size:13px; font-weight:500; }
+    .tsw { position:relative; width:42px; height:24px; background:rgba(128,128,128,.2); border-radius:12px; cursor:pointer; transition:background var(--tr); flex-shrink:0; }
+    .tsw.active { background:var(--accent); }
+    .tsw::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform var(--tr); box-shadow:0 1px 2px rgba(0,0,0,.2); }
+    .tsw.active::after { transform:translateX(18px); }
 
-.t-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm)}
-.t-row span{font-size:13px;font-weight:500}
-.tsw{position:relative;width:42px;height:24px;background:rgba(128,128,128,.2);border-radius:12px;cursor:pointer;transition:background var(--tr);flex-shrink:0}
-.tsw.active{background:var(--accent)}
-.tsw::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform var(--tr);box-shadow:0 1px 2px rgba(0,0,0,.2)}
-.tsw.active::after{transform:translateX(18px)}
+    /* CONFIRM DIALOG */
+    .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; display:none; align-items:center; justify-content:center; }
+    .confirm-overlay.show { display:flex; }
+    .confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
+    .confirm-msg { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:18px; line-height:1.5; }
+    .confirm-actions { display:flex; gap:10px; justify-content:center; }
+    .confirm-actions button { flex:1; padding:10px 0; border-radius:14px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .confirm-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
+    .confirm-cancel:active { background:rgba(128,128,128,.12); }
+    .confirm-ok { background:var(--danger); color:#fff; }
+    .confirm-ok:active { opacity:.85; transform:scale(.97); }
 
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;color:#fff;padding:9px 18px;border-radius:18px;font-size:12px;z-index:500;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.scroll-down{position:fixed;bottom:140px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(128,128,128,.12);background:var(--bg-secondary);color:var(--text-primary);font-size:14px;cursor:pointer;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.08);display:none;align-items:center;justify-content:center}
-.scroll-down.show{display:flex}
-.btn-primary{padding:10px 20px;border-radius:18px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;width:100%;transition:all var(--tr)}
-.btn-primary:active{transform:scale(.97);opacity:.85}
-.empty{text-align:center;padding:36px 20px;color:var(--text-secondary);font-size:13px}
-.page{display:none;flex-direction:column;height:100%}
-.page.active{display:flex}
-.chat-page{display:none;flex-direction:column;height:100%}
-.chat-page.active{display:flex}
-.data-actions{display:flex;gap:6px}
-.data-actions button{flex:1;padding:8px 8px;border-radius:12px;border:1.5px solid rgba(128,128,128,.12);background:var(--bg-tertiary);color:var(--text-primary);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--tr)}
-.data-actions button:active{border-color:var(--accent)}
-
-</style>
+    /* MISC */
+    .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:9px 18px; border-radius:18px; font-size:12px; z-index:500; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .scroll-down { position:fixed; bottom:140px; right:16px; width:34px; height:34px; border-radius:50%; border:1px solid var(--border-subtle); background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; align-items:center; justify-content:center; }
+    .scroll-down.show { display:flex; }
+    .btn-primary { padding:10px 20px; border-radius:18px; border:none; background:var(--accent); color:#fff; font-size:13px; font-weight:600; cursor:pointer; width:100%; transition:all var(--tr); }
+    .btn-primary:active { transform:scale(.97); opacity:.85; }
+    .empty { text-align:center; padding:36px 20px; color:var(--text-secondary); font-size:13px; }
+    .page { display:none; flex-direction:column; height:100%; }
+    .page.active { display:flex; }
+    .chat-page { display:none; flex-direction:column; height:100%; }
+    .chat-page.active { display:flex; }
+    .data-actions { display:flex; gap:6px; }
+    .data-actions button { flex:1; padding:8px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:11px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .data-actions button:active { border-color:var(--accent); }
+  </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ASSISTANTS PAGE -->
-<div class="page active" id="ast-page">
-  <div class="navbar">
-    <div style="width:34px"></div>
-    <div class="nav-center"><span class="asst-name">AI Chat</span></div>
-    <button class="nav-btn accent" id="add-ast-btn">＋</button>
+  <!-- ASSISTANTS PAGE -->
+  <div class="page active" id="ast-page">
+    <div class="navbar">
+      <div style="width:34px"></div>
+      <div class="nav-center"><span class="asst-name">AI Chat</span></div>
+      <button class="nav-btn accent" id="add-ast-btn">＋</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch">
+      <div class="ast-grid" id="ast-list"></div>
+    </div>
   </div>
-  <div style="flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch">
-    <div class="ast-grid" id="ast-list"></div>
-  </div>
-</div>
 
-<!-- CHAT PAGE -->
-<div class="chat-page" id="chat-page">
-  <div class="navbar">
-    <div class="nav-left"><button class="nav-btn" id="chat-back">←</button></div>
-    <div class="nav-center" id="chat-title-area">
-      <span class="asst-name" id="chat-asst-name">助手</span>
-      <div class="topic-row" id="topic-toggle">
-        <span class="topic-name" id="chat-topic-name">新话题</span>
-        <span class="topic-arr">▾</span>
+  <!-- CHAT PAGE -->
+  <div class="chat-page" id="chat-page">
+    <div class="navbar">
+      <div class="nav-left"><button class="nav-btn" id="chat-back">←</button></div>
+      <div class="nav-center" id="chat-title-area">
+        <span class="asst-name" id="chat-asst-name">助手</span>
+        <div class="topic-row" id="topic-toggle">
+          <span class="topic-name" id="chat-topic-name">新话题</span>
+          <span class="topic-arr">▾</span>
+        </div>
+      </div>
+      <div class="nav-right"><button class="nav-btn" id="settings-btn">⚙️</button></div>
+    </div>
+    <div id="chat-container"><div id="messages"></div></div>
+    <button class="scroll-down" id="scroll-down">↓</button>
+    <div id="input-bar">
+      <div class="inp-wrap"><textarea id="user-input" rows="1" placeholder="输入消息，Enter 换行..." autofocus></textarea></div>
+    </div>
+    <div id="bottom-bar">
+      <button id="model-chip-btn"><span class="micon">🧠</span><span id="model-chip-label">模型</span> ▾</button>
+      <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> ▾</button>
+      <button id="send-btn">➤</button><button id="stop-btn">■</button>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="edit-overlay" id="edit-overlay">
+    <div class="edit-card">
+      <div class="edit-card-body">
+        <textarea id="edit-textarea" placeholder="输入消息内容…"></textarea>
+      </div>
+      <div class="edit-card-foot">
+        <button class="edit-cancel-btn" id="edit-cancel-btn">取消</button>
+        <button class="edit-save-btn" id="edit-save-btn">💾 保存</button>
       </div>
     </div>
-    <div class="nav-right"><button class="nav-btn" id="settings-btn">⚙️</button></div>
   </div>
-  <div id="chat-container"><div id="messages"></div></div>
-  <button class="scroll-down" id="scroll-down">↓</button>
-  <div id="input-bar">
-    <div class="inp-wrap"><textarea id="user-input" rows="1" placeholder="输入消息，Enter 换行..." autofocus></textarea></div>
-  </div>
-  <div id="bottom-bar">
-    <button id="model-chip-btn"><span class="micon">🧠</span><span id="model-chip-label">模型</span> ▾</button>
-    <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> ▾</button>
-    <button id="send-btn">➤</button><button id="stop-btn">■</button>
-  </div>
-</div>
 
-<!-- EDIT MODAL -->
-<div class="edit-overlay" id="edit-overlay">
-  <div class="edit-card">
-    <div class="edit-card-body">
-      <textarea id="edit-textarea" placeholder="输入消息内容…"></textarea>
-    </div>
-    <div class="edit-card-foot">
-      <button class="edit-cancel-btn" id="edit-cancel-btn">取消</button>
-      <button class="edit-save-btn" id="edit-save-btn">💾 保存</button>
+  <!-- CONFIRM DIALOG -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-card">
+      <div class="confirm-msg" id="confirm-msg">确定要执行此操作吗？</div>
+      <div class="confirm-actions">
+        <button class="confirm-cancel" id="confirm-cancel">取消</button>
+        <button class="confirm-ok" id="confirm-ok">确定</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- OVERLAY -->
-<div class="overlay" id="overlay"></div>
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
 
-<!-- TOPICS DRAWER -->
-<div class="drawer drawer-right" id="topics-drawer">
-  <div class="drawer-head"><h3>📋 历史话题</h3><button class="nav-btn" id="close-topics">✕</button></div>
-  <div class="drawer-body">
-    <button class="new-topic-btn" id="new-topic">＋ 新建话题</button>
-    <div id="topic-list"></div>
-  </div>
-</div>
-
-<!-- SETTINGS DRAWER -->
-<div class="drawer drawer-right" id="settings-drawer">
-  <div class="drawer-head"><h3>⚙️ 设置</h3><button class="nav-btn" id="close-settings">✕</button></div>
-  <div class="drawer-body" id="settings-body"></div>
-</div>
-
-<!-- ADD ASSISTANT SHEET -->
-<div class="sheet" id="add-ast-sheet">
-  <div class="sheet-handle"></div><div class="sheet-title">添加助手</div>
-  <div class="sheet-body">
-    <div class="field"><label>助手名称</label><input type="text" id="new-ast-name" placeholder="如 编程助手"></div>
-    <div class="field"><label>系统提示词</label><textarea id="new-ast-prompt" rows="3">你是一个有帮助的AI助手，请用简洁清晰的语言回答。</textarea></div>
-    <button class="btn-primary" id="create-ast" style="margin-top:8px">✨ 创建助手</button>
-  </div>
-</div>
-
-<!-- FULLSCREEN PROMPT EDITOR -->
-<div class="fs-prompt-overlay" id="fs-prompt-overlay">
-  <div class="fs-prompt-head">
-    <span>✏️ 编辑系统提示词</span>
-    <button class="nav-btn" id="fs-prompt-close">✕</button>
-  </div>
-  <div class="fs-prompt-body">
-    <div class="prompt-toolbar" id="fs-prompt-tb">
-      <button data-md="bold" title="粗体">B</button>
-      <button data-md="italic" title="斜体"><i>I</i></button>
-      <button data-md="code" title="代码">&lt;/&gt;</button>
-      <button data-md="heading" title="标题">H</button>
-      <button data-md="list" title="列表">•</button>
-      <button data-md="quote" title="引用">❝</button>
+  <!-- TOPICS DRAWER -->
+  <div class="drawer drawer-right" id="topics-drawer">
+    <div class="drawer-head"><h3>📋 历史话题</h3><button class="nav-btn" id="close-topics">✕</button></div>
+    <div class="drawer-body">
+      <button class="new-topic-btn" id="new-topic">＋ 新建话题</button>
+      <div id="topic-list"></div>
     </div>
-    <textarea id="fs-prompt-textarea" placeholder="输入系统提示词…"></textarea>
   </div>
-</div>
 
-<!-- 通用下拉菜单 -->
-<div class="dropdown-menu" id="dropdown-menu"></div>
+  <!-- SETTINGS DRAWER -->
+  <div class="drawer drawer-right" id="settings-drawer">
+    <div class="drawer-head"><h3>⚙️ 设置</h3><button class="nav-btn" id="close-settings">✕</button></div>
+    <div class="drawer-body" id="settings-body"></div>
+  </div>
 
-<div class="toast" id="toast"></div>
+  <!-- ADD ASSISTANT SHEET -->
+  <div class="sheet" id="add-ast-sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">添加助手</div>
+    <div class="sheet-body">
+      <div class="field"><label>助手名称</label><input type="text" id="new-ast-name" placeholder="如 编程助手"></div>
+      <div class="field"><label>系统提示词</label><textarea id="new-ast-prompt" rows="3">你是一个有帮助的AI助手，请用简洁清晰的语言回答。</textarea></div>
+      <button class="btn-primary" id="create-ast" style="margin-top:8px">✨ 创建助手</button>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN PROMPT EDITOR -->
+  <div class="fs-prompt-overlay" id="fs-prompt-overlay">
+    <div class="fs-prompt-head">
+      <span>✏️ 编辑系统提示词</span>
+      <button class="nav-btn" id="fs-prompt-close">✕</button>
+    </div>
+    <div class="fs-prompt-body">
+      <div class="prompt-toolbar" id="fs-prompt-tb">
+        <button data-md="bold" title="粗体">B</button>
+        <button data-md="italic" title="斜体"><i>I</i></button>
+        <button data-md="code" title="代码">&lt;/&gt;</button>
+        <button data-md="heading" title="标题">H</button>
+        <button data-md="list" title="列表">•</button>
+        <button data-md="quote" title="引用">❝</button>
+      </div>
+      <textarea id="fs-prompt-textarea" placeholder="输入系统提示词…"></textarea>
+    </div>
+  </div>
+
+  <!-- 通用下拉菜单 -->
+  <div class="dropdown-menu" id="dropdown-menu"></div>
+
+  <div class="toast" id="toast"></div>
 </div>
 
 <script>
@@ -541,6 +430,8 @@ var STORAGE_KEY = 'ai_chat_v8';
 var state = loadState();
 var abortCtrl = null, streaming = false;
 var editingMsg = null, editingIdx = -1, editingConv = null;
+
+var reasoningTimers = {};
 
 var DS_MODELS = [
   { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎', desc: '最强推理' },
@@ -621,55 +512,52 @@ function toast(m,d){
 }
 function $1(s){ return document.getElementById(s); }
 
-// ==================== 通用复制函数（修复失败） ====================
+// ==================== COPY ====================
 function copyText(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text).catch(function(err) {
-      // 回退到传统方法
-      fallbackCopy(text);
-    });
+    return navigator.clipboard.writeText(text).catch(function() { fallbackCopy(text); });
   } else {
     fallbackCopy(text);
     return Promise.resolve();
   }
 }
-
 function fallbackCopy(text) {
-  var textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.left = '-9999px';
-  document.body.appendChild(textarea);
-  textarea.select();
-  try {
-    document.execCommand('copy');
-    toast('已复制');
-  } catch (err) {
-    toast('复制失败，请手动复制');
-  }
-  document.body.removeChild(textarea);
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); toast('已复制'); } catch (err) { toast('复制失败，请手动复制'); }
+  document.body.removeChild(ta);
 }
 
-// ==================== PWA MANIFEST ====================
+// ==================== CONFIRM DIALOG ====================
+function showConfirm(msg) {
+  return new Promise(function(resolve) {
+    $1('confirm-msg').textContent = msg;
+    $1('confirm-overlay').classList.add('show');
+    function cleanup() {
+      $1('confirm-overlay').classList.remove('show');
+      $1('confirm-ok').removeEventListener('click', onOk);
+      $1('confirm-cancel').removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
+    $1('confirm-ok').addEventListener('click', onOk);
+    $1('confirm-cancel').addEventListener('click', onCancel);
+  });
+}
+
+// ==================== PWA ====================
 function setupPWA() {
   var manifest = {
-    name: 'AI Chat',
-    short_name: 'AI Chat',
-    description: 'DeepSeek AI 聊天助手',
-    start_url: location.href.split('?')[0],
-    display: 'standalone',
-    orientation: 'portrait',
-    background_color: '#f0f0f5',
-    theme_color: '#4f46e5',
-    icons: [{
-      src: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>'),
-      sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable'
-    }, {
-      src: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="#4f46e5" width="512" height="512" rx="96"/><text x="256" y="330" text-anchor="middle" font-size="256">🤖</text></svg>'),
-      sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable'
-    }]
+    name: 'AI Chat', short_name: 'AI Chat', description: 'DeepSeek AI 聊天助手',
+    start_url: location.href.split('?')[0], display: 'standalone', orientation: 'portrait',
+    background_color: '#f0f0f5', theme_color: '#4f46e5',
+    icons: [
+      { src: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>'), sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' },
+      { src: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="#4f46e5" width="512" height="512" rx="96"/><text x="256" y="330" text-anchor="middle" font-size="256">🤖</text></svg>'), sizes:'512x512', type:'image/svg+xml', purpose:'any maskable' }
+    ]
   };
-  var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  var blob = new Blob([JSON.stringify(manifest)],{ type:'application/json' });
   $1('pwa-manifest').href = URL.createObjectURL(blob);
 }
 
@@ -728,7 +616,6 @@ function renderChatPage() {
 marked.setOptions({ breaks:true, gfm:true });
 function md(t){ if(!t) return ''; try{ return marked.parse(t); }catch(e){ return esc(t).replace(/\n/g,'<br>'); } }
 
-/* 增强代码块：添加语言标签、复制/折叠按钮，默认折叠 */
 function enhanceCodeBlocks(container) {
   var pres = container.querySelectorAll('pre');
   for (var i = 0; i < pres.length; i++) {
@@ -740,25 +627,19 @@ function enhanceCodeBlocks(container) {
         var match = code.className.match(/language-(\w+)/);
         if (match) lang = match[1];
       }
-
       var wrapper = document.createElement('div');
       wrapper.className = 'code-block-wrapper collapsed';
-
       var header = document.createElement('div');
       header.className = 'code-block-header';
-
       var langSpan = document.createElement('span');
       langSpan.className = 'code-lang';
       langSpan.textContent = lang || 'code';
       header.appendChild(langSpan);
-
       var btnGroup = document.createElement('div');
       btnGroup.className = 'code-btns';
 
-      // 复制按钮（使用通用复制函数）
       var copyBtn = document.createElement('button');
-      copyBtn.className = 'code-btn';
-      copyBtn.textContent = '复制';
+      copyBtn.className = 'code-btn'; copyBtn.textContent = '复制';
       copyBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         var text = (code ? code.textContent : pre.textContent) || '';
@@ -769,10 +650,8 @@ function enhanceCodeBlocks(container) {
       });
       btnGroup.appendChild(copyBtn);
 
-      // 折叠/展开按钮
       var foldBtn = document.createElement('button');
-      foldBtn.className = 'code-btn fold-btn';
-      foldBtn.textContent = '展开';
+      foldBtn.className = 'code-btn fold-btn'; foldBtn.textContent = '展开';
       foldBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         wrapper.classList.toggle('collapsed');
@@ -784,7 +663,6 @@ function enhanceCodeBlocks(container) {
       pre.parentNode.insertBefore(wrapper, pre);
       wrapper.appendChild(header);
       wrapper.appendChild(pre);
-
       if (code && !code.dataset.hl) {
         try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {}
       }
@@ -803,7 +681,8 @@ function makeMsg(msg, idx, conv){
   if(msg.reasoning){
     var rb=document.createElement('div');
     rb.className='rblock';
-    rb.innerHTML='<button class="rhead" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">🧠 思考过程 <span class="arr">▶</span></button><div class="rbody">'+esc(msg.reasoning)+'</div>';
+    var timeStr = msg.reasoningTime ? '⏱ '+msg.reasoningTime+'s' : '';
+    rb.innerHTML='<button class="rhead" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">🧠 思考过程 <span class="arr">▶</span><span class="reasoning-time">'+timeStr+'</span></button><div class="rbody">'+esc(msg.reasoning)+'</div>';
     bub.appendChild(rb);
   }
 
@@ -815,9 +694,11 @@ function makeMsg(msg, idx, conv){
 
   d.appendChild(bub);
 
-  // 操作栏
   var act=document.createElement('div');
   act.className='msg-actions';
+
+  var right = document.createElement('div');
+  right.className = 'actions-right';
 
   if(msg.role==='assistant'){
     var m = getModel(msg.modelId || (getActiveAst()||{}).modelId);
@@ -825,69 +706,57 @@ function makeMsg(msg, idx, conv){
     badge.className='badge';
     badge.textContent = m.icon+' '+m.name;
     act.appendChild(badge);
-
-    var right = document.createElement('div');
-    right.className='actions-right';
-    // 四个按钮：复制、编辑、删除、重新生成
     right.innerHTML = '<button data-a="cp">📋</button><button data-a="ed">✏️</button><button data-a="del">🗑</button><button data-a="re">🔄</button>';
-    act.appendChild(right);
   } else {
-    // 用户消息四个按钮：复制、编辑、删除、重新发送
-    var right = document.createElement('div');
-    right.className='actions-right';
     right.innerHTML = '<button data-a="cp">📋</button><button data-a="ed">✏️</button><button data-a="del">🗑</button><button data-a="re">↩️</button>';
-    act.appendChild(right);
   }
+  act.appendChild(right);
 
-  // 绑定事件
-  var cpBtn = act.querySelector('[data-a="cp"]');
+  // event binding
+  var cpBtn = right.querySelector('[data-a="cp"]');
   if(cpBtn) cpBtn.addEventListener('click', function(e){
     e.stopPropagation();
     copyText(msg.content).then(function() { toast('已复制'); });
   });
 
-  var edBtn = act.querySelector('[data-a="ed"]');
+  var edBtn = right.querySelector('[data-a="ed"]');
   if(edBtn) edBtn.addEventListener('click', function(e){
     e.stopPropagation();
     openEditModal(msg, idx, conv);
   });
 
-  var delBtn = act.querySelector('[data-a="del"]');
+  var delBtn = right.querySelector('[data-a="del"]');
   if(delBtn) delBtn.addEventListener('click', function(e){
     e.stopPropagation();
     deleteMessage(idx);
   });
 
-  var reBtn = act.querySelector('[data-a="re"]');
+  var reBtn = right.querySelector('[data-a="re"]');
   if(reBtn) reBtn.addEventListener('click', function(e){
     e.stopPropagation();
-    if(msg.role==='assistant'){
-      regenerateMessage(idx);
-    } else {
-      resendUserMessage(idx);
-    }
+    if(msg.role==='assistant'){ regenerateMessage(idx); }
+    else { resendUserMessage(idx); }
   });
 
   d.appendChild(act);
   return d;
 }
 
-// 删除单条消息
-function deleteMessage(idx) {
+async function deleteMessage(idx) {
   var conv = getActiveConv();
   if (!conv || idx < 0 || idx >= conv.messages.length) return;
+  if (!(await showConfirm('确定要删除这条消息吗？'))) return;
   conv.messages.splice(idx, 1);
   saveState();
   renderMessages();
-  scrollBottom(false);
 }
 
-// 重新生成（从指定 AI 消息位置重发上一条用户消息）
-function regenerateMessage(idx) {
+async function regenerateMessage(idx) {
   if (streaming) return;
   var conv = getActiveConv();
   if (!conv || idx < 0 || idx >= conv.messages.length) return;
   if (conv.messages[idx].role !== 'assistant') return;
+  if (!(await showConfirm('确定要重新生成此回复吗？'))) return;
   conv.messages.splice(idx);
   if (conv.messages.length === 0 || conv.messages[conv.messages.length - 1].role !== 'user') {
     toast('无法重新生成：缺少用户消息');
@@ -901,16 +770,14 @@ function regenerateMessage(idx) {
   sendMessage();
 }
 
-// 重新发送用户消息（用原内容重新发送）
-function resendUserMessage(idx) {
+async function resendUserMessage(idx) {
   if (streaming) return;
   var conv = getActiveConv();
   if (!conv || idx < 0 || idx >= conv.messages.length) return;
   var msg = conv.messages[idx];
   if (msg.role !== 'user') return;
-  // 删除该用户消息以及之后所有消息
+  if (!(await showConfirm('确定要重新发送这条消息吗？'))) return;
   conv.messages.splice(idx);
-  // 将原内容填入输入框并触发发送
   $1('user-input').value = msg.content;
   saveState();
   renderMessages();
@@ -927,7 +794,6 @@ function renderMessages() {
   if(!c||c.messages.length===0){ wel.style.display='flex'; return; }
   wel.style.display='none';
   for(var j=0;j<c.messages.length;j++) msgs.appendChild(makeMsg(c.messages[j],j,c));
-  scrollBottom(false);
 }
 
 // ==================== EDIT MODAL ====================
@@ -937,15 +803,12 @@ function openEditModal(msg,idx,conv){
   $1('edit-overlay').classList.add('show');
   $1('edit-textarea').focus();
 }
-
 function closeEditModal(){ $1('edit-overlay').classList.remove('show'); editingMsg=null; editingIdx=-1; editingConv=null; }
-
 function saveEdit(){
   if(!editingMsg||!editingConv) return;
   var c=$1('edit-textarea').value.trim(); if(!c){ toast('内容不能为空'); return; }
-  editingMsg.content=c; saveState(); renderMessages(); scrollBottom(false); closeEditModal(); toast('✅ 已保存');
+  editingMsg.content=c; saveState(); renderMessages(); closeEditModal(); toast('✅ 已保存');
 }
-
 $1('edit-cancel-btn').addEventListener('click',closeEditModal);
 $1('edit-save-btn').addEventListener('click',saveEdit);
 $1('edit-textarea').addEventListener('keydown',function(e){ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); saveEdit(); } });
@@ -987,7 +850,6 @@ $1('new-topic').addEventListener('click',function(){ var a=getActiveAst(); if(!a
 // ==================== SETTINGS ====================
 function setupPromptToolbar(textareaId) {
   var ta = $1(textareaId);
-
   function insert(prefix, suffix) {
     suffix = suffix || '';
     var s = ta.selectionStart, e = ta.selectionEnd;
@@ -1000,7 +862,6 @@ function setupPromptToolbar(textareaId) {
     ta.setSelectionRange(newPos, newPos);
     ta.dispatchEvent(new Event('input'));
   }
-
   return {
     bold: function() { insert('**', '**'); },
     italic: function() { insert('*', '*'); },
@@ -1015,26 +876,33 @@ function renderSettings() {
   var a = getActiveAst(); if (!a) return;
   var h = '';
 
-  h += '<div class="section"><div class="section-title">📌 助手设置</div>';
+  // 助手设置区域（无标题）
+  h += '<div class="section">';
   h += '<div class="field"><label>助手名称</label><input type="text" id="s-name" value="' + esc(a.name) + '"></div>';
-
   h += '<div class="field"><label>系统提示词</label>';
   h += '<div style="position:relative;">';
   h += '<textarea id="s-prompt" rows="4">' + esc(a.systemPrompt) + '</textarea>';
   h += '<button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute; top:4px; right:4px;">⛶</button>';
   h += '</div></div>';
-
   h += '<div class="field"><label>温度 Temperature：<strong id="s-tval">' + a.temperature.toFixed(2) + '</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="' + a.temperature + '"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>';
-
   h += '<div class="field"><label>Top P：<strong id="s-pval">' + a.topP.toFixed(2) + '</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="' + a.topP + '"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>';
   h += '<div class="hint" style="margin-top:-8px;margin-bottom:10px;">⚠️ 思考模式（high/max）下 temperature/top_p 不生效</div>';
   h += '</div>';
 
-  h += '<div class="section"><div class="section-title">🔑 DeepSeek API</div><div class="field"><label>API Key</label><input type="password" id="s-dskey" value="' + esc(state.deepseekKey) + '" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div></div>';
+  // 外观区域
+  h += '<div class="section">';
+  h += '<div class="t-row"><span id="theme-label">' + (state.darkMode ? '🌙 暗色' : '☀️ 亮色') + '</span><div class="tsw' + (state.darkMode ? ' active' : '') + '" id="s-theme"></div></div>';
+  h += '</div>';
 
-  h += '<div class="section"><div class="section-title">🎨 外观</div><div class="t-row"><span id="theme-label">' + (state.darkMode ? '🌙 暗色' : '☀️ 亮色') + '</span><div class="tsw' + (state.darkMode ? ' active' : '') + '" id="s-theme"></div></div></div>';
+  // API 设置
+  h += '<div class="section">';
+  h += '<div class="field"><label>API Key</label><input type="password" id="s-dskey" value="' + esc(state.deepseekKey) + '" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div>';
+  h += '</div>';
 
-  h += '<div class="section"><div class="section-title">💾 数据管理</div><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div><input type="file" id="import-file" accept=".json" style="display:none;"></div>';
+  // 数据管理
+  h += '<div class="section">';
+  h += '<div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div><input type="file" id="import-file" accept=".json" style="display:none;">';
+  h += '</div>';
 
   h += '<button class="btn-primary" id="s-save" style="margin-top:8px">💾 保存设置</button>';
 
@@ -1056,9 +924,9 @@ function renderSettings() {
   $1('data-export').addEventListener('click', function() {
     var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
-    var el = document.createElement('a'); el.href = url;
-    el.download = 'ai-chat-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-    el.click(); URL.revokeObjectURL(url); toast('✅ 已导出备份');
+    var a = document.createElement('a'); a.href = url;
+    a.download = 'ai-chat-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click(); URL.revokeObjectURL(url); toast('✅ 已导出备份');
   });
   $1('data-import-btn').addEventListener('click', function() { $1('import-file').click(); });
   $1('import-file').addEventListener('change', function(e) {
@@ -1110,7 +978,7 @@ $1('fs-prompt-close').addEventListener('click', function() {
   $1('fs-prompt-overlay').classList.remove('show');
 });
 
-// ==================== DROPDOWN LOGIC ====================
+// ==================== DROPDOWN (fixed positioning, prefers upward) ====================
 function showDropdown(anchor, items, onSelect) {
   var dd = $1('dropdown-menu');
   dd.innerHTML = '';
@@ -1126,20 +994,29 @@ function showDropdown(anchor, items, onSelect) {
     });
     dd.appendChild(div);
   });
+
+  // 先临时显示以获取高度
+  dd.style.display = 'block';
+  dd.style.visibility = 'hidden';
+  var menuHeight = dd.offsetHeight;
   var rect = anchor.getBoundingClientRect();
-  dd.style.bottom = 'auto';
-  dd.style.top = 'auto';
-  var spaceBelow = window.innerHeight - rect.bottom;
-  var spaceAbove = rect.top;
-  var ddHeight = Math.min(items.length * 36 + 8, 200);
-  if (spaceBelow < ddHeight && spaceAbove > ddHeight) {
-    dd.style.top = rect.top - ddHeight - 4 + 'px';
-    dd.style.left = rect.left + 'px';
+  var top;
+  // 优先显示在按钮上方
+  if (rect.top - menuHeight - 4 > 0) {
+    top = rect.top - menuHeight - 4;
   } else {
-    dd.style.top = rect.bottom + 4 + 'px';
-    dd.style.left = rect.left + 'px';
+    top = rect.bottom + 4;
   }
+  // 若下方也放不下，则贴近底部
+  if (top + menuHeight > window.innerHeight) {
+    top = window.innerHeight - menuHeight - 10;
+  }
+  var left = Math.max(5, Math.min(rect.left, window.innerWidth - dd.offsetWidth - 5));
+  dd.style.top = top + 'px';
+  dd.style.left = left + 'px';
+  dd.style.visibility = 'visible';
   dd.classList.add('show');
+
   setTimeout(function(){
     document.addEventListener('click', hideDropdown, { once: true });
   }, 10);
@@ -1147,6 +1024,7 @@ function showDropdown(anchor, items, onSelect) {
 
 function hideDropdown() {
   $1('dropdown-menu').classList.remove('show');
+  $1('dropdown-menu').style.display = 'none';
 }
 
 // ==================== MODEL & REASONING DROPDOWNS ====================
@@ -1183,6 +1061,14 @@ $1('reasoning-btn').addEventListener('click', function(e) {
   });
 });
 
+// ==================== SCROLL BEHAVIOR (only on user actions, never during streaming) ====================
+function scrollBottom(force) {
+  if (force !== true) return; // 除非强制，否则不自动滚动
+  requestAnimationFrame(function() {
+    $1('chat-container').scrollTo({ top: $1('chat-container').scrollHeight, behavior: 'smooth' });
+  });
+}
+
 // ==================== CHAT LOGIC ====================
 async function sendMessage() {
   if (streaming) return;
@@ -1192,9 +1078,9 @@ async function sendMessage() {
   $1('user-input').value = ''; $1('user-input').style.height = 'auto';
   var c = ensureConv(a);
   c.messages.push({ role: 'user', content: txt }); updateConvTitle(c);
-  saveState(); renderMessages(); scrollBottom();
+  saveState(); renderMessages(); scrollBottom(true); // 发送后滚动一次
 
-  var am = { role: 'assistant', content: '', reasoning: '', modelId: a.modelId };
+  var am = { role: 'assistant', content: '', reasoning: '', reasoningTime: null, reasoningStartTime: null, modelId: a.modelId };
   c.messages.push(am); var ai = c.messages.length - 1; saveState(); renderMessages();
   setStreamingUI(true); streaming = true;
 
@@ -1239,8 +1125,19 @@ async function sendMessage() {
           var json = JSON.parse(data);
           var delta = json.choices && json.choices[0] ? json.choices[0].delta : null;
           if (!delta) continue;
+          if (delta.reasoning_content) {
+            if (!am.reasoning) {
+              am.reasoningStartTime = Date.now();
+              var timerId = setInterval(function() {
+                var elapsed = ((Date.now() - am.reasoningStartTime) / 1000).toFixed(1);
+                var el2 = document.querySelector('#messages .msg.ai[data-index="'+ai+'"] .reasoning-time');
+                if (el2) el2.textContent = elapsed + 's';
+              }, 200);
+              reasoningTimers[ai] = timerId;
+            }
+            am.reasoning += delta.reasoning_content;
+          }
           if (delta.content) am.content += delta.content;
-          if (delta.reasoning_content) am.reasoning += delta.reasoning_content;
           updateLive(ai, am);
         } catch (e) {}
       }
@@ -1250,7 +1147,19 @@ async function sendMessage() {
   } finally {
     streaming = false; abortCtrl = null;
     setStreamingUI(false);
-    saveState(); renderMessages(); scrollBottom();
+
+    if (reasoningTimers[ai]) {
+      clearInterval(reasoningTimers[ai]);
+      delete reasoningTimers[ai];
+    }
+    if (am.reasoningStartTime) {
+      am.reasoningTime = ((Date.now() - am.reasoningStartTime) / 1000).toFixed(1);
+    } else {
+      am.reasoningTime = null;
+    }
+    delete am.reasoningStartTime;
+    saveState(); renderMessages();
+    // no auto scroll after streaming finishes
   }
 }
 
@@ -1266,7 +1175,7 @@ function updateLive(idx, msg) {
   var rb = bub.querySelector('.rblock');
   if (msg.reasoning && !rb) {
     rb = document.createElement('div'); rb.className = 'rblock';
-    rb.innerHTML = '<button class="rhead open">🧠 思考过程 <span class="arr">▶</span></button><div class="rbody open"></div>';
+    rb.innerHTML = '<button class="rhead open">🧠 思考过程 <span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody open"></div>';
     bub.insertBefore(rb, bub.firstChild);
   }
   if (rb && msg.reasoning) { var rc = rb.querySelector('.rbody'); if (rc) rc.textContent = msg.reasoning; }
@@ -1274,20 +1183,10 @@ function updateLive(idx, msg) {
   if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
   mc.innerHTML = md(msg.content);
   enhanceCodeBlocks(bub);
-  scrollBottom();
+  // no scroll during streaming
 }
 
 function stopStream() { if (abortCtrl) abortCtrl.abort(); }
-
-function retryLast() {
-  if (streaming) return;
-  var c = getActiveConv(); if (!c || !c.messages.length) return;
-  while (c.messages.length && c.messages[c.messages.length - 1].role === 'assistant') c.messages.pop();
-  if (!c.messages.length) return;
-  var um = c.messages[c.messages.length - 1]; if (um.role !== 'user') return;
-  $1('user-input').value = um.content; c.messages.pop();
-  saveState(); renderMessages(); sendMessage();
-}
 
 function updateConvTitle(c) {
   if (c.title === '新话题' && c.messages.length > 0) {
@@ -1316,7 +1215,7 @@ $1('chat-container').addEventListener('scroll', function() {
   var c = $1('chat-container');
   $1('scroll-down').classList.toggle('show', c.scrollHeight - c.scrollTop - c.clientHeight > 200 && $1('messages').children.length > 1);
 });
-$1('scroll-down').addEventListener('click', function() { scrollBottom(); });
+$1('scroll-down').addEventListener('click', function() { scrollBottom(true); });
 $1('chat-back').addEventListener('click', goToAsts);
 $1('topic-toggle').addEventListener('click', function(e) { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
 $1('settings-btn').addEventListener('click', function() { renderSettings(); openDrawer('settings-drawer'); });
@@ -1324,13 +1223,6 @@ $1('close-topics').addEventListener('click', closeAll);
 $1('close-settings').addEventListener('click', closeAll);
 $1('overlay').addEventListener('click', closeAll);
 
-// 移除 PWA 安装弹窗相关代码（弹窗 HTML 已删除）
-function scrollBottom(s) {
-  if (s === undefined) s = true;
-  requestAnimationFrame(function() {
-    $1('chat-container').scrollTo({ top: $1('chat-container').scrollHeight, behavior: s ? 'smooth' : 'instant' });
-  });
-}
 function openSettings() { renderSettings(); openDrawer('settings-drawer'); }
 function init() { setupPWA(); applyTheme(); renderAstList(); if (state.activeAstId) goToChat(state.activeAstId); }
 init();
