@@ -111,7 +111,6 @@
     .rblock { margin-bottom:8px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
     .rhead { gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
     .rhead .arr { transition:transform var(--tr); font-size:9px; margin-left:auto; }
-    .rhead .reasoning-time { margin-left:8px; font-size:11px; font-weight:normal; color:var(--text-secondary); white-space:nowrap; }
     .rhead.open .arr { transform:rotate(90deg); }
     .rbody { padding:8px 12px; font-size:12px; line-height:1.5; color:var(--text-secondary); background:var(--bg-tertiary); border-top:1px solid var(--border-soft); max-height:180px; overflow-y:auto; display:none; font-style:italic; white-space:pre-wrap; }
     .rbody.open { display:block; }
@@ -119,10 +118,12 @@
     /* MESSAGE ACTIONS */
     .msg-actions { display:flex; align-items:center; justify-content:space-between; width:100%; padding-top:4px; gap:4px; }
     .actions-left, .actions-right { flex:1; display:flex; min-width:0; }
-    .actions-left { justify-content:flex-start; }
+    .actions-left { justify-content:flex-start; align-items:center; }
     .actions-right { justify-content:flex-end; gap:2px; }
     .msg-tokens { font-size:10px; color:var(--text-secondary); opacity:0.65; font-family:var(--mono); white-space:nowrap; }
-    .actions-left .badge { font-size:10px; color:var(--text-secondary); opacity:.55; letter-spacing:.3px; white-space:nowrap; }
+    .actions-left .badge, .gen-time { font-size:10px; color:var(--text-secondary); opacity:.65; white-space:nowrap; }
+    .actions-left .badge { letter-spacing:.3px; }
+    .gen-time { font-family:var(--mono); margin-left:6px; }
     
     .actions-right button { opacity:0; transition:opacity .2s; }
     .msg:hover .actions-right button, .msg-actions.show .actions-right button { opacity:1; }
@@ -424,7 +425,8 @@ const estimateTokens = str => {
   const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) ||[]).length;
   return Math.ceil(zhCnt + (str.length - zhCnt) * 0.25);
 };
-const calcConvTokens = (c, p) => c.messages.reduce((t, m) => t + estimateTokens(m.content) + estimateTokens(m.reasoning), estimateTokens(p));
+const getMsgTokens = m => estimateTokens(m.content) + estimateTokens(m.reasoning);
+const calcConvTokens = (c, p) => c.messages.reduce((t, m) => t + getMsgTokens(m), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t/1000).toFixed(1) + 'k';
 
 // ==================== STATE & MODELS ====================
@@ -432,7 +434,7 @@ const STORAGE_KEY = 'ai_chat_v8';
 let state = loadState();
 let abortCtrl = null, streaming = false;
 let editingMsg = null, editingIdx = -1, editingConv = null;
-const reasoningTimers = {};
+const generationTimers = {};
 
 const DS_MODELS =[
   { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎' },
@@ -476,7 +478,14 @@ function fixAsst(a) {
   return {
     id: a.id || genId(), name: a.name || '未命名助手', systemPrompt: a.systemPrompt || '你是一个有帮助的AI助手。',
     temperature: a.temperature ?? 1.0, topP: a.topP ?? 1.0, modelId, reasoningEffort: a.reasoningEffort || 'off',
-    conversations: (a.conversations ||[]).map(c => ({ id: c.id || genId(), title: c.title || '新话题', messages: c.messages ||[] })),
+    conversations: (a.conversations ||[]).map(c => ({ 
+      id: c.id || genId(), title: c.title || '新话题', 
+      messages: (c.messages ||[]).map(m => {
+        // 兼容旧数据的计时字段，统一转化为全局耗时
+        if (m.reasoningTime && !m.genTime) { m.genTime = m.reasoningTime; delete m.reasoningTime; }
+        return m;
+      })
+    })),
     activeConvId: a.activeConvId || null
   };
 }
@@ -586,7 +595,7 @@ function renderChatPage() {
   
   $1('chat-asst-name').textContent = `${a.name}${a.conversations.length ? ` (${a.conversations.length})` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
-  $1('chat-nav-tokens').textContent = c ? formatK(calcConvTokens(c, a.systemPrompt)) : formatK(estimateTokens(a.systemPrompt));
+  $1('chat-nav-tokens').textContent = formatK(c ? calcConvTokens(c, a.systemPrompt) : estimateTokens(a.systemPrompt));
   $1('model-chip-label').textContent = m.name;
   $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
 
@@ -603,7 +612,7 @@ const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { 
 function enhanceCodeBlocks(container) {
   container.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
     const code = pre.querySelector('code');
-    const lang = code?.className.match(/language-(\w+)/)?.[1] || 'code';
+    const lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
 
     const wrapper = document.createElement('div');
     wrapper.className = 'code-block-wrapper collapsed';
@@ -622,24 +631,27 @@ function enhanceCodeBlocks(container) {
 }
 
 function makeMsg(msg, idx) {
-  const d = document.createElement('div'); d.className = `msg ${msg.role === 'user' ? 'user' : 'ai'}`; d.dataset.index = idx;
   const isAi = msg.role === 'assistant';
+  const d = document.createElement('div'); 
+  d.className = `msg ${isAi ? 'ai' : 'user'}`; 
+  d.dataset.index = idx;
 
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time">${msg.reasoningTime ? `⏱ ${msg.reasoningTime}s` : ''}</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
   
-  // 仅 AI 消息计算 tokens 且去掉 "tokens" 单位
-  const tokenDisplay = isAi ? formatK(estimateTokens(msg.content) + estimateTokens(msg.reasoning)) : '';
+  const tokenDisplay = isAi ? formatK(getMsgTokens(msg)) : '';
+  const timeDisplay = isAi ? `<span class="gen-time">⏱ ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(1) : '0.0')}s</span>` : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
     <div class="msg-actions">
-      <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>` : ''}</div>
+      <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>${timeDisplay}` : ''}</div>
       <div class="msg-tokens">${tokenDisplay}</div>
       <div class="actions-right">${buttonsHtml}</div>
     </div>`;
-  enhanceCodeBlocks(d); return d;
+  enhanceCodeBlocks(d); 
+  return d;
 }
 
 on('messages', 'click', async e => {
@@ -652,11 +664,14 @@ on('messages', 'click', async e => {
   const btn = e.target.closest('button[data-a]');
   if (btn) {
     e.stopPropagation();
+    const act = btn.dataset.a;
     const idx = parseInt(btn.closest('.msg').dataset.index, 10);
     const conv = getActiveConv(); const msg = conv.messages[idx];
-    const act = btn.dataset.a;
-    if (act === 'cp') copyText(msg.content).then(() => toast('已复制'));
-    else if (act === 'ed') openEditModal(msg, idx, conv);
+    
+    if (act === 'cp') return copyText(msg.content).then(() => toast('已复制'));
+    if (streaming) return toast('⚠️ 生成中不可操作');
+
+    if (act === 'ed') openEditModal(msg, idx, conv);
     else if (act === 'del') deleteMessage(idx);
     else if (act === 're') msg.role === 'assistant' ? regenerateMessage(idx) : resendUserMessage(idx);
   }
@@ -665,24 +680,22 @@ on('messages', 'click', async e => {
 async function deleteMessage(idx) {
   const conv = getActiveConv(); if (!conv || idx < 0 || idx >= conv.messages.length) return;
   if (!await showConfirm('确定要删除这条消息吗？')) return;
-  conv.messages.splice(idx, 1); saveState(); renderMessages(); renderChatPage();
+  conv.messages.splice(idx, 1); saveState(); renderChatPage();
 }
 
 async function regenerateMessage(idx) {
-  if (streaming) return;
   const conv = getActiveConv(); if (!conv || conv.messages[idx]?.role !== 'assistant') return;
   if (!await showConfirm('确定要重新生成此回复吗？')) return;
   conv.messages.splice(idx);
   if (!conv.messages.length || conv.messages[conv.messages.length - 1].role !== 'user') return toast('无法重新生成：缺少用户消息');
-  $1('user-input').value = conv.messages.pop().content; saveState(); renderMessages(); sendMessage();
+  $1('user-input').value = conv.messages.pop().content; saveState(); renderChatPage(); sendMessage();
 }
 
 async function resendUserMessage(idx) {
-  if (streaming) return;
   const conv = getActiveConv(); if (!conv || conv.messages[idx]?.role !== 'user') return;
   if (!await showConfirm('确定要重新发送这条消息吗？')) return;
   const msg = conv.messages[idx]; conv.messages.splice(idx);
-  $1('user-input').value = msg.content; saveState(); renderMessages(); sendMessage();
+  $1('user-input').value = msg.content; saveState(); renderChatPage(); sendMessage();
 }
 
 function renderMessages() {
@@ -703,7 +716,7 @@ function closeEditModal() { $1('edit-overlay').classList.remove('show'); editing
 function saveEdit() {
   if (!editingMsg) return;
   const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
-  editingMsg.content = val; saveState(); renderMessages(); closeEditModal(); renderChatPage(); toast('✅ 已保存');
+  editingMsg.content = val; saveState(); renderChatPage(); closeEditModal(); toast('✅ 已保存');
 }
 on('edit-cancel-btn', 'click', closeEditModal); on('edit-save-btn', 'click', saveEdit);
 on('edit-textarea', 'keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
@@ -737,7 +750,7 @@ on('topic-list', 'click', async e => {
     e.stopPropagation(); if (!await showConfirm('确定删除此话题？')) return;
     a.conversations = a.conversations.filter(c => c.id !== cid);
     if (a.activeConvId === cid) a.activeConvId = a.conversations[0]?.id || null;
-    saveState(); renderTopicList(); renderChatPage(); return;
+    saveState(); renderChatPage(); renderTopicList(); return;
   }
   if (e.target.closest('[data-edit]')) { e.stopPropagation(); return startRename(cid); }
   
@@ -894,6 +907,7 @@ function showDropdown(anchor, items, onSelect) {
 function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
 
 on('model-chip-btn', 'click', e => {
+  if (streaming) return toast('⚠️ 生成中不可切换模型');
   e.stopPropagation(); const ast = getActiveAst();
   const items =[
       { isHeader: true, label: 'DeepSeek API' },
@@ -905,6 +919,7 @@ on('model-chip-btn', 'click', e => {
 });
 
 on('reasoning-btn', 'click', e => {
+  if (streaming) return toast('⚠️ 生成中不可切换推理设置');
   e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off';
   const isDs = isDeepSeek(ast?.modelId);
   const opts = isDs 
@@ -917,36 +932,41 @@ on('reasoning-btn', 'click', e => {
 });
 
 // ==================== CHAT LOGIC ====================
-const scrollBottom = (force) => force && requestAnimationFrame(() => $1('chat-container').scrollTo({ top: $1('chat-container').scrollHeight, behavior: 'smooth' }));
+const scrollBottom = (force) => force && requestAnimationFrame(() => {
+    const c = $1('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+});
 const setStreamingUI = stream => { $1('send-btn').style.display = stream ? 'none' : 'flex'; $1('stop-btn').style.display = stream ? 'flex' : 'none'; };
 
-function startReasoningTimer(idx, am) {
-  if (am.reasoningStartTime) return;
-  am.reasoningStartTime = Date.now();
-  reasoningTimers[idx] = setInterval(() => {
-    const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .reasoning-time`);
-    if (el) el.textContent = `${((Date.now() - am.reasoningStartTime) / 1000).toFixed(1)}s`;
+function startGenTimer(idx, am) {
+  if (am.startTime) return;
+  am.startTime = Date.now();
+  generationTimers[idx] = setInterval(() => {
+    const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .gen-time`);
+    if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(1)}s`;
   }, 200);
 }
 
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
+  
   if (msg.reasoning) { 
       let rb = bub.querySelector('.rblock');
       if (!rb) { 
-          rb = document.createElement('div'); rb.className = 'rblock'; 
-          rb.innerHTML = '<button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody"></div>'; 
-          bub.insertBefore(rb, bub.firstChild); 
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody"></div></div>'); 
+          rb = bub.querySelector('.rblock');
       }
       rb.querySelector('.rbody').textContent = msg.reasoning;
   }
   let mc = bub.querySelector('.markdown-body');
-  if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
-  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
+  if (!mc) { 
+      bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>');
+      mc = bub.querySelector('.markdown-body');
+  }
+  mc.innerHTML = md(msg.content); 
+  enhanceCodeBlocks(bub);
 
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
-  // 流式更新时使用 formatK 格式化数值并去掉文字
-  if (tokensEl) tokensEl.textContent = formatK(estimateTokens(msg.content) + estimateTokens(msg.reasoning));
+  if (tokensEl) tokensEl.textContent = formatK(getMsgTokens(msg));
 }
 
 async function sendMessage() {
@@ -965,7 +985,7 @@ async function sendMessage() {
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
 
-  const am = { role: 'assistant', content: '', reasoning: '', reasoningTime: null, modelId: a.modelId };
+  const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
 
@@ -1005,6 +1025,7 @@ async function sendMessage() {
 
   abortCtrl = new AbortController();
   try {
+    startGenTimer(ai, am); // 开始记录整体生成响应与输出耗时
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
     if (!resp.ok) { let em = `HTTP ${resp.status}`; try { em = (await resp.json()).error?.message || em; } catch(e){} throw new Error(em); }
     
@@ -1024,27 +1045,36 @@ async function sendMessage() {
                       am.thoughtSignatures.push(part.thoughtSignature || part.thought_signature);
                   }
                   if (part.thought === true || String(part.thought) === "true") {
-                      currentTokens += estimateTokens(part.text || ''); startReasoningTimer(ai, am);
+                      currentTokens += estimateTokens(part.text || ''); 
                       am.reasoning += (part.text || '');
                   } else if (part.text) {
-                      currentTokens += estimateTokens(part.text); am.content += part.text;
+                      currentTokens += estimateTokens(part.text); 
+                      am.content += part.text;
                   }
               }
           } else {
               const delta = chunk.choices?.[0]?.delta; if (!delta) continue;
-              if (delta.reasoning_content) { currentTokens += estimateTokens(delta.reasoning_content); startReasoningTimer(ai, am); am.reasoning += delta.reasoning_content; }
-              if (delta.content) { currentTokens += estimateTokens(delta.content); am.content += delta.content; }
+              if (delta.reasoning_content) { 
+                  currentTokens += estimateTokens(delta.reasoning_content); 
+                  am.reasoning += delta.reasoning_content; 
+              }
+              if (delta.content) { 
+                  currentTokens += estimateTokens(delta.content); 
+                  am.content += delta.content; 
+              }
           }
-          $1('chat-nav-tokens').textContent = formatK(currentTokens); updateLive(ai, am);
+          $1('chat-nav-tokens').textContent = formatK(currentTokens); 
+          updateLive(ai, am);
         } catch(e) {}
       }
     }
   } catch (err) { if (err.name !== 'AbortError') am.content = am.content || `❌ 错误：${err.message}`; }
   finally {
     streaming = false; abortCtrl = null; setStreamingUI(false);
-    if (reasoningTimers[ai]) { clearInterval(reasoningTimers[ai]); delete reasoningTimers[ai]; }
-    am.reasoningTime = am.reasoningStartTime ? ((Date.now() - am.reasoningStartTime) / 1000).toFixed(1) : null;
-    delete am.reasoningStartTime; saveState(); renderMessages(); renderChatPage();
+    if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
+    am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(1) : null;
+    delete am.startTime; 
+    saveState(); renderChatPage();
   }
 }
 
