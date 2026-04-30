@@ -629,11 +629,14 @@ function makeMsg(msg, idx) {
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
+  
+  // 仅 AI 消息计算 tokens 且去掉 "tokens" 单位
+  const tokenDisplay = isAi ? formatK(estimateTokens(msg.content) + estimateTokens(msg.reasoning)) : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
     <div class="msg-actions">
       <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>` : ''}</div>
-      <div class="msg-tokens">${estimateTokens(msg.content) + estimateTokens(msg.reasoning)} tokens</div>
+      <div class="msg-tokens">${tokenDisplay}</div>
       <div class="actions-right">${buttonsHtml}</div>
     </div>`;
   enhanceCodeBlocks(d); return d;
@@ -942,7 +945,8 @@ function updateLive(idx, msg) {
   mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
 
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
-  if (tokensEl) tokensEl.textContent = `${estimateTokens(msg.content) + estimateTokens(msg.reasoning)} tokens`;
+  // 流式更新时使用 formatK 格式化数值并去掉文字
+  if (tokensEl) tokensEl.textContent = formatK(estimateTokens(msg.content) + estimateTokens(msg.reasoning));
 }
 
 async function sendMessage() {
