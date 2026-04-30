@@ -29,8 +29,8 @@
   <style>
     :root {
       --bg-primary: #f0f0f5; --bg-secondary: #fafafa; --bg-tertiary: #eaeaef;
-      --bg-bubble-user: #4f46e5; --bg-bubble-ai: transparent;
-      --text-primary: #1a1a2e; --text-secondary: #8e8e9a; --text-user: #fff; --text-ai: #1a1a2e;
+      --bg-bubble-user: #e2e8e4; --bg-bubble-ai: transparent;
+      --text-primary: #1a1a2e; --text-secondary: #8e8e9a; --text-user: #1a1a2e; --text-ai: #1a1a2e;
       --accent: #4f46e5; --accent-light: #eef2ff; --danger: #ef4444; --success: #10b981;
       --radius-sm: 8px; --radius-md: 14px; --radius-lg: 20px;
       --header-h: 52px; --safe-b: env(safe-area-inset-bottom, 16px);
@@ -41,26 +41,51 @@
     }
     [data-theme="dark"] {
       --bg-primary: #0a0a10; --bg-secondary: #111118; --bg-tertiary: #1a1a26;
-      --bg-bubble-user: #6366f1; --text-primary: #e4e4ed; --text-ai: #e4e4ed;
+      --bg-bubble-user: #2a362f; --text-primary: #e4e4ed; --text-user: #e4e4ed; --text-ai: #e4e4ed;
       --accent-light: #1e1b4b; --code-bg: #1a1a26; --code-header-bg: rgba(255,255,255,0.05);
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html,body { height:100%; width:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
+    /* Reset & Base */
+    *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+    html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
     #app { display:flex; flex-direction:column; height:100%; max-width:700px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg-primary); }
 
-    /* NAVBAR */
-    .navbar { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:var(--bg-secondary); border-bottom:0.5px solid var(--border-subtle); z-index:100; height:var(--header-h); flex-shrink:0; gap:4px; }
-    .nav-left, .nav-right { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+    /* Flex Alignments Commonalities */
+    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .msg-actions, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap { display:flex; align-items:center; }
+    .navbar, .drawer-head, .t-row, .code-block-header, .fs-prompt-head { justify-content:space-between; }
+    
+    /* Common Buttons & Interactives */
+    .nav-btn, #send-btn, #stop-btn, .topic-btn, .ast-del, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
+    .nav-btn:active, .icon-btn:active, #stop-btn:active, #send-btn:not(:disabled):active { transform:scale(.9); }
+    .ast-card:active, .welcome-hint:active { transform:scale(.97); }
+    .btn-primary, .confirm-actions button, .edit-card-foot button, .data-actions button { cursor:pointer; transition:all var(--tr); font-weight:600; border:none; }
+
+    /* Inputs Commonalities */
+    .field input, .field textarea, .field select, .topic-rename-input { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
+    .field input:focus, .field textarea:focus, .field select:focus, .topic-rename-input:focus { border-color:var(--accent); }
+
+    /* Overlays and Modals Commonalities */
+    .edit-overlay, .confirm-overlay, .fs-prompt-overlay, .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none; }
+    .fs-prompt-overlay { background:var(--bg-secondary); z-index:400; flex-direction:column; }
+    .edit-overlay { z-index:250; flex-direction:column; overscroll-behavior:none; } /* Prevent background bounce */
+    .confirm-overlay { z-index:500; align-items:center; justify-content:center; }
+    .overlay { opacity:0; pointer-events:none; transition:opacity .3s; display:block; }
+    .edit-overlay.show, .confirm-overlay.show, .fs-prompt-overlay.show { display:flex; }
+    .overlay.show { opacity:1; pointer-events:auto; }
+
+    /* NAVBAR & TOKENS */
+    .navbar { padding:6px 10px; background:var(--bg-secondary); border-bottom:0.5px solid var(--border-subtle); z-index:100; height:var(--header-h); flex-shrink:0; gap:4px; }
+    .nav-left, .nav-right { gap:2px; flex-shrink:0; }
     .nav-center { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; text-align:center; }
     .nav-center .asst-name { font-size:14px; font-weight:700; }
-    .nav-center .topic-row { display:flex; align-items:center; gap:4px; cursor:pointer; padding:1px 6px; border-radius:8px; transition:all var(--tr); }
+    .nav-center .topic-row { gap:4px; cursor:pointer; padding:1px 6px; border-radius:8px; transition:background var(--tr); }
     .nav-center .topic-row:active { background:var(--bg-tertiary); }
     .nav-center .topic-name { font-size:10px; color:var(--text-secondary); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .nav-center .topic-arr { font-size:8px; color:var(--text-secondary); flex-shrink:0; }
-    .nav-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all var(--tr); }
-    .nav-btn:active { transform:scale(.9); }
+    .nav-center .topic-arr { font-size:8px; color:var(--text-secondary); }
+    .nav-btn { width:34px; height:34px; background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; }
     .nav-btn.accent { background:var(--accent); color:#fff; }
+    
+    .nav-tokens { font-size:9px; background:rgba(128,128,128,0.12); padding:2px 5px; border-radius:8px; color:var(--text-secondary); font-family:var(--mono); margin-left:4px; font-weight:600; line-height:1; }
 
     /* CHAT */
     #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
@@ -74,7 +99,7 @@
     .welcome p { color:var(--text-secondary); font-size:13px; margin-bottom:18px; }
     .welcome-hints { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; max-width:360px; }
     .welcome-hint { padding:12px; background:var(--bg-secondary); border-radius:var(--radius-md); font-size:13px; color:var(--text-secondary); cursor:pointer; transition:all var(--tr); text-align:left; line-height:1.4; border:1.5px solid transparent; }
-    .welcome-hint:active { border-color:var(--accent); transform:scale(.97); }
+    .welcome-hint:active { border-color:var(--accent); }
 
     /* MESSAGES */
     .msg { display:flex; flex-direction:column; max-width:88%; animation:msgIn .3s ease-out; }
@@ -82,10 +107,10 @@
     .msg.user { align-self:flex-end; }
     .msg.ai { align-self:flex-start; width:100%; max-width:100%; }
     .msg .bubble { padding:10px 14px; border-radius:var(--radius-lg); font-size:14.5px; line-height:1.65; word-break:break-word; position:relative; }
-    .msg.user .bubble { background:var(--bg-bubble-user); color:var(--text-user); border-bottom-right-radius:6px; box-shadow:0 2px 8px rgba(79,70,229,.25); }
+    .msg.user .bubble { background:var(--bg-bubble-user); color:var(--text-user); border-bottom-right-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-block; max-width:100%; }
     .msg.ai .bubble { background:transparent; color:var(--text-ai); border-bottom-left-radius:6px; padding-left:2px; padding-right:2px; }
     .rblock { margin-bottom:8px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
-    .rhead { display:flex; align-items:center; gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
+    .rhead { gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
     .rhead .arr { transition:transform var(--tr); font-size:9px; margin-left:auto; }
     .rhead .reasoning-time { margin-left:8px; font-size:11px; font-weight:normal; color:var(--text-secondary); white-space:nowrap; }
     .rhead.open .arr { transform:rotate(90deg); }
@@ -93,24 +118,42 @@
     .rbody.open { display:block; }
 
     /* MESSAGE ACTIONS */
-    .msg-actions { display:flex; align-items:center; gap:6px; padding-right:2px; }
+    .msg-actions { gap:6px; padding-right:2px; }
     .msg.user .msg-actions { justify-content:flex-end; }
     .msg.ai .msg-actions { justify-content:space-between; }
     .msg-actions .badge { font-size:10px; color:var(--text-secondary); opacity:.55; letter-spacing:.3px; white-space:nowrap; }
-    .actions-right { display:flex; gap:2px; }
+    .actions-right { gap:2px; }
     .actions-right button { opacity:0; transition:opacity .2s; }
     .msg:hover .actions-right button, .msg-actions.show .actions-right button { opacity:1; }
-    .msg-actions button { padding:3px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:11px; cursor:pointer; transition:all var(--tr); font-weight:500; }
+    .msg-actions button { padding:3px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:11px; cursor:pointer; transition:background var(--tr), color var(--tr); font-weight:500; }
     .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
     /* EDIT MODAL */
-    .edit-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:250; display:none; flex-direction:column; }
-    .edit-overlay.show { display:flex; }
-    .edit-card { position:absolute; top:0; left:0; right:0; bottom:0; background:var(--bg-secondary); display:flex; flex-direction:column; margin-top:var(--header-h); }
-    .edit-card-body { flex:1; overflow-y:auto; padding:16px; }
-    .edit-card-body textarea { width:100%; height:100%; min-height:240px; padding:14px; border:none; border-radius:var(--radius-md); background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
-    .edit-card-foot { display:flex; gap:10px; padding:14px 16px; padding-bottom:calc(14px + var(--safe-b)); border-top:0.5px solid rgba(128,128,128,.1); background:var(--bg-secondary); }
-    .edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .edit-card { 
+      position:absolute; 
+      top:12vh; /* Use Viewport Height to lock positioning */
+      height:75vh; /* Lock height so keyboard won't dynamically squash the modal */
+      left:6px; right:6px; /* Widened to almost fill screen laterally */
+      background:var(--bg-secondary); 
+      display:flex; flex-direction:column; 
+      border-radius:var(--radius-lg); 
+      box-shadow:0 10px 30px rgba(0,0,0,0.2); 
+      overflow:hidden; 
+      animation:msgIn .3s ease-out; 
+    }
+    .edit-card-body { 
+      flex:1; display:flex; padding:12px; 
+      overflow:hidden; /* Prevents the double (outer) scrollbar */
+    }
+    .edit-card-body textarea { 
+      flex:1; width:100%; border:none; background:transparent; 
+      color:var(--text-primary); font-size:15px; font-family:inherit; 
+      line-height:1.7; resize:none; outline:none; 
+      overflow-y:auto; /* The only scrolling element */
+      -webkit-overflow-scrolling:touch; 
+    }
+    .edit-card-foot { display:flex; gap:10px; padding:14px 16px; border-top:0.5px solid var(--border-subtle); background:var(--bg-secondary); }
+    .edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; font-size:14px; }
     .edit-save-btn { background:var(--accent); color:#fff; }
     .edit-save-btn:active { opacity:.85; transform:scale(.98); }
     .edit-cancel-btn { background:var(--bg-tertiary); color:var(--text-secondary); }
@@ -127,16 +170,15 @@
 
     /* CODE BLOCK */
     .code-block-wrapper { border-radius:var(--radius-sm); overflow:hidden; margin:8px 0; background:var(--code-bg); }
-    .code-block-header { display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:var(--code-header-bg); border-bottom:1px solid var(--border-subtle); }
+    .code-block-header { padding:4px 8px; background:var(--code-header-bg); border-bottom:1px solid var(--border-subtle); }
     .code-lang { font-size:11px; color:#9ca3af; text-transform:uppercase; font-weight:500; }
-    .code-btns { display:flex; gap:4px; }
-    .code-btn { padding:2px 8px; border:none; border-radius:4px; background:rgba(128,128,128,.15); color:var(--text-secondary); font-size:10px; cursor:pointer; transition:all var(--tr); }
+    .code-btns { gap:4px; }
+    .code-btn { padding:2px 8px; border:none; border-radius:4px; background:rgba(128,128,128,.15); color:var(--text-secondary); font-size:10px; cursor:pointer; transition:background var(--tr); }
     .code-btn:hover { background:rgba(128,128,128,.25); }
     .code-block-wrapper.collapsed pre { max-height:100px; overflow-y:hidden; overflow-x:auto; position:relative; }
     .bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background:var(--code-bg) !important; color:var(--text-primary); }
     .bubble .code-block-wrapper pre { padding:12px; overflow-x:auto; margin:0; scrollbar-width:none; }
     .bubble .code-block-wrapper pre::-webkit-scrollbar { display:none; }
-
     .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
     .bubble table { border-collapse:collapse; width:100%; margin:6px 0; font-size:12px; }
     .bubble th, .bubble td { border:1px solid var(--border-subtle); padding:5px 8px; text-align:left; }
@@ -145,39 +187,32 @@
     .bubble img { max-width:100%; border-radius:var(--radius-sm); }
 
     /* INPUT */
-    #input-bar { display:flex; align-items:flex-end; padding:6px 10px 2px; background:var(--bg-secondary); border-top:0.5px solid var(--border-soft); z-index:100; flex-shrink:0; }
-    .inp-wrap { flex:1; display:flex; align-items:flex-end; background:var(--bg-tertiary); border-radius:24px; padding:3px 6px 3px 14px; border:1.5px solid transparent; transition:all var(--tr); }
+    #input-bar { align-items:flex-end; padding:6px 10px 2px; background:var(--bg-secondary); border-top:0.5px solid var(--border-soft); z-index:100; flex-shrink:0; }
+    .inp-wrap { flex:1; display:flex; align-items:flex-end; background:var(--bg-tertiary); border-radius:24px; padding:3px 6px 3px 14px; border:1.5px solid transparent; transition:border var(--tr), box-shadow var(--tr); }
     .inp-wrap:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
     #input-bar textarea { flex:1; border:none; background:transparent; color:var(--text-primary); font-size:14.5px; line-height:1.4; resize:none; outline:none; padding:7px 0; max-height:220px; font-family:inherit; -webkit-appearance:none; }
     #input-bar textarea::placeholder { color:var(--text-secondary); opacity:.5; }
 
     /* BOTTOM BAR */
-    #bottom-bar { display:flex; align-items:center; gap:6px; padding:2px 10px 3px; padding-bottom:calc(3px + var(--safe-b)); background:var(--bg-secondary); flex-shrink:0; position:relative; }
-    #model-chip-btn, #reasoning-btn { display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all var(--tr); flex-shrink:0; }
+    #bottom-bar { gap:6px; padding:2px 10px 3px; padding-bottom:calc(3px + var(--safe-b)); background:var(--bg-secondary); flex-shrink:0; position:relative; }
+    #model-chip-btn, #reasoning-btn { gap:5px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all var(--tr); flex-shrink:0; }
     #model-chip-btn:active, #reasoning-btn:active { transform:scale(.95); border-color:var(--accent); }
     #model-chip-btn .micon { font-size:16px; }
-
-    #send-btn, #stop-btn { width:36px; height:36px; border-radius:50%; border:none; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all var(--tr); margin-left:auto; }
+    #send-btn, #stop-btn { width:36px; height:36px; font-size:18px; }
     #send-btn { background:var(--accent); color:#fff; }
-    #stop-btn { background:transparent; border:2px solid var(--danger); color:var(--danger); display:none; }
-    #send-btn:disabled { opacity:.3; cursor:not-allowed; }
-    #send-btn:not(:disabled):active { transform:scale(.88); }
-    #stop-btn:active { transform:scale(.88); }
 
     /* DROPDOWN */
     .dropdown-menu { position:fixed; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(0,0,0,.15); z-index:500; min-width:140px; padding:4px; display:none; }
     .dropdown-menu.show { display:block; }
-    .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); display:flex; align-items:center; gap:8px; color:var(--text-primary); transition:background .15s; }
+    .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); gap:8px; color:var(--text-primary); transition:background .15s; }
     .dropdown-menu .dropdown-item:hover, .dropdown-menu .dropdown-item.selected { background:var(--bg-tertiary); }
     .dropdown-menu .dropdown-item .check { margin-left:auto; color:var(--accent); font-weight:700; }
 
-    /* OVERLAY & DRAWER & SHEET */
-    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; opacity:0; pointer-events:none; transition:opacity .3s; }
-    .overlay.show { opacity:1; pointer-events:auto; }
+    /* DRAWER & SHEET */
     .drawer { position:fixed; top:0; bottom:0; width:320px; max-width:86vw; background:var(--bg-secondary); z-index:300; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 0 40px rgba(0,0,0,.15); }
     .drawer-right { right:0; transform:translateX(100%); border-radius:var(--radius-lg) 0 0 var(--radius-lg); }
     .drawer-right.open { transform:translateX(0); }
-    .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:0.5px solid rgba(128,128,128,.1); }
+    .drawer-head { padding:14px 16px; border-bottom:0.5px solid rgba(128,128,128,.1); }
     .drawer-head h3 { font-size:15px; font-weight:700; }
     .drawer-body { flex:1; overflow-y:auto; padding:14px; -webkit-overflow-scrolling:touch; }
     .sheet { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:700px; max-height:70vh; background:var(--bg-secondary); z-index:350; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 -4px 20px rgba(0,0,0,.2); }
@@ -188,29 +223,27 @@
 
     /* ASSISTANT CARDS */
     .ast-grid { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
-    .ast-card { padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); display:flex; align-items:center; gap:12px; border:1.5px solid transparent; }
-    .ast-card:active { transform:scale(.98); border-color:var(--accent); }
+    .ast-card { padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:12px; border:1.5px solid transparent; }
+    .ast-card:active { border-color:var(--accent); }
     .ast-card .ast-icon { font-size:32px; flex-shrink:0; }
     .ast-card .ast-info { flex:1; min-width:0; }
     .ast-card .ast-name { font-size:15px; font-weight:700; margin-bottom:2px; }
-    .ast-card .ast-meta { font-size:11px; color:var(--text-secondary); display:flex; gap:8px; align-items:center; }
+    .ast-card .ast-meta { font-size:11px; color:var(--text-secondary); gap:8px; }
     .ast-card .ast-prompt { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }
-    .ast-card .ast-del { width:28px; height:28px; border:none; border-radius:50%; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0; transition:all var(--tr); }
     .ast-card:hover .ast-del { opacity:1; }
-    .ast-card .ast-del:active { background:var(--danger); color:#fff; }
 
     /* TOPIC LIST */
-    .topic-item { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
+    .topic-item { gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
     .topic-item:hover, .topic-item.active { background:var(--bg-tertiary); }
     .topic-item.active { border-color:var(--accent-light); }
     .topic-item .tinfo { flex:1; min-width:0; }
-    .topic-item .ttitle { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ttitle-wrap { margin-bottom:2px; }
+    .topic-item .ttitle { font-size:13px; font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .topic-item .tmeta { font-size:10px; color:var(--text-secondary); }
-    .topic-item .tact { display:flex; gap:2px; flex-shrink:0; }
-    .topic-btn { width:26px; height:26px; border:none; border-radius:50%; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; transition:all var(--tr); }
-    .topic-btn:active { background:var(--bg-tertiary); }
-    .topic-btn.del:active { background:var(--danger); color:#fff; }
-    .topic-rename-input { flex:1; padding:5px 8px; border:1.5px solid var(--accent); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-weight:600; font-family:inherit; outline:none; min-width:0; }
+    .topic-item .tact { gap:16px; } /* Increased gap for fewer misclicks */
+    .topic-btn { width:32px; height:32px; font-size:14px; } /* Slightly larger touch area */
+    
+    .topic-rename-input { padding:5px 8px; flex:1; min-width:0; font-weight:600; }
     .new-topic-btn { width:100%; padding:10px; border:2px dashed rgba(128,128,128,.2); border-radius:var(--radius-md); background:transparent; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:10px; transition:all var(--tr); }
     .new-topic-btn:active { background:var(--accent-light); }
 
@@ -218,78 +251,63 @@
     .section { margin-bottom:22px; }
     .field { margin-bottom:14px; }
     .field label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px; }
-    .field input, .field textarea, .field select { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
-    .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--accent); }
     .field textarea { resize:vertical; min-height:50px; }
     .field .hint { font-size:10px; color:var(--text-secondary); margin-top:3px; }
     .field .hint a { color:var(--accent); }
 
     .settings-fold { margin-bottom:14px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
-    .settings-fold-head { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--bg-tertiary); border:none; width:100%; font-size:12px; font-weight:600; color:var(--text-secondary); cursor:pointer; }
+    .settings-fold-head { padding:9px 12px; background:var(--bg-tertiary); border:none; width:100%; font-size:12px; font-weight:600; color:var(--text-secondary); cursor:pointer; }
     .settings-fold-head .arr { transition:transform var(--tr); font-size:9px; }
     .settings-fold.open .settings-fold-head .arr { transform:rotate(90deg); }
     .settings-fold-body { padding:8px 12px 12px; background:var(--bg-tertiary); border-top:1px solid var(--border-soft); display:none; }
     .settings-fold.open .settings-fold-body { display:block; }
+    .icon-btn { border-radius:8px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:16px; }
 
-    .icon-btn { width:32px; height:32px; border-radius:8px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all var(--tr); }
-    .icon-btn:hover { background:var(--accent-light); color:var(--accent); }
-    .icon-btn:active { transform:scale(.92); }
-
-    .prompt-toolbar { display:flex; gap:3px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+    .prompt-toolbar { gap:3px; margin-bottom:8px; flex-wrap:wrap; }
     .prompt-toolbar button { width:30px; height:28px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; transition:all var(--tr); font-family:var(--mono); }
     .prompt-toolbar button:active { background:var(--accent-light); color:var(--accent); }
 
-    /* FULLSCREEN PROMPT EDITOR */
-    .fs-prompt-overlay { position:fixed; inset:0; background:var(--bg-secondary); z-index:400; display:none; flex-direction:column; }
-    .fs-prompt-overlay.show { display:flex; }
-    .fs-prompt-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:0.5px solid rgba(128,128,128,.1); flex-shrink:0; }
+    .fs-prompt-head { padding:12px 14px; border-bottom:0.5px solid rgba(128,128,128,.1); flex-shrink:0; }
     .fs-prompt-head span { font-size:14px; font-weight:700; }
     .fs-prompt-body { flex:1; display:flex; flex-direction:column; padding:14px; overflow:hidden; }
     .fs-prompt-body textarea { flex:1; width:100%; padding:14px; border:2px solid var(--accent); border-radius:var(--radius-md); background:var(--bg-tertiary); color:var(--text-primary); font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
 
-    .slider-row { display:flex; align-items:center; gap:10px; }
+    .slider-row { gap:10px; }
     .slider-row input[type="range"] { flex:1; -webkit-appearance:none; height:4px; border-radius:2px; background:var(--border-subtle); outline:none; padding:0; border:none; }
     .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.2); }
 
-    .t-row { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--bg-tertiary); border-radius:var(--radius-sm); }
+    .t-row { padding:9px 12px; background:var(--bg-tertiary); border-radius:var(--radius-sm); }
     .t-row span { font-size:13px; font-weight:500; }
     .tsw { position:relative; width:42px; height:24px; background:rgba(128,128,128,.2); border-radius:12px; cursor:pointer; transition:background var(--tr); flex-shrink:0; }
     .tsw.active { background:var(--accent); }
     .tsw::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform var(--tr); box-shadow:0 1px 2px rgba(0,0,0,.2); }
     .tsw.active::after { transform:translateX(18px); }
 
-    /* CONFIRM DIALOG */
-    .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; display:none; align-items:center; justify-content:center; }
-    .confirm-overlay.show { display:flex; }
     .confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
     .confirm-msg { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:18px; line-height:1.5; }
     .confirm-actions { display:flex; gap:10px; justify-content:center; }
-    .confirm-actions button { flex:1; padding:10px 0; border-radius:14px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .confirm-actions button { flex:1; padding:10px 0; border-radius:14px; font-size:14px; }
     .confirm-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
     .confirm-cancel:active { background:rgba(128,128,128,.12); }
     .confirm-ok { background:var(--danger); color:#fff; }
     .confirm-ok:active { opacity:.85; transform:scale(.97); }
 
-    /* MISC */
     .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:9px 18px; border-radius:18px; font-size:12px; z-index:500; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.3); }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .scroll-down { position:fixed; bottom:140px; right:16px; width:34px; height:34px; border-radius:50%; border:1px solid var(--border-subtle); background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; align-items:center; justify-content:center; }
+    .scroll-down { position:fixed; bottom:140px; right:16px; width:34px; height:34px; border:1px solid var(--border-subtle); background:var(--bg-secondary); color:var(--text-primary); font-size:14px; z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; }
     .scroll-down.show { display:flex; }
-    .btn-primary { padding:10px 20px; border-radius:18px; border:none; background:var(--accent); color:#fff; font-size:13px; font-weight:600; cursor:pointer; width:100%; transition:all var(--tr); }
+    .btn-primary { padding:10px 20px; border-radius:18px; background:var(--accent); color:#fff; font-size:13px; width:100%; }
     .btn-primary:active { transform:scale(.97); opacity:.85; }
     .empty { text-align:center; padding:36px 20px; color:var(--text-secondary); font-size:13px; }
-    .page { display:none; flex-direction:column; height:100%; }
-    .page.active { display:flex; }
-    .chat-page { display:none; flex-direction:column; height:100%; }
-    .chat-page.active { display:flex; }
-    .data-actions { display:flex; gap:6px; }
-    .data-actions button { flex:1; padding:8px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:11px; font-weight:600; cursor:pointer; transition:all var(--tr); }
+    .page, .chat-page { display:none; flex-direction:column; height:100%; }
+    .page.active, .chat-page.active { display:flex; }
+    .data-actions { gap:6px; }
+    .data-actions button { flex:1; padding:8px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-primary); font-size:11px; }
     .data-actions button:active { border-color:var(--accent); }
   </style>
 </head>
 <body>
 <div id="app">
-
   <!-- ASSISTANTS PAGE -->
   <div class="page active" id="ast-page">
     <div class="navbar">
@@ -310,6 +328,7 @@
         <span class="asst-name" id="chat-asst-name">助手</span>
         <div class="topic-row" id="topic-toggle">
           <span class="topic-name" id="chat-topic-name">新话题</span>
+          <span class="nav-tokens" id="chat-nav-tokens">0k</span>
           <span class="topic-arr">▾</span>
         </div>
       </div>
@@ -323,7 +342,8 @@
     <div id="bottom-bar">
       <button id="model-chip-btn"><span class="micon">🧠</span><span id="model-chip-label">模型</span> ▾</button>
       <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> ▾</button>
-      <button id="send-btn">➤</button><button id="stop-btn">■</button>
+      <button id="send-btn">➤</button>
+      <button id="stop-btn" style="display:none">■</button>
     </div>
   </div>
 
@@ -351,12 +371,14 @@
     </div>
   </div>
 
-  <!-- OVERLAY -->
   <div class="overlay" id="overlay"></div>
 
   <!-- TOPICS DRAWER -->
   <div class="drawer drawer-right" id="topics-drawer">
-    <div class="drawer-head"><h3>📋 历史话题</h3><button class="nav-btn" id="close-topics">✕</button></div>
+    <div class="drawer-head">
+      <h3 style="display:flex;align-items:center">📋 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
+      <button class="nav-btn" id="close-topics">✕</button>
+    </div>
     <div class="drawer-body">
       <button class="new-topic-btn" id="new-topic">＋ 新建话题</button>
       <div id="topic-list"></div>
@@ -409,6 +431,23 @@
 (() => {
 'use strict';
 
+// ==================== UTILS ====================
+const $1 = s => document.getElementById(s);
+const on = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.addEventListener(evt, cb); };
+const off = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.removeEventListener(evt, cb); };
+const genId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+
+// ==================== TOKENS CALCULATION ====================
+const estimateTokens = str => {
+  if (!str) return 0;
+  const zh = str.match(/[\u4e00-\u9fa5]/g);
+  const zhCnt = zh ? zh.length : 0;
+  return Math.ceil(zhCnt * 1 + (str.length - zhCnt) * 0.25);
+};
+const calcConvTokens = (c, p) => { let t = estimateTokens(p); c.messages.forEach(m => t += estimateTokens(m.content) + estimateTokens(m.reasoning)); return t; };
+const formatK = t => t < 1000 ? t : (t/1000).toFixed(1) + 'k';
+
 // ==================== STATE ====================
 const STORAGE_KEY = 'ai_chat_v8';
 let state = loadState();
@@ -442,10 +481,6 @@ function saveState() {
   catch(e) { toast('⚠️ 存储空间不足'); }
 }
 
-const genId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-const $1 = s => document.getElementById(s);
-const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
-
 function fixAsst(a) {
   return {
     id: a.id || genId(), name: a.name || '未命名助手',
@@ -460,10 +495,7 @@ function fixAsst(a) {
 }
 
 const getActiveAst = () => state.assistants.find(a => a.id === state.activeAstId) || null;
-const getActiveConv = () => {
-  const a = getActiveAst();
-  return a ? a.conversations.find(c => c.id === a.activeConvId) : null;
-};
+const getActiveConv = () => { const a = getActiveAst(); return a ? a.conversations.find(c => c.id === a.activeConvId) : null; };
 const getModel = id => DS_MODELS.find(m => m.id === id) || DS_MODELS[0];
 
 function ensureConv(a) {
@@ -475,26 +507,14 @@ function ensureConv(a) {
 }
 
 function toast(m, d = 2000) {
-  const t = $1('toast');
-  t.textContent = m; t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), d);
+  const t = $1('toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), d);
 }
 
 // ==================== COPY ====================
 async function copyText(text) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-  } catch(e) {}
-  fallbackCopy(text);
-}
-
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
+  try { if (navigator.clipboard?.writeText) return await navigator.clipboard.writeText(text); } catch(e) {}
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
   document.body.appendChild(ta); ta.select();
   try { document.execCommand('copy'); toast('已复制'); } catch (err) { toast('复制失败，请手动复制'); }
   document.body.removeChild(ta);
@@ -509,11 +529,11 @@ function showConfirm(msg) {
     const onCancel = () => { cleanup(); resolve(false); };
     const cleanup = () => {
       $1('confirm-overlay').classList.remove('show');
-      $1('confirm-ok').removeEventListener('click', onOk);
-      $1('confirm-cancel').removeEventListener('click', onCancel);
+      off('confirm-ok', 'click', onOk);
+      off('confirm-cancel', 'click', onCancel);
     };
-    $1('confirm-ok').addEventListener('click', onOk);
-    $1('confirm-cancel').addEventListener('click', onCancel);
+    on('confirm-ok', 'click', onOk);
+    on('confirm-cancel', 'click', onCancel);
   });
 }
 
@@ -524,8 +544,7 @@ function setupPWA() {
     start_url: location.href.split('?')[0], display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
     icons: [
-      { src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' },
-      { src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="#4f46e5" width="512" height="512" rx="96"/><text x="256" y="330" text-anchor="middle" font-size="256">🤖</text></svg>')}`, sizes:'512x512', type:'image/svg+xml', purpose:'any maskable' }
+      { src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }
     ]
   };
   $1('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{ type:'application/json' }));
@@ -538,15 +557,8 @@ function applyTheme() {
 }
 
 // ==================== NAVIGATION ====================
-function goToAsts() {
-  $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active');
-  renderAstList();
-}
-function goToChat(id) {
-  state.activeAstId = id; saveState();
-  $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active');
-  renderChatPage(); closeAll();
-}
+function goToAsts() { $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); }
+function goToChat(id) { state.activeAstId = id; saveState(); $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); renderChatPage(); closeAll(); }
 
 // ==================== ASSISTANT LIST ====================
 function renderAstList() {
@@ -566,7 +578,7 @@ function renderAstList() {
   }).join('');
 }
 
-$1('ast-list').addEventListener('click', async e => {
+on('ast-list', 'click', async e => {
   const delBtn = e.target.closest('.ast-del');
   if (delBtn) {
     e.stopPropagation();
@@ -579,8 +591,8 @@ $1('ast-list').addEventListener('click', async e => {
   if (card) goToChat(card.dataset.id);
 });
 
-$1('add-ast-btn').addEventListener('click', () => openSheet('add-ast-sheet'));
-$1('create-ast').addEventListener('click', () => {
+on('add-ast-btn', 'click', () => openSheet('add-ast-sheet'));
+on('create-ast', 'click', () => {
   const n = $1('new-ast-name').value.trim(); if (!n) return toast('请输入名称');
   state.assistants.unshift({
     id: genId(), name: n, systemPrompt: $1('new-ast-prompt').value.trim(),
@@ -596,6 +608,7 @@ function renderChatPage() {
   const c = getActiveConv(), m = getModel(a.modelId);
   $1('chat-asst-name').textContent = `${a.name}${a.conversations.length > 0 ? ` (${a.conversations.length})` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
+  $1('chat-nav-tokens').textContent = c ? formatK(calcConvTokens(c, a.systemPrompt)) : formatK(estimateTokens(a.systemPrompt));
   $1('model-chip-label').textContent = m.name;
   $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
   $1('reasoning-label').textContent = `推理：${{ off:'关闭', high:'High', max:'Max' }[a.reasoningEffort || 'off']}`;
@@ -604,15 +617,13 @@ function renderChatPage() {
 
 // ==================== MESSAGES & MARKDOWN ====================
 marked.setOptions({ breaks: true, gfm: true });
-const md = t => t ? (tryCatch(() => marked.parse(t), esc(t).replace(/\n/g, '<br>'))) : '';
-function tryCatch(fn, fallback) { try { return fn(); } catch(e) { return fallback; } }
+const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { return esc(t).replace(/\n/g, '<br>'); } };
 
 function enhanceCodeBlocks(container) {
   container.querySelectorAll('pre').forEach(pre => {
     if (pre.parentNode.classList.contains('code-block-wrapper')) return;
     const code = pre.querySelector('code');
-    const match = code?.className.match(/language-(\w+)/);
-    const lang = match ? match[1] : 'code';
+    const lang = code?.className.match(/language-(\w+)/)?.[1] || 'code';
 
     const wrapper = document.createElement('div');
     wrapper.className = 'code-block-wrapper collapsed';
@@ -620,41 +631,30 @@ function enhanceCodeBlocks(container) {
     
     pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
 
-    wrapper.querySelector('.copy-btn').addEventListener('click', e => {
-      e.stopPropagation();
-      copyText((code || pre).textContent || '').then(() => {
-        e.target.textContent = '✓'; setTimeout(() => e.target.textContent = '复制', 1200);
-      });
+    on(wrapper.querySelector('.copy-btn'), 'click', e => {
+      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { e.target.textContent = '✓'; setTimeout(() => e.target.textContent = '复制', 1200); });
     });
-    wrapper.querySelector('.fold-btn').addEventListener('click', e => {
-      e.stopPropagation(); wrapper.classList.toggle('collapsed');
-      e.target.textContent = wrapper.classList.contains('collapsed') ? '展开' : '折叠';
+    on(wrapper.querySelector('.fold-btn'), 'click', e => {
+      e.stopPropagation(); wrapper.classList.toggle('collapsed'); e.target.textContent = wrapper.classList.contains('collapsed') ? '展开' : '折叠';
     });
     if (code && !code.dataset.hl) { try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} }
   });
 }
 
 function makeMsg(msg, idx, conv) {
-  const d = document.createElement('div');
-  d.className = `msg ${msg.role === 'user' ? 'user' : 'ai'}`; d.dataset.index = idx;
+  const d = document.createElement('div'); d.className = `msg ${msg.role === 'user' ? 'user' : 'ai'}`; d.dataset.index = idx;
 
-  let reasoningHTML = '';
-  if (msg.reasoning) {
-    reasoningHTML = `<div class="rblock"><button class="rhead open"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time">${msg.reasoningTime ? `⏱ ${msg.reasoningTime}s` : ''}</span></button><div class="rbody open">${esc(msg.reasoning)}</div></div>`;
-  }
+  let reasoningHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time">${msg.reasoningTime ? `⏱ ${msg.reasoningTime}s` : ''}</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
 
   const actions = msg.role === 'assistant' 
-    ? `<span class="badge">${getModel(msg.modelId || getActiveAst()?.modelId).icon} ${getModel(msg.modelId || getActiveAst()?.modelId).name}</span>
-       <div class="actions-right"><button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="重新生成">🔄</button></div>`
+    ? `<span class="badge">${getModel(msg.modelId || getActiveAst()?.modelId).icon} ${getModel(msg.modelId || getActiveAst()?.modelId).name}</span><div class="actions-right"><button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="重新生成">🔄</button></div>`
     : `<div class="actions-right"><button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="重新发送">↩️</button></div>`;
 
   d.innerHTML = `<div class="bubble">${reasoningHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions">${actions}</div>`;
-  enhanceCodeBlocks(d);
-  return d;
+  enhanceCodeBlocks(d); return d;
 }
 
-// 事件代理中心：处理聊天面板中产生的所有交互
-$1('messages').addEventListener('click', async e => {
+on('messages', 'click', async e => {
   const hint = e.target.closest('.welcome-hint');
   if (hint) { $1('user-input').value = hint.dataset.prompt; return sendMessage(); }
 
@@ -664,11 +664,9 @@ $1('messages').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-a]');
   if (btn) {
     e.stopPropagation();
-    const msgEl = btn.closest('.msg');
-    const idx = parseInt(msgEl.dataset.index, 10);
+    const idx = parseInt(btn.closest('.msg').dataset.index, 10);
     const conv = getActiveConv(); const msg = conv.messages[idx];
     const act = btn.dataset.a;
-
     if (act === 'cp') copyText(msg.content).then(() => toast('已复制'));
     if (act === 'ed') openEditModal(msg, idx, conv);
     if (act === 'del') deleteMessage(idx);
@@ -679,7 +677,7 @@ $1('messages').addEventListener('click', async e => {
 async function deleteMessage(idx) {
   const conv = getActiveConv(); if (!conv || idx < 0 || idx >= conv.messages.length) return;
   if (!await showConfirm('确定要删除这条消息吗？')) return;
-  conv.messages.splice(idx, 1); saveState(); renderMessages();
+  conv.messages.splice(idx, 1); saveState(); renderMessages(); renderChatPage(); // Update tokens
 }
 
 async function regenerateMessage(idx) {
@@ -702,8 +700,7 @@ async function resendUserMessage(idx) {
 }
 
 function renderMessages() {
-  const msgs = $1('messages'), c = getActiveConv();
-  msgs.innerHTML = '';
+  const msgs = $1('messages'), c = getActiveConv(); msgs.innerHTML = '';
   if (!c || c.messages.length === 0) {
     msgs.innerHTML = `<div class="welcome" style="display:flex"><div class="emoji">✨</div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算">🔬 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗">📝 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏">🐍 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划">💪 健身计划</div></div></div>`;
     return;
@@ -714,32 +711,49 @@ function renderMessages() {
 // ==================== EDIT MODAL ====================
 function openEditModal(msg, idx, conv) {
   editingMsg = msg; editingIdx = idx; editingConv = conv;
-  $1('edit-textarea').value = msg.content;
-  $1('edit-overlay').classList.add('show'); $1('edit-textarea').focus();
+  $1('edit-textarea').value = msg.content; $1('edit-overlay').classList.add('show');
 }
 function closeEditModal() { $1('edit-overlay').classList.remove('show'); editingMsg = null; }
 function saveEdit() {
   if (!editingMsg) return;
   const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
-  editingMsg.content = val; saveState(); renderMessages(); closeEditModal(); toast('✅ 已保存');
+  editingMsg.content = val; saveState(); renderMessages(); closeEditModal(); renderChatPage(); toast('✅ 已保存');
 }
-$1('edit-cancel-btn').addEventListener('click', closeEditModal);
-$1('edit-save-btn').addEventListener('click', saveEdit);
-$1('edit-textarea').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
+on('edit-cancel-btn', 'click', closeEditModal);
+on('edit-save-btn', 'click', saveEdit);
+on('edit-textarea', 'keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
 
 // ==================== TOPIC LIST ====================
 function renderTopicList() {
   const a = getActiveAst(), l = $1('topic-list');
-  if (!a || !a.conversations.length) { l.innerHTML = '<div class="empty">暂无话题</div>'; return; }
-  l.innerHTML = a.conversations.map(c => `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}"><span>💬</span><div class="tinfo"><div class="ttitle">${esc(c.title)}</div><div class="tmeta">${c.messages.length} 条消息</div></div><div class="tact"><button class="topic-btn" data-edit="${c.id}" title="重命名">✏️</button><button class="topic-btn del" data-dc="${c.id}" title="删除">🗑</button></div></div>`).join('');
+  if (!a || !a.conversations.length) { l.innerHTML = '<div class="empty">暂无话题</div>'; $1('drawer-total-tokens').textContent = '0'; return; }
+  
+  let totalTokens = 0;
+  l.innerHTML = a.conversations.map(c => {
+    const tok = calcConvTokens(c, a.systemPrompt); totalTokens += tok;
+    return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
+      <span>💬</span>
+      <div class="tinfo">
+        <div class="ttitle-wrap">
+          <div class="ttitle">${esc(c.title)}</div>
+          <span class="nav-tokens">${formatK(tok)}</span>
+        </div>
+        <div class="tmeta">${c.messages.length} 条消息</div>
+      </div>
+      <div class="tact">
+        <button class="topic-btn" data-edit="${c.id}" title="重命名">✏️</button>
+        <button class="topic-btn del" data-dc="${c.id}" title="删除">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  $1('drawer-total-tokens').textContent = formatK(totalTokens);
 }
 
-$1('topic-list').addEventListener('click', async e => {
+on('topic-list', 'click', async e => {
   const a = getActiveAst(); if (!a) return;
   const delBtn = e.target.closest('[data-dc]');
   if (delBtn) {
-    e.stopPropagation();
-    if (!await showConfirm('确定删除此话题？')) return;
+    e.stopPropagation(); if (!await showConfirm('确定删除此话题？')) return;
     a.conversations = a.conversations.filter(c => c.id !== delBtn.dataset.dc);
     if (a.activeConvId === delBtn.dataset.dc) a.activeConvId = a.conversations[0]?.id || null;
     saveState(); renderTopicList(); renderChatPage(); return;
@@ -756,24 +770,18 @@ function startRename(cid) {
   tinfo.innerHTML = `<input class="topic-rename-input" value="${esc(conv.title)}" maxlength="40">`;
   const inp = tinfo.querySelector('input'); inp.focus(); inp.select();
   const finish = () => { const nt = inp.value.trim(); if (nt && nt !== conv.title) { conv.title = nt; saveState(); renderChatPage(); } renderTopicList(); };
-  inp.addEventListener('blur', finish);
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
+  on(inp, 'blur', finish);
+  on(inp, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
 }
-
-$1('new-topic').addEventListener('click', () => {
-  const a = getActiveAst(); if (!a) return;
-  a.activeConvId = null; saveState(); closeAll(); renderChatPage();
-});
+on('new-topic', 'click', () => { const a = getActiveAst(); if (!a) return; a.activeConvId = null; saveState(); closeAll(); renderChatPage(); });
 
 // ==================== SETTINGS ====================
 function renderSettings() {
   const a = getActiveAst(); if (!a) return;
   $1('settings-body').innerHTML = `
-    <div class="section">
-      <div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div>
+    <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div>
       <div class="field"><label>系统提示词</label><div style="position:relative;"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute;top:4px;right:4px;">⛶</button></div></div>
-      <div class="settings-fold">
-        <button class="settings-fold-head">⚙️ 高级参数 (Temp / Top P) <span class="arr">▶</span></button>
+      <div class="settings-fold"><button class="settings-fold-head">⚙️ 高级参数 <span class="arr">▶</span></button>
         <div class="settings-fold-body">
           <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
           <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
@@ -782,57 +790,58 @@ function renderSettings() {
       </div>
     </div>
     <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
-    <div class="section"><div class="field"><label>API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div></div>
+    <div class="section"><div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."><div class="hint">Endpoint：api.deepseek.com，<a href="https://platform.deepseek.com/api_keys" target="_blank">获取 API Key →</a></div></div></div>
     <div class="section"><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div></div>
     <button class="btn-primary" id="s-save" style="margin-top:8px">💾 保存设置</button>
   `;
-
-  // UI Event Bindings
-  document.querySelectorAll('.settings-fold-head').forEach(btn => btn.addEventListener('click', function() { this.parentElement.classList.toggle('open'); }));
-  $1('s-temp').addEventListener('input', function() { $1('s-tval').textContent = parseFloat(this.value).toFixed(2); });
-  $1('s-topp').addEventListener('input', function() { $1('s-pval').textContent = parseFloat(this.value).toFixed(2); });
-  $1('s-theme').addEventListener('click', function() { this.classList.toggle('active'); $1('theme-label').textContent = this.classList.contains('active') ? '🌙 暗色' : '☀️ 亮色'; });
-  $1('s-prompt-fs-btn').addEventListener('click', () => { $1('fs-prompt-textarea').value = $1('s-prompt').value; $1('fs-prompt-overlay').classList.add('show'); $1('fs-prompt-textarea').focus(); });
 }
 
-// 提取数据流转逻辑到底部，运用事件委托挂载外部逻辑
-$1('settings-body').addEventListener('click', e => {
+// 代理所有 Settings UI 的交互以实现无副作用渲染
+on('settings-body', 'click', e => {
   if (e.target.id === 'data-export') exportData();
   else if (e.target.id === 'data-import-btn') $1('import-file').click();
   else if (e.target.id === 's-save') applyAndSaveSettings();
+  else {
+    const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
+    const themeSw = e.target.closest('#s-theme');
+    if (themeSw) { themeSw.classList.toggle('active'); $1('theme-label').textContent = themeSw.classList.contains('active') ? '🌙 暗色' : '☀️ 亮色'; }
+    const fsBtn = e.target.closest('#s-prompt-fs-btn');
+    if (fsBtn) { $1('fs-prompt-textarea').value = $1('s-prompt').value; $1('fs-prompt-overlay').classList.add('show'); $1('fs-prompt-textarea').focus(); }
+  }
+});
+on('settings-body', 'input', e => {
+  if (e.target.id === 's-temp') $1('s-tval').textContent = parseFloat(e.target.value).toFixed(2);
+  if (e.target.id === 's-topp') $1('s-pval').textContent = parseFloat(e.target.value).toFixed(2);
 });
 
 function applyAndSaveSettings() {
   const a = getActiveAst(); if (!a) return;
-  if ($1('s-name')) a.name = $1('s-name').value.trim() || a.name;
-  if ($1('s-prompt')) a.systemPrompt = $1('s-prompt').value.trim();
-  if ($1('s-temp')) a.temperature = parseFloat($1('s-temp').value);
-  if ($1('s-topp')) a.topP = parseFloat($1('s-topp').value);
-  if ($1('s-dskey')) state.deepseekKey = $1('s-dskey').value.trim();
+  const val = id => { const e = $1(id); return e ? e.value : null; };
+  if (val('s-name') !== null) a.name = val('s-name').trim() || a.name;
+  if (val('s-prompt') !== null) a.systemPrompt = val('s-prompt').trim();
+  if (val('s-temp') !== null) a.temperature = parseFloat(val('s-temp'));
+  if (val('s-topp') !== null) a.topP = parseFloat(val('s-topp'));
+  if (val('s-dskey') !== null) state.deepseekKey = val('s-dskey').trim();
   if ($1('s-theme')) state.darkMode = $1('s-theme').classList.contains('active');
   saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('✅ 设置已保存');
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(url); toast('✅ 已导出备份');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
+  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
 }
 
-$1('import-file').addEventListener('change', e => {
+on('import-file', 'change', e => {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
     try {
-      const data = JSON.parse(ev.target.result);
-      if (!Array.isArray(data.assistants)) throw new Error('格式错误');
+      const data = JSON.parse(ev.target.result); if (!Array.isArray(data.assistants)) throw new Error();
       if (await showConfirm('导入将合并数据（不会删除现有助手），确定继续？')) {
-        const existingIds = new Set(state.assistants.map(a => a.id));
         data.assistants.forEach(importedA => {
-          const fixed = fixAsst(importedA);
-          if (existingIds.has(fixed.id)) { const idx = state.assistants.findIndex(a => a.id === fixed.id); state.assistants[idx] = fixed; }
-          else state.assistants.push(fixed);
+          const fixed = fixAsst(importedA); const idx = state.assistants.findIndex(a => a.id === fixed.id);
+          if (idx > -1) state.assistants[idx] = fixed; else state.assistants.push(fixed);
         });
         if (data.activeAstId) state.activeAstId = data.activeAstId;
         if (data.deepseekKey) state.deepseekKey = data.deepseekKey;
@@ -855,12 +864,9 @@ const setupPromptToolbar = ta => {
   return { bold: () => insert('**', '**'), italic: () => insert('*', '*'), code: () => insert('`', '`'), heading: () => insert('## '), list: () => insert('- '), quote: () => insert('> ') };
 };
 const ptb = setupPromptToolbar($1('fs-prompt-textarea'));
-$1('fs-prompt-tb').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-md]');
-  if (btn && ptb[btn.dataset.md]) ptb[btn.dataset.md]();
-});
-$1('fs-prompt-save').addEventListener('click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; applyAndSaveSettings(); $1('fs-prompt-overlay').classList.remove('show'); });
-$1('fs-prompt-close').addEventListener('click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; $1('fs-prompt-overlay').classList.remove('show'); });
+on('fs-prompt-tb', 'click', e => { const btn = e.target.closest('button[data-md]'); if (btn && ptb[btn.dataset.md]) ptb[btn.dataset.md](); });
+on('fs-prompt-save', 'click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; applyAndSaveSettings(); $1('fs-prompt-overlay').classList.remove('show'); });
+on('fs-prompt-close', 'click', () => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; $1('fs-prompt-overlay').classList.remove('show'); });
 
 // ==================== DROPDOWN ====================
 function showDropdown(anchor, items, onSelect) {
@@ -872,26 +878,18 @@ function showDropdown(anchor, items, onSelect) {
   dd.style.top = `${top}px`; dd.style.left = `${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
   dd.style.visibility = 'visible'; dd.classList.add('show');
   
-  const clickHandler = e => {
-    const item = e.target.closest('.dropdown-item');
-    if (item) onSelect(items[item.dataset.idx].value);
-    hideDropdown(); document.removeEventListener('click', clickHandler);
-  };
-  setTimeout(() => document.addEventListener('click', clickHandler), 10);
+  const clickHandler = e => { const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
+  setTimeout(() => on(document, 'click', clickHandler), 10);
 }
 function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
 
-$1('model-chip-btn').addEventListener('click', e => {
+on('model-chip-btn', 'click', e => {
   e.stopPropagation(); const ast = getActiveAst();
-  showDropdown(e.currentTarget, DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })), id => {
-    if (ast) { ast.modelId = id; saveState(); renderChatPage(); toast('已切换模型'); }
-  });
+  showDropdown(e.currentTarget, DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })), id => { if (ast) { ast.modelId = id; saveState(); renderChatPage(); toast('已切换模型'); } });
 });
-$1('reasoning-btn').addEventListener('click', e => {
+on('reasoning-btn', 'click', e => {
   e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off';
-  showDropdown(e.currentTarget, [{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}].map(o => ({ ...o, selected: o.value === cur })), val => {
-    if (ast) { ast.reasoningEffort = val; saveState(); renderChatPage(); toast({ off:'推理已关闭', high:'推理深度：High', max:'推理深度：Max' }[val] || ''); }
-  });
+  showDropdown(e.currentTarget, [{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}].map(o => ({ ...o, selected: o.value === cur })), val => { if (ast) { ast.reasoningEffort = val; saveState(); renderChatPage(); toast({ off:'推理已关闭', high:'推理深度：High', max:'推理深度：Max' }[val] || ''); } });
 });
 
 // ==================== CHAT LOGIC ====================
@@ -905,8 +903,7 @@ async function sendMessage() {
   if (!state.deepseekKey) return toast('请先设置 API Key') || openSettings();
   
   $1('user-input').value = ''; $1('user-input').style.height = 'auto';
-  const c = ensureConv(a);
-  c.messages.push({ role: 'user', content: txt });
+  const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
 
@@ -914,10 +911,11 @@ async function sendMessage() {
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
 
-  const body = { 
-    model: a.modelId, stream: true,
-    messages: [{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))]
-  };
+  // Initialize rolling token count
+  let currentTokens = calcConvTokens(c, a.systemPrompt);
+  $1('chat-nav-tokens').textContent = formatK(currentTokens);
+
+  const body = { model: a.modelId, stream: true, messages: [{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))] };
   if (a.reasoningEffort === 'off') { Object.assign(body, { temperature: a.temperature, top_p: a.topP }); body.thinking = { type: 'disabled' }; }
   else { Object.assign(body, { reasoning_effort: a.reasoningEffort }); body.thinking = { type: 'enabled' }; }
 
@@ -929,21 +927,25 @@ async function sendMessage() {
     const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '';
     while (true) {
       const { done, value } = await reader.read(); if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n'); buf = lines.pop() || '';
+      buf += dec.decode(value, { stream: true }); const lines = buf.split('\n'); buf = lines.pop() || '';
       for (let t of lines) {
         t = t.trim(); if (!t || !t.startsWith('data: ')) continue;
         const data = t.slice(6); if (data === '[DONE]') continue;
         try {
           const delta = JSON.parse(data).choices?.[0]?.delta; if (!delta) continue;
           if (delta.reasoning_content) {
+            currentTokens += estimateTokens(delta.reasoning_content);
             if (!am.reasoningStartTime) {
-              am.reasoningStartTime = Date.now();
-              reasoningTimers[ai] = setInterval(() => { const el = document.querySelector(`#messages .msg.ai[data-index="${ai}"] .reasoning-time`); if (el) el.textContent = `${((Date.now() - am.reasoningStartTime) / 1000).toFixed(1)}s`; }, 200);
+              am.reasoningStartTime = Date.now(); let timeEl = null;
+              reasoningTimers[ai] = setInterval(() => { if(!timeEl) timeEl = document.querySelector(`#messages .msg.ai[data-index="${ai}"] .reasoning-time`); if (timeEl) timeEl.textContent = `${((Date.now() - am.reasoningStartTime) / 1000).toFixed(1)}s`; }, 200);
             }
             am.reasoning += delta.reasoning_content;
           }
-          if (delta.content) am.content += delta.content;
+          if (delta.content) {
+            currentTokens += estimateTokens(delta.content);
+            am.content += delta.content;
+          }
+          $1('chat-nav-tokens').textContent = formatK(currentTokens);
           updateLive(ai, am);
         } catch(e) {}
       }
@@ -953,23 +955,18 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (reasoningTimers[ai]) { clearInterval(reasoningTimers[ai]); delete reasoningTimers[ai]; }
     am.reasoningTime = am.reasoningStartTime ? ((Date.now() - am.reasoningStartTime) / 1000).toFixed(1) : null;
-    delete am.reasoningStartTime; saveState(); renderMessages();
+    delete am.reasoningStartTime; saveState(); renderMessages(); renderChatPage(); // Update tokens fully
   }
 }
 
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
   let rb = bub.querySelector('.rblock');
-  if (msg.reasoning && !rb) {
-    rb = document.createElement('div'); rb.className = 'rblock';
-    rb.innerHTML = '<button class="rhead open"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody open"></div>';
-    bub.insertBefore(rb, bub.firstChild);
-  }
+  if (msg.reasoning && !rb) { rb = document.createElement('div'); rb.className = 'rblock'; rb.innerHTML = '<button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span><span class="reasoning-time"></span></button><div class="rbody"></div>'; bub.insertBefore(rb, bub.firstChild); }
   if (rb && msg.reasoning) rb.querySelector('.rbody').textContent = msg.reasoning;
   let mc = bub.querySelector('.markdown-body');
   if (!mc) { mc = document.createElement('div'); mc.className = 'markdown-body'; bub.appendChild(mc); }
-  mc.innerHTML = md(msg.content);
-  enhanceCodeBlocks(bub);
+  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
 }
 
 // ==================== SHEET / DRAWER BINDINGS ====================
@@ -980,22 +977,22 @@ const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show');
 const openSettings = () => { renderSettings(); openDrawer('settings-drawer'); };
 
 // ==================== EVENT BINDINGS ====================
-$1('send-btn').addEventListener('click', sendMessage);
-$1('stop-btn').addEventListener('click', () => abortCtrl?.abort());
-$1('user-input').addEventListener('keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
-$1('user-input').addEventListener('input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
-$1('chat-container').addEventListener('scroll', function() { $1('scroll-down').classList.toggle('show', this.scrollHeight - this.scrollTop - this.clientHeight > 200 && $1('messages').children.length > 1); });
-$1('scroll-down').addEventListener('click', () => scrollBottom(true));
-$1('chat-back').addEventListener('click', goToAsts);
-$1('topic-toggle').addEventListener('click', e => { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
-$1('settings-btn').addEventListener('click', openSettings);
-$1('close-topics').addEventListener('click', closeAll);
-$1('close-settings').addEventListener('click', closeAll);
-$1('overlay').addEventListener('click', closeAll);
+on('send-btn', 'click', sendMessage);
+on('stop-btn', 'click', () => abortCtrl?.abort());
+on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
+on('user-input', 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
+on('chat-container', 'scroll', function() { $1('scroll-down').classList.toggle('show', this.scrollHeight - this.scrollTop - this.clientHeight > 200 && $1('messages').children.length > 1); });
+on('scroll-down', 'click', () => scrollBottom(true));
+on('chat-back', 'click', goToAsts);
+on('topic-toggle', 'click', e => { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
+on('settings-btn', 'click', openSettings);
+on('close-topics', 'click', closeAll);
+on('close-settings', 'click', closeAll);
+on('overlay', 'click', closeAll);
 
 // ==================== INIT ====================
 setupPWA(); applyTheme(); renderAstList();
-if (state.activeAstId) goToChat(state.activeAstId);
+state.activeAstId = null; saveState();
 
 })();
 </script>
