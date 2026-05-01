@@ -102,7 +102,7 @@
     /* MESSAGES */
     .msg { display:flex; flex-direction:column; max-width:88%; animation:msgIn .3s ease-out; }
     @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-    .msg.user { align-self:flex-end; }
+    .msg.user { align-self:flex-end; align-items:flex-end; } /* Added align-items to prevent stretching short texts */
     .msg.ai { align-self:flex-start; width:100%; max-width:100%; }
     .msg .bubble { padding:10px 14px; border-radius:var(--radius-lg); font-size:14.5px; line-height:1.65; word-break:break-word; position:relative; }
     .msg.user .bubble { background:var(--bg-bubble-user); border-bottom-right-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-block; max-width:100%; }
@@ -635,7 +635,8 @@ function makeMsg(msg, idx) {
   d.className = `msg ${isAi ? 'ai' : 'user'}`; 
   d.dataset.index = idx;
 
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const thinkTimeHTML = msg.thinkTime ? `<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;">(${msg.thinkTime}s)</span>` : '';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程${thinkTimeHTML}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
@@ -776,20 +777,19 @@ function renderSettings() {
         <div class="settings-fold-body">
           <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
           <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
-          <div class="hint" style="margin-top:4px;">⚠️ 思考模式（high/max）下部分参数可能不生效</div>
+          <!-- 思考模式（high/max）下部分参数可能不生效（仅适用于DeepSeek模型） -->
         </div>
       </div>
     </div>
     <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
     <div class="section">
-      <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:8px;">API 密钥与模型列表</label>
-      <div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."><div class="hint">Endpoint: api.deepseek.com</div></div>
       <div class="settings-fold">
-        <button class="settings-fold-head">🔌 第三方 API 设置 <span class="arr">▶</span></button>
+        <button class="settings-fold-head">🔌 API 密钥与模型设置 <span class="arr">▶</span></button>
         <div class="settings-fold-body">
-          <div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}" placeholder="sk-... / AIza..."><div class="hint">第三方中转或官方 Key</div></div>
-          <div class="field"><label>第三方 API 地址</label><input type="text" id="s-gmurl" value="${esc(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com')}" placeholder="https://generativelanguage.googleapis.com"><div class="hint">请填入官方地址或中转域名</div></div>
-          <div class="field"><label>第三方模型列表 (英文逗号分隔)</label><input type="text" id="s-gmmodels" value="${esc(state.geminiModels || 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp')}" placeholder="gemini-2.5-pro, ..."><div class="hint">在此添加的模型将在聊天页面顶部的模型菜单中可选</div></div>
+          <div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."></div>
+          <div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}" placeholder="sk-... / AIza..."></div>
+          <div class="field"><label>第三方 API 地址</label><input type="text" id="s-gmurl" value="${esc(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com')}" placeholder="https://generativelanguage.googleapis.com"></div>
+          <div class="field"><label>第三方模型列表 (英文逗号分隔)</label><input type="text" id="s-gmmodels" value="${esc(state.geminiModels || 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp')}" placeholder="gemini-2.5-pro, ..."></div>
         </div>
       </div>
     </div>
@@ -947,15 +947,34 @@ function startGenTimer(idx, am) {
 
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
+  const isThinking = msg.content.length === 0; // 当普通内容为空时，即正在思考阶段
   
   if (msg.reasoning) { 
-      let rb = bub.querySelector('.rblock');
-      if (!rb) { 
-          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody"></div></div>'); 
-          rb = bub.querySelector('.rblock');
+          let rb = bub.querySelector('.rblock');
+          if (!rb) { 
+              // 初始输出思考块时，默认添加 open 类实现展开
+              bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
+              rb = bub.querySelector('.rblock');
+          }
+          
+          const ttEl = rb.querySelector('.think-time');
+          // 思考中，实时更新思考时间
+          if (isThinking && msg.startTime) {
+              ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
+          }
+
+          // 思考结束后自动收起并固定思考时间
+          if (!isThinking && !rb.dataset.autoClosed) {
+              rb.querySelector('.rhead').classList.remove('open');
+              rb.querySelector('.rbody').classList.remove('open');
+              rb.dataset.autoClosed = '1';
+              if (msg.startTime && !msg.thinkTime) {
+                  msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0);
+                  if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`;
+              }
+          }
+          rb.querySelector('.rbody').textContent = msg.reasoning;
       }
-      rb.querySelector('.rbody').textContent = msg.reasoning;
-  }
   let mc = bub.querySelector('.markdown-body');
   if (!mc) { 
       bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>');
@@ -985,7 +1004,7 @@ async function sendMessage() {
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
 
-  const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
+  const am = { role: 'assistant', content: '', reasoning: '', genTime: null, thinkTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
 
@@ -1073,6 +1092,7 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
+    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; // 若在纯思考阶段被中止，保留时间
     delete am.startTime; 
     saveState(); renderChatPage();
   }
