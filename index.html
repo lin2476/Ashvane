@@ -640,7 +640,7 @@ function makeMsg(msg, idx) {
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
   
-  const tokenDisplay = isAi ? formatK(getMsgTokens(msg)) : '';
+  const tokenDisplay = isAi ? '🏷️' + formatK(getMsgTokens(msg)) : '';
   const timeDisplay = isAi ? `<span class="gen-time">⏱ ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
@@ -964,8 +964,9 @@ function updateLive(idx, msg) {
   mc.innerHTML = md(msg.content); 
   enhanceCodeBlocks(bub);
 
+  // 实时更新ai消息的token内容
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
-  if (tokensEl) tokensEl.textContent = formatK(getMsgTokens(msg));
+  if (tokensEl) tokensEl.textContent = '🏷️' + formatK(getMsgTokens(msg));
 }
 
 async function sendMessage() {
