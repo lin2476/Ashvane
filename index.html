@@ -813,7 +813,6 @@ function renderSettings() {
         </div>
       </div>
     </div>
-    <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
     <div class="section">
       <div class="settings-fold">
         <button class="settings-fold-head">🔌 API 密钥与模型设置 <span class="arr">▶</span></button>
@@ -825,6 +824,7 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
     <div class="section"><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div></div>
     <button class="btn-primary" id="s-save" style="margin-top:8px">保存设置</button>
   `;
