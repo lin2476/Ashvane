@@ -116,11 +116,10 @@
     .rbody.open { display:block; }
 
     /* MESSAGE ACTIONS */
-    .msg-actions { display:flex; align-items:center; justify-content:space-between; width:100%; padding-top:4px; gap:4px; }
-    .actions-left, .actions-right { flex:1; display:flex; min-width:0; }
-    .actions-left { justify-content:flex-start; align-items:center; }
-    .actions-right { justify-content:flex-end; gap:2px; }
-    .msg-tokens { font-size:10px; color:var(--text-secondary); opacity:0.65; font-family:var(--mono); white-space:nowrap; }
+    .msg-actions { display:flex; align-items:center; width:100%; padding-top:4px; gap:6px; }
+    .actions-left { flex:1; display:flex; min-width:0; justify-content:flex-start; align-items:center; }
+    .actions-right { display:flex; justify-content:flex-end; gap:2px; flex-shrink:0; }
+    .msg-tokens { font-size:10px; color:var(--text-secondary); opacity:0.65; font-family:var(--mono); white-space:nowrap; flex-shrink:0; margin-right:4px; }
     .actions-left .badge, .gen-time { font-size:10px; color:var(--text-secondary); opacity:.65; white-space:nowrap; }
     .actions-left .badge { letter-spacing:.3px; }
     .gen-time { font-family:var(--mono); margin-left:6px; }
@@ -642,7 +641,7 @@ function makeMsg(msg, idx) {
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
   
   const tokenDisplay = isAi ? formatK(getMsgTokens(msg)) : '';
-  const timeDisplay = isAi ? `<span class="gen-time">⏱ ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(1) : '0.0')}s</span>` : '';
+  const timeDisplay = isAi ? `<span class="gen-time">⏱ ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
     <div class="msg-actions">
@@ -942,8 +941,8 @@ function startGenTimer(idx, am) {
   am.startTime = Date.now();
   generationTimers[idx] = setInterval(() => {
     const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .gen-time`);
-    if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(1)}s`;
-  }, 200);
+    if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
+  }, 1000);
 }
 
 function updateLive(idx, msg) {
@@ -1072,7 +1071,7 @@ async function sendMessage() {
   finally {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
-    am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(1) : null;
+    am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
     delete am.startTime; 
     saveState(); renderChatPage();
   }
