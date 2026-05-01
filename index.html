@@ -45,13 +45,17 @@
       --accent-light: #1e1b4b; --code-bg: #1a1a26; --code-header-bg: rgba(255,255,255,0.05);
     }
 
-    /* Reset & Base */
+    /* Reset & Custom Scrollbar */
     *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
     html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
     #app { display:flex; flex-direction:column; height:100%; max-width:700px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg-primary); }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.4); }
 
     /* Flex Alignments */
-    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap { display:flex; align-items:center; }
+    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap, .msg-actions, .actions-left { display:flex; align-items:center; }
     .navbar, .drawer-head, .t-row, .code-block-header, .fs-prompt-head { justify-content:space-between; }
     
     /* Common Buttons */
@@ -90,7 +94,7 @@
     #messages { display:flex; flex-direction:column; gap:8px; max-width:100%; }
 
     .welcome { flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 20px; text-align:center; opacity:0; animation:fadeIn .4s .1s forwards; }
-    @keyframes fadeIn { to { opacity:1; } }
+    @keyframes fadeIn { to { opacity:1; transform:translateY(0); } }
     .welcome .emoji { font-size:48px; margin-bottom:10px; animation:float 3s ease-in-out infinite; }
     @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
     .welcome h3 { font-size:18px; font-weight:700; margin-bottom:4px; }
@@ -102,12 +106,13 @@
     /* MESSAGES */
     .msg { display:flex; flex-direction:column; max-width:88%; animation:msgIn .3s ease-out; }
     @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-    .msg.user { align-self:flex-end; align-items:flex-end; } /* Added align-items to prevent stretching short texts */
+    .msg.user { align-self:flex-end; align-items:flex-end; }
     .msg.ai { align-self:flex-start; width:100%; max-width:100%; }
     .msg .bubble { padding:10px 14px; border-radius:var(--radius-lg); font-size:14.5px; line-height:1.65; word-break:break-word; position:relative; }
     .msg.user .bubble { background:var(--bg-bubble-user); border-bottom-right-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-block; max-width:100%; }
     .msg.ai .bubble { background:transparent; border-bottom-left-radius:6px; padding:10px 2px; }
     
+    /* REASONING BLOCK */
     .rblock { margin-bottom:8px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
     .rhead { gap:6px; padding:7px 12px; background:var(--bg-tertiary); font-size:11px; font-weight:600; color:var(--text-secondary); cursor:pointer; border:none; width:100%; text-align:left; border-radius:var(--radius-sm); }
     .rhead .arr { transition:transform var(--tr); font-size:9px; margin-left:auto; }
@@ -116,8 +121,8 @@
     .rbody.open { display:block; }
 
     /* MESSAGE ACTIONS */
-    .msg-actions { display:flex; align-items:center; width:100%; padding-top:4px; gap:6px; }
-    .actions-left { flex:1; display:flex; min-width:0; justify-content:flex-start; align-items:center; }
+    .msg-actions { width:100%; padding-top:4px; gap:6px; }
+    .actions-left { flex:1; min-width:0; justify-content:flex-start; }
     .actions-right { display:flex; justify-content:flex-end; gap:2px; flex-shrink:0; }
     .msg-tokens { font-size:10px; color:var(--text-secondary); opacity:0.65; font-family:var(--mono); white-space:nowrap; flex-shrink:0; margin-right:4px; }
     .actions-left .badge, .gen-time { font-size:10px; color:var(--text-secondary); opacity:.65; white-space:nowrap; }
@@ -148,6 +153,15 @@
     .bubble ul, .bubble ol { padding-left:18px; margin:4px 0; }
     .bubble li { margin:2px 0; }
     .bubble code { background:var(--bg-tertiary); padding:2px 5px; border-radius:3px; font-family:var(--mono); font-size:.86em; }
+    .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
+    
+    /* Table Optimization */
+    .bubble .table-wrapper { width: 100%; overflow-x: auto; margin: 6px 0; }
+    .bubble table { border-collapse:collapse; width:100%; font-size:12px; white-space: nowrap; }
+    .bubble th, .bubble td { border:1px solid var(--border-subtle); padding:5px 8px; text-align:left; }
+    .bubble th { background:var(--bg-tertiary); }
+    .bubble a { color:var(--accent); }
+    .bubble img { max-width:100%; border-radius:var(--radius-sm); }
 
     /* CODE BLOCK */
     .code-block-wrapper { border-radius:var(--radius-sm); overflow:hidden; margin:8px 0; background:var(--code-bg); }
@@ -156,16 +170,10 @@
     .code-btns { gap:4px; }
     .code-btn { padding:2px 8px; border:none; border-radius:4px; background:rgba(128,128,128,.15); color:var(--text-secondary); font-size:10px; cursor:pointer; transition:background var(--tr); }
     .code-btn:hover { background:rgba(128,128,128,.25); }
-    .code-block-wrapper.collapsed pre { max-height:100px; overflow-y:hidden; overflow-x:auto; position:relative; }
+    .code-block-wrapper.collapsed pre { max-height:150px; overflow-y:hidden; overflow-x:auto; position:relative; }
     .bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background:var(--code-bg) !important; color:inherit; }
     .bubble .code-block-wrapper pre { padding:12px; overflow-x:auto; margin:0; scrollbar-width:none; }
     .bubble .code-block-wrapper pre::-webkit-scrollbar { display:none; }
-    .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
-    .bubble table { border-collapse:collapse; width:100%; margin:6px 0; font-size:12px; }
-    .bubble th, .bubble td { border:1px solid var(--border-subtle); padding:5px 8px; text-align:left; }
-    .bubble th { background:var(--bg-tertiary); }
-    .bubble a { color:var(--accent); }
-    .bubble img { max-width:100%; border-radius:var(--radius-sm); }
 
     /* INPUT */
     #input-bar { align-items:flex-end; padding:6px 10px 2px; background:var(--bg-secondary); border-top:0.5px solid var(--border-soft); z-index:100; flex-shrink:0; }
@@ -204,7 +212,7 @@
     .sheet-title { font-size:14px; font-weight:700; text-align:center; padding:4px 0 10px; flex-shrink:0; }
     .sheet-body { flex:1; overflow-y:auto; padding:0 16px 30px; }
 
-    /* ASSISTANT CARDS */
+    /* ASSISTANT CARDS & TOPICS */
     .ast-grid { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
     .ast-card { padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:12px; border:1.5px solid transparent; }
     .ast-card:active { border-color:var(--accent); }
@@ -215,7 +223,6 @@
     .ast-card .ast-prompt { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }
     .ast-card:hover .ast-del { opacity:1; }
 
-    /* TOPIC LIST */
     .topic-item { gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
     .topic-item:hover, .topic-item.active { background:var(--bg-tertiary); }
     .topic-item.active { border-color:var(--accent-light); }
@@ -236,8 +243,6 @@
     .field label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:5px; }
     .field textarea { resize:vertical; min-height:50px; }
     .field .hint { font-size:10px; color:var(--text-secondary); margin-top:3px; }
-    .field .hint a { color:var(--accent); }
-
     .settings-fold { margin-bottom:14px; border-radius:var(--radius-sm); overflow:hidden; background:var(--bg-tertiary); }
     .settings-fold-head { padding:9px 12px; background:var(--bg-tertiary); border:none; width:100%; font-size:12px; font-weight:600; color:var(--text-secondary); cursor:pointer; }
     .settings-fold-head .arr { transition:transform var(--tr); font-size:9px; }
@@ -265,6 +270,7 @@
     .tsw::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform var(--tr); box-shadow:0 1px 2px rgba(0,0,0,.2); }
     .tsw.active::after { transform:translateX(18px); }
 
+    /* UI Widgets */
     .confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
     .confirm-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; }
     .confirm-actions { display:flex; gap:10px; justify-content:center; }
@@ -426,7 +432,7 @@ const estimateTokens = str => {
 };
 const getMsgTokens = m => estimateTokens(m.content) + estimateTokens(m.reasoning);
 const calcConvTokens = (c, p) => c.messages.reduce((t, m) => t + getMsgTokens(m), estimateTokens(p));
-const formatK = t => t < 1000 ? t : (t/1000).toFixed(1) + 'k';
+const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
 
 // ==================== STATE & MODELS ====================
 const STORAGE_KEY = 'ai_chat_v8';
@@ -459,11 +465,11 @@ function loadState() {
         darkMode: !!p.darkMode
       };
     }
-  } catch(e){}
+  } catch(e) {}
   return { 
-    assistants:[], activeAstId:null, deepseekKey:'', geminiKey:'', 
-    geminiBaseUrl:'https://generativelanguage.googleapis.com', 
-    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode:false 
+    assistants:[], activeAstId: null, deepseekKey: '', geminiKey: '', 
+    geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
+    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode: false 
   };
 }
 
@@ -480,7 +486,6 @@ function fixAsst(a) {
     conversations: (a.conversations ||[]).map(c => ({ 
       id: c.id || genId(), title: c.title || '新话题', 
       messages: (c.messages ||[]).map(m => {
-        // 兼容旧数据的计时字段，统一转化为全局耗时
         if (m.reasoningTime && !m.genTime) { m.genTime = m.reasoningTime; delete m.reasoningTime; }
         return m;
       })
@@ -526,7 +531,7 @@ function showConfirm(msg) {
 // ==================== PWA & THEME ====================
 function setupPWA() {
   const manifest = {
-    name: 'AI Chat', short_name: 'AI Chat', description: 'DeepSeek & Gemini AI 聊天助手',
+    name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
     start_url: location.href.split('?')[0], display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
     icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
@@ -609,7 +614,11 @@ marked.setOptions({ breaks: true, gfm: true });
 const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { return esc(t).replace(/\n/g, '<br>'); } };
 
 function enhanceCodeBlocks(container) {
+  // Prevent re-enhancing already enhanced blocks during fast streaming
   container.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
+    if (pre.dataset.enhanced) return;
+    pre.dataset.enhanced = '1';
+
     const code = pre.querySelector('code');
     const lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
 
@@ -617,15 +626,31 @@ function enhanceCodeBlocks(container) {
     wrapper.className = 'code-block-wrapper collapsed';
     wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn">复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
     
-    pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
+    pre.parentNode.insertBefore(wrapper, pre); 
+    wrapper.appendChild(pre);
 
     on(wrapper.querySelector('.copy-btn'), 'click', e => {
-      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { e.target.textContent = '✓'; setTimeout(() => e.target.textContent = '复制', 1200); });
+      e.stopPropagation(); 
+      copyText((code || pre).textContent || '').then(() => { 
+        e.target.textContent = '✓'; 
+        clearTimeout(e.target._t);
+        e.target._t = setTimeout(() => e.target.textContent = '复制', 1200); 
+      });
     });
     on(wrapper.querySelector('.fold-btn'), 'click', e => {
       e.stopPropagation(); const isCol = wrapper.classList.toggle('collapsed'); e.target.textContent = isCol ? '展开' : '折叠';
     });
-    if (code && !code.dataset.hl) { try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} }
+    if (code && !code.dataset.hl) { 
+      try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} 
+    }
+  });
+
+  // Table wrapper optimization
+  container.querySelectorAll('table:not(.table-wrapper table)').forEach(table => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
   });
 }
 
@@ -673,7 +698,7 @@ on('messages', 'click', async e => {
 
     if (act === 'ed') openEditModal(msg, idx, conv);
     else if (act === 'del') deleteMessage(idx);
-    else if (act === 're') msg.role === 'assistant' ? regenerateMessage(idx) : resendUserMessage(idx);
+    else if (act === 're') retryMessage(idx, msg.role === 'assistant');
   }
 });
 
@@ -683,19 +708,27 @@ async function deleteMessage(idx) {
   conv.messages.splice(idx, 1); saveState(); renderChatPage();
 }
 
-async function regenerateMessage(idx) {
-  const conv = getActiveConv(); if (!conv || conv.messages[idx]?.role !== 'assistant') return;
-  if (!await showConfirm('确定要重新生成此回复吗？')) return;
-  conv.messages.splice(idx);
-  if (!conv.messages.length || conv.messages[conv.messages.length - 1].role !== 'user') return toast('无法重新生成：缺少用户消息');
-  $1('user-input').value = conv.messages.pop().content; saveState(); renderChatPage(); sendMessage();
-}
-
-async function resendUserMessage(idx) {
-  const conv = getActiveConv(); if (!conv || conv.messages[idx]?.role !== 'user') return;
-  if (!await showConfirm('确定要重新发送这条消息吗？')) return;
-  const msg = conv.messages[idx]; conv.messages.splice(idx);
-  $1('user-input').value = msg.content; saveState(); renderChatPage(); sendMessage();
+// 精简合并后的重新发送/生成逻辑
+async function retryMessage(idx, isAi) {
+  const conv = getActiveConv(); if (!conv) return;
+  if (!await showConfirm(`确定要重新${isAi ? '生成此回复' : '发送这条消息'}吗？`)) return;
+  
+  let targetIdx = idx;
+  if (isAi) {
+    while (targetIdx >= 0 && conv.messages[targetIdx].role !== 'user') targetIdx--;
+    if (targetIdx < 0) return toast('无法重新生成：缺少关联的用户消息');
+  }
+  
+  const userMsgContent = conv.messages[targetIdx].content;
+  conv.messages = conv.messages.slice(0, targetIdx); // 安全截断数组
+  
+  const input = $1('user-input');
+  input.value = userMsgContent; 
+  saveState(); 
+  renderChatPage(); 
+  
+  input.dispatchEvent(new Event('input')); // 触发输入框高度重计算（不聚焦，防止键盘弹出）
+  sendMessage();
 }
 
 function renderMessages() {
@@ -777,7 +810,6 @@ function renderSettings() {
         <div class="settings-fold-body">
           <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
           <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
-          <!-- 思考模式（high/max）下部分参数可能不生效（仅适用于DeepSeek模型） -->
         </div>
       </div>
     </div>
@@ -810,6 +842,7 @@ on('settings-body', 'click', e => {
     if (fsBtn) { $1('fs-prompt-textarea').value = $1('s-prompt').value; $1('fs-prompt-overlay').classList.add('show'); $1('fs-prompt-textarea').focus(); }
   }
 });
+
 on('settings-body', 'input', e => {
   if (e.target.id === 's-temp') $1('s-tval').textContent = parseFloat(e.target.value).toFixed(2);
   if (e.target.id === 's-topp') $1('s-pval').textContent = parseFloat(e.target.value).toFixed(2);
@@ -834,7 +867,8 @@ function applyAndSaveSettings() {
 }
 
 function exportData() {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
+  const a = document.createElement('a'); 
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
   a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
 }
@@ -947,34 +981,32 @@ function startGenTimer(idx, am) {
 
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
-  const isThinking = msg.content.length === 0; // 当普通内容为空时，即正在思考阶段
+  const isThinking = msg.content.length === 0; 
   
   if (msg.reasoning) { 
-          let rb = bub.querySelector('.rblock');
-          if (!rb) { 
-              // 初始输出思考块时，默认添加 open 类实现展开
-              bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
-              rb = bub.querySelector('.rblock');
-          }
-          
-          const ttEl = rb.querySelector('.think-time');
-          // 思考中，实时更新思考时间
-          if (isThinking && msg.startTime) {
-              ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
-          }
-
-          // 思考结束后自动收起并固定思考时间
-          if (!isThinking && !rb.dataset.autoClosed) {
-              rb.querySelector('.rhead').classList.remove('open');
-              rb.querySelector('.rbody').classList.remove('open');
-              rb.dataset.autoClosed = '1';
-              if (msg.startTime && !msg.thinkTime) {
-                  msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0);
-                  if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`;
-              }
-          }
-          rb.querySelector('.rbody').textContent = msg.reasoning;
+      let rb = bub.querySelector('.rblock');
+      if (!rb) { 
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
+          rb = bub.querySelector('.rblock');
       }
+      
+      const ttEl = rb.querySelector('.think-time');
+      if (isThinking && msg.startTime) {
+          ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
+      }
+
+      if (!isThinking && !rb.dataset.autoClosed) {
+          rb.querySelector('.rhead').classList.remove('open');
+          rb.querySelector('.rbody').classList.remove('open');
+          rb.dataset.autoClosed = '1';
+          if (msg.startTime && !msg.thinkTime) {
+              msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0);
+              if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`;
+          }
+      }
+      rb.querySelector('.rbody').textContent = msg.reasoning;
+  }
+
   let mc = bub.querySelector('.markdown-body');
   if (!mc) { 
       bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>');
@@ -983,14 +1015,14 @@ function updateLive(idx, msg) {
   mc.innerHTML = md(msg.content); 
   enhanceCodeBlocks(bub);
 
-  // 实时更新ai消息的token内容
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
   if (tokensEl) tokensEl.textContent = '🏷️ ' + formatK(getMsgTokens(msg));
 }
 
 async function sendMessage() {
   if (streaming) return;
-  const txt = $1('user-input').value.trim(); if (!txt) return;
+  const inputEl = $1('user-input');
+  const txt = inputEl.value.trim(); if (!txt) return;
   const a = getActiveAst(); if (!a) return;
   
   if (isDeepSeek(a.modelId)) {
@@ -999,7 +1031,7 @@ async function sendMessage() {
       if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings();
   }
   
-  $1('user-input').value = ''; $1('user-input').style.height = 'auto';
+  inputEl.value = ''; inputEl.style.height = 'auto'; // 清空并重置高度（此操作不会触发键盘）
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
@@ -1027,7 +1059,7 @@ async function sendMessage() {
       }
       
       body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
-      if (a.systemPrompt) body.systemInstruction = { role: "system", parts:[{ text: a.systemPrompt }] };
+      if (a.systemPrompt) body.systemInstruction = { role: "system", parts: [{ text: a.systemPrompt }] };
       if (a.reasoningEffort !== 'off') {
           const isV3 = a.modelId.includes('gemini-3');
           body.generationConfig.thinkingConfig = isV3 
@@ -1044,7 +1076,7 @@ async function sendMessage() {
 
   abortCtrl = new AbortController();
   try {
-    startGenTimer(ai, am); // 开始记录整体生成响应与输出耗时
+    startGenTimer(ai, am); 
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
     if (!resp.ok) { let em = `HTTP ${resp.status}`; try { em = (await resp.json()).error?.message || em; } catch(e){} throw new Error(em); }
     
@@ -1092,7 +1124,7 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
-    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; // 若在纯思考阶段被中止，保留时间
+    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; 
     delete am.startTime; 
     saveState(); renderChatPage();
   }
@@ -1101,7 +1133,7 @@ async function sendMessage() {
 // ==================== BINDINGS ====================
 const openSheet = id => { closeDrawers(); $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
 const openDrawer = id => { $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
-const closeDrawers = () =>['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
+const closeDrawers = () => ['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show'); closeDrawers(); };
 const openSettings = () => { renderSettings(); openDrawer('settings-drawer'); };
 
