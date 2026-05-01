@@ -948,7 +948,19 @@ on('model-chip-btn', 'click', e => {
       { isHeader: true, label: '第三方 API' },
       ...getCustomModels().map(name => ({ label: `✨ ${name}`, value: name, selected: ast?.modelId === name }))
   ];
-  showDropdown(e.currentTarget, items, id => { if (ast) { ast.modelId = id; saveState(); renderChatPage(); toast('已切换模型'); } });
+  showDropdown(e.currentTarget, items, id => { 
+      if (ast) { 
+          ast.modelId = id; 
+          // 修正不支持的推理参数，确保传参和UI显示正确
+          const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
+          if (!validOpts.includes(ast.reasoningEffort)) {
+              if (ast.reasoningEffort === 'max') ast.reasoningEffort = 'high';
+              else if (ast.reasoningEffort === 'low') ast.reasoningEffort = 'off';
+              else ast.reasoningEffort = 'off';
+          }
+          saveState(); renderChatPage(); toast('已切换模型'); 
+      } 
+  });
 });
 
 on('reasoning-btn', 'click', e => {
