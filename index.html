@@ -982,35 +982,87 @@ on('import-file', 'change', e => {
   reader.onload = async ev => {
     try {
       const parsed = JSON.parse(ev.target.result);
-      // 兼容旧版直出和新版包裹格式
       const data = parsed._meta ? parsed.data : parsed; 
       if (!Array.isArray(data.assistants)) throw new Error('Invalid format');
       
-      if (await showConfirm('导入将“深度合并”数据（原有话题不会丢失）')) {
+      if (await showConfirm('导入将“深度合并”数据（原有话题不会丢失，新分支将自动追加）')) {
+        
+        // 1. 深度合并分组：防重名与ID叠加
         if (Array.isArray(data.groups)) {
-          data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
+          data.groups.forEach(g => { 
+            if (!state.groups.find(x => x.id === g.id || x.name === g.name)) {
+              state.groups.push(g); 
+            }
+          });
         }
+
+        // 2. 深度合并助手及话题数据
         data.assistants.forEach(importedA => {
           const fixed = fixAsst(importedA);
-          const existing = state.assistants.find(a => a.id === fixed.id);
+          
+          // 修正导入助手的分组ID，确保能放到正确的本地同名组下
+          const originGroup = (data.groups || []).find(g => g.id === fixed.groupId);
+          let localGroup = state.groups.find(g => g.id === fixed.groupId);
+          if (!localGroup && originGroup) {
+            localGroup = state.groups.find(g => g.name === originGroup.name);
+          }
+          fixed.groupId = localGroup ? localGroup.id : 'default';
+
+          // 优先通过 ID 匹配现有助手，若不存在则通过名称匹配
+          let existing = state.assistants.find(a => a.id === fixed.id);
+          if (!existing) {
+            existing = state.assistants.find(a => a.name.trim() === fixed.name.trim());
+          }
+
           if (existing) {
-            // 深入合并已有助手内的对话（按 ID 排重插入）
+            // 助手已存在，仅在现有助手下合并其中不存在的差异话题
             fixed.conversations.forEach(ic => {
-              if (!existing.conversations.find(c => c.id === ic.id)) existing.conversations.push(ic);
+              // 检查是否已经存在一模一样的话题 (ID、名称、消息数全等视为绝对相同)
+              const isExactSame = existing.conversations.some(c => 
+                c.id === ic.id && c.title === ic.title && c.messages.length === ic.messages.length
+              );
+              if (isExactSame) return; // 已经存在，跳过
+
+              // 检查 ID 是否产生冲突
+              const conflictById = existing.conversations.find(c => c.id === ic.id);
+              if (conflictById) {
+                // ID 相同，但标题或消息数不同，说明这是来自另一台设备的衍生/分叉对话！
+                // 此时不进行粗暴忽略，赋予导入的话题新 ID，作为独立分支追加，100%防止你的修改丢失
+                ic.id = genId();
+                existing.conversations.push(ic);
+              } else {
+                // 若无 ID 冲突，检查是否因旧版重置等原因造成仅内容重复的话题副本
+                const isDuplicateContent = existing.conversations.some(c => 
+                  c.title === ic.title && c.messages.length === ic.messages.length && ic.messages.length > 0
+                );
+                if (isDuplicateContent) return; // 视为内容重复，跳过
+                
+                // 完全陌生且无冲突的话题，正常追加
+                existing.conversations.push(ic);
+              }
             });
-            Object.assign(existing, { ...fixed, conversations: existing.conversations });
           } else {
+            // 助手在本地完全不存在，直接作为新助手添加
             state.assistants.push(fixed);
           }
         });
+        
+        // 3. 合并全局设置信息 (优先保留本地设置，空缺由导入补充)
         Object.assign(state, {
-          activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey,
-          geminiKey: data.geminiKey ?? state.geminiKey, geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl,
-          geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode
+          activeAstId: data.activeAstId ?? state.activeAstId, 
+          deepseekKey: data.deepseekKey ?? state.deepseekKey,
+          geminiKey: data.geminiKey ?? state.geminiKey, 
+          geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl,
+          geminiModels: data.geminiModels ?? state.geminiModels, 
+          darkMode: data.darkMode ?? state.darkMode
         });
+
         saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); toast('✅ 数据已合并');
       }
-    } catch(err) { toast('❌ 文件格式错误'); }
+    } catch(err) { 
+      toast('❌ 文件格式错误或数据损坏'); 
+      console.error(err);
+    }
   };
   reader.readAsText(file); e.target.value = '';
 });
