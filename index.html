@@ -55,13 +55,13 @@
     ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.4); }
 
     /* Flex Alignments */
-    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-card, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap, .msg-actions, .actions-left { display:flex; align-items:center; }
+    .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .ast-meta, .topic-item, .tact, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap, .msg-actions, .actions-left, .ast-group-actions { display:flex; align-items:center; }
     .navbar, .drawer-head, .t-row, .code-block-header, .fs-prompt-head { justify-content:space-between; }
     
     /* Common Buttons */
-    .nav-btn, #send-btn, #stop-btn, .topic-btn, .ast-del, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
+    .nav-btn, #send-btn, #stop-btn, .topic-btn, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
     .nav-btn:active, .icon-btn:active, #stop-btn:active, #send-btn:not(:disabled):active { transform:scale(.9); }
-    .ast-card:active, .welcome-hint:active { transform:scale(.97); }
+    .welcome-hint:active { transform:scale(.97); }
     .btn-primary, .confirm-actions button, .edit-card-foot button, .data-actions button { cursor:pointer; transition:all var(--tr); font-weight:600; border:none; }
 
     /* Inputs */
@@ -212,16 +212,34 @@
     .sheet-title { font-size:14px; font-weight:700; text-align:center; padding:4px 0 10px; flex-shrink:0; }
     .sheet-body { flex:1; overflow-y:auto; padding:0 16px 30px; }
 
-    /* ASSISTANT CARDS & TOPICS */
-    .ast-grid { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
-    .ast-card { padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:12px; border:1.5px solid transparent; }
+    /* ASSISTANT GROUPS & CARDS */
+    .ast-group { margin-bottom: 6px; }
+    .ast-group-header { padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-radius: var(--radius-sm); transition: background var(--tr); }
+    .ast-group-header:active { background: var(--bg-tertiary); }
+    .ast-group-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+    .ast-group-title .arr { font-size: 10px; transition: transform var(--tr); display: inline-block; }
+    .ast-group-title .arr.open { transform: rotate(90deg); }
+    .ast-group-count { font-weight: normal; opacity: 0.6; font-size: 11px; }
+
+    .ast-group-actions { gap: 4px; }
+    .ast-group-actions .icon-btn { width: 28px; height: 28px; background: transparent; border: none; font-size: 16px; border-radius: 6px; }
+    .ast-group-actions .icon-btn:active { background: var(--bg-tertiary); }
+    .ast-group-header:hover .icon-btn { color: var(--text-primary); }
+
+    .ast-group-list { display: none; flex-direction: column; gap: 10px; padding: 6px 0 10px; min-height: 20px; }
+    .ast-group-list.open { display: flex; }
+
+    .ast-card { display:flex; align-items:center; padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:12px; border:1.5px solid transparent; }
     .ast-card:active { border-color:var(--accent); }
     .ast-card .ast-icon { font-size:32px; flex-shrink:0; }
     .ast-card .ast-info { flex:1; min-width:0; }
     .ast-card .ast-name { font-size:15px; font-weight:700; margin-bottom:2px; }
     .ast-card .ast-meta { font-size:11px; color:var(--text-secondary); gap:8px; }
     .ast-card .ast-prompt { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }
-    .ast-card:hover .ast-del { opacity:1; }
+
+    .ast-more { padding: 4px 10px; font-size: 18px; font-weight: bold; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; margin-left: auto; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all var(--tr); width: 32px; height: 32px; }
+    .ast-more:active { background: var(--bg-tertiary); }
+    .ast-card:hover .ast-more { color: var(--text-primary); }
 
     .topic-item { gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
     .topic-item:hover, .topic-item.active { background:var(--bg-tertiary); }
@@ -249,7 +267,6 @@
     .settings-fold.open .settings-fold-head .arr { transform:rotate(90deg); }
     .settings-fold-body { padding:8px 12px 12px; background:var(--bg-tertiary); border-top:1px solid var(--border-soft); display:none; }
     .settings-fold.open .settings-fold-body { display:block; }
-    .icon-btn { border-radius:8px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:16px; }
 
     .prompt-toolbar { gap:3px; margin-bottom:8px; flex-wrap:wrap; }
     .prompt-toolbar button { width:30px; height:28px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; transition:all var(--tr); font-family:var(--mono); }
@@ -272,7 +289,7 @@
 
     /* UI Widgets */
     .confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
-    .confirm-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; }
+    .confirm-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; white-space:pre-wrap; }
     .confirm-actions { display:flex; gap:10px; justify-content:center; }
     .confirm-actions button { flex:1; padding:10px 0; border-radius:14px; font-size:14px; }
     .confirm-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
@@ -299,12 +316,15 @@
   <!-- ASSISTANTS PAGE -->
   <div class="page active" id="ast-page">
     <div class="navbar">
-      <div style="width:34px"></div>
+      <div class="nav-left" style="width:70px"></div>
       <div class="nav-center"><span class="asst-name">AI Chat</span></div>
-      <button class="nav-btn accent" id="add-ast-btn">＋</button>
+      <div class="nav-right" style="width:70px;justify-content:flex-end;gap:8px;">
+        <button class="nav-btn" id="add-group-btn" title="新建分组" style="font-size:16px;background:transparent;">📁</button>
+        <button class="nav-btn accent" id="add-ast-btn" title="新建助手">＋</button>
+      </div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:10px 12px;">
-      <div class="ast-grid" id="ast-list"></div>
+      <div id="ast-list"></div>
     </div>
   </div>
 
@@ -381,6 +401,7 @@
   <div class="sheet" id="add-ast-sheet">
     <div class="sheet-handle"></div><div class="sheet-title">添加助手</div>
     <div class="sheet-body">
+      <div class="field"><label>所属分组</label><select id="new-ast-group"></select></div>
       <div class="field"><label>助手名称</label><input type="text" id="new-ast-name" placeholder="如 编程助手"></div>
       <div class="field"><label>系统提示词</label><textarea id="new-ast-prompt" rows="3">你是一个有帮助的AI助手，请用简洁清晰的语言回答。</textarea></div>
       <button class="btn-primary" id="create-ast" style="margin-top:8px">✨ 创建助手</button>
@@ -451,26 +472,23 @@ const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerC
 const getCustomModels = () => (state.geminiModels || '').split(',').map(s => s.trim()).filter(Boolean);
 
 function loadState() {
+  let loaded = { 
+    assistants:[], groups: [{ id: 'default', name: '默认分组', expanded: true }], 
+    activeAstId: null, deepseekKey: '', geminiKey: '', 
+    geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
+    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode: false 
+  };
   try {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) {
       const p = JSON.parse(r);
-      return {
-        assistants: (p.assistants ||[]).map(fixAsst),
-        activeAstId: p.activeAstId || null,
-        deepseekKey: p.deepseekKey || '',
-        geminiKey: p.geminiKey || '',
-        geminiBaseUrl: p.geminiBaseUrl || 'https://generativelanguage.googleapis.com',
-        geminiModels: p.geminiModels || 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp',
-        darkMode: !!p.darkMode
-      };
+      if (!p.groups || !p.groups.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
+      loaded = { ...loaded, ...p };
     }
   } catch(e) {}
-  return { 
-    assistants:[], activeAstId: null, deepseekKey: '', geminiKey: '', 
-    geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
-    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode: false 
-  };
+  
+  loaded.assistants = (loaded.assistants || []).map(fixAsst);
+  return loaded;
 }
 
 function saveState() {
@@ -483,6 +501,7 @@ function fixAsst(a) {
   return {
     id: a.id || genId(), name: a.name || '未命名助手', systemPrompt: a.systemPrompt || '你是一个有帮助的AI助手。',
     temperature: a.temperature ?? 1.0, topP: a.topP ?? 1.0, modelId, reasoningEffort: a.reasoningEffort || 'off',
+    groupId: a.groupId || 'default',
     conversations: (a.conversations ||[]).map(c => ({ 
       id: c.id || genId(), title: c.title || '新话题', 
       messages: (c.messages ||[]).map(m => {
@@ -550,44 +569,156 @@ function goToAsts() { $1('ast-page').classList.add('active'); $1('chat-page').cl
 function goToChat(id) { state.activeAstId = id; saveState(); $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); renderChatPage(); closeAll(); }
 
 // ==================== ASSISTANT LIST ====================
-function renderAstList() {
-  const l = $1('ast-list');
-  if (!state.assistants.length) return l.innerHTML = '<div class="empty">还没有助手，点击 ＋ 创建</div>';
-  l.innerHTML = state.assistants.map(a => {
-    const m = getModelInfo(a.modelId);
-    return `<div class="ast-card" data-id="${a.id}">
-      <span class="ast-icon">${m.icon}</span>
-      <div class="ast-info">
-        <div class="ast-name">${esc(a.name)}</div>
-        <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span>${a.conversations.length} 个话题</span></div>
-        <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
-      </div>
-      <button class="ast-del">🗑</button>
-    </div>`;
-  }).join('');
+function populateGroupSelect(defaultGid) {
+  const sel = $1('new-ast-group');
+  if (sel) sel.innerHTML = state.groups.map(g => `<option value="${g.id}" ${g.id === defaultGid ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
 }
 
+function renderAstList() {
+  const l = $1('ast-list');
+  if (!state.assistants.length && state.groups.length <= 1) {
+    l.innerHTML = '<div class="empty">还没有助手，点击右上角 ＋ 创建</div>';
+    return;
+  }
+  
+  let html = '';
+  state.groups.forEach(g => {
+    const asts = state.assistants.filter(a => a.groupId === g.id);
+    html += `
+      <div class="ast-group" data-gid="${g.id}">
+        <div class="ast-group-header">
+          <div class="ast-group-title"><span class="arr ${g.expanded ? 'open' : ''}">▶</span> ${esc(g.name)} <span class="ast-group-count">(${asts.length})</span></div>
+          <div class="ast-group-actions">
+            <button class="icon-btn add-to-group" title="添加到此分组">＋</button>
+            ${g.id !== 'default' ? `<button class="icon-btn group-more" title="分组操作">⋮</button>` : ''}
+          </div>
+        </div>
+        <div class="ast-group-list ${g.expanded ? 'open' : ''}" data-gid="${g.id}">
+          ${asts.map(a => {
+            const m = getModelInfo(a.modelId);
+            return `<div class="ast-card" data-id="${a.id}">
+              <span class="ast-icon">${m.icon}</span>
+              <div class="ast-info">
+                <div class="ast-name">${esc(a.name)}</div>
+                <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span>${a.conversations.length} 个话题</span></div>
+                <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
+              </div>
+              <button class="ast-more">⋮</button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+  l.innerHTML = html;
+}
+
+on('add-group-btn', 'click', () => {
+  const name = prompt('请输入新建的分组名称');
+  if (name && name.trim()) {
+    state.groups.push({ id: genId(), name: name.trim(), expanded: true });
+    saveState(); renderAstList();
+  }
+});
+
 on('ast-list', 'click', async e => {
+  const groupHead = e.target.closest('.ast-group-header');
+  if (groupHead) {
+    const gid = groupHead.parentElement.dataset.gid;
+    
+    if (e.target.closest('.add-to-group')) {
+      e.stopPropagation();
+      populateGroupSelect(gid);
+      openSheet('add-ast-sheet');
+      return;
+    }
+    
+    const moreBtn = e.target.closest('.group-more');
+    if (moreBtn) {
+      e.stopPropagation();
+      showDropdown(moreBtn, [
+        { label: '重命名分组', value: 'rename', icon: '✏️ ' },
+        { label: '删除分组', value: 'delete', icon: '🗑 ' }
+      ], async val => {
+        const g = state.groups.find(x => x.id === gid);
+        if (!g) return;
+        
+        if (val === 'rename') {
+          const newName = prompt('重命名分组', g.name);
+          if (newName && newName.trim()) { g.name = newName.trim(); saveState(); renderAstList(); }
+        } else if (val === 'delete') {
+          if (!await showConfirm(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) return;
+          state.assistants.forEach(a => { if (a.groupId === gid) a.groupId = 'default'; });
+          state.groups = state.groups.filter(x => x.id !== gid);
+          const defG = state.groups.find(x => x.id === 'default'); if (defG) defG.expanded = true;
+          saveState(); renderAstList();
+        }
+      });
+      return;
+    }
+
+    const g = state.groups.find(x => x.id === gid);
+    if (g) { g.expanded = !g.expanded; saveState(); renderAstList(); }
+    return;
+  }
+
   const card = e.target.closest('.ast-card'); if (!card) return;
   const id = card.dataset.id;
   
-  if (e.target.closest('.ast-del')) {
-    e.stopPropagation(); if (!await showConfirm('确定要删除此助手吗？')) return;
-    state.assistants = state.assistants.filter(a => a.id !== id);
-    if (state.activeAstId === id) state.activeAstId = null;
-    saveState(); renderAstList(); return;
+  const astMoreBtn = e.target.closest('.ast-more');
+  if (astMoreBtn) {
+    e.stopPropagation();
+    const ast = state.assistants.find(a => a.id === id);
+    const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
+    const groupIdx = groupAsts.findIndex(a => a.id === id);
+
+    const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '📁 ' }));
+    const items = [
+      ...moveItems,
+      ...(moveItems.length ? [{ isHeader: true, label: '操作' }] : []),
+      { label: '删除助手', value: 'delete', icon: '🗑 ' }
+    ];
+
+    if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '⬆️ ' });
+    if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '⬇️ ' });
+
+    showDropdown(astMoreBtn, items, async val => {
+      if (val === 'delete') {
+        if (!await showConfirm('确定要删除此助手吗？')) return;
+        state.assistants = state.assistants.filter(a => a.id !== id);
+        if (state.activeAstId === id) state.activeAstId = null;
+        saveState(); renderAstList();
+      } else if (val === 'order_up' || val === 'order_down') {
+        const targetAst = val === 'order_up' ? groupAsts[groupIdx - 1] : groupAsts[groupIdx + 1];
+        const idx1 = state.assistants.findIndex(a => a.id === ast.id);
+        const idx2 = state.assistants.findIndex(a => a.id === targetAst.id);
+        [state.assistants[idx1], state.assistants[idx2]] = [state.assistants[idx2], state.assistants[idx1]];
+        saveState(); renderAstList();
+      } else if (val.startsWith('move_')) {
+        const targetGid = val.replace('move_', '');
+        ast.groupId = targetGid;
+        const tg = state.groups.find(g => g.id === targetGid);
+        if (tg) tg.expanded = true;
+        saveState(); renderAstList();
+      }
+    });
+    return;
   }
+
   goToChat(id);
 });
 
-on('add-ast-btn', 'click', () => openSheet('add-ast-sheet'));
+on('add-ast-btn', 'click', () => { populateGroupSelect('default'); openSheet('add-ast-sheet'); });
+
 on('create-ast', 'click', () => {
   const n = $1('new-ast-name').value.trim(); if (!n) return toast('请输入名称');
+  const gid = $1('new-ast-group')?.value || 'default';
   state.assistants.unshift({
     id: genId(), name: n, systemPrompt: $1('new-ast-prompt').value.trim(),
     temperature: 1.0, topP: 1.0, modelId: 'deepseek-v4-pro', reasoningEffort: 'off',
-    conversations:[], activeConvId: null
+    groupId: gid, conversations:[], activeConvId: null
   });
+  const tg = state.groups.find(g => g.id === gid); if (tg) tg.expanded = true;
   saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('✅ 已创建');
 });
 
@@ -614,7 +745,6 @@ marked.setOptions({ breaks: true, gfm: true });
 const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { return esc(t).replace(/\n/g, '<br>'); } };
 
 function enhanceCodeBlocks(container) {
-  // Prevent re-enhancing already enhanced blocks during fast streaming
   container.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
     if (pre.dataset.enhanced) return;
     pre.dataset.enhanced = '1';
@@ -645,7 +775,6 @@ function enhanceCodeBlocks(container) {
     }
   });
 
-  // Table wrapper optimization
   container.querySelectorAll('table:not(.table-wrapper table)').forEach(table => {
       const wrapper = document.createElement('div');
       wrapper.className = 'table-wrapper';
@@ -708,7 +837,6 @@ async function deleteMessage(idx) {
   conv.messages.splice(idx, 1); saveState(); renderChatPage();
 }
 
-// 精简合并后的重新发送/生成逻辑
 async function retryMessage(idx, isAi) {
   const conv = getActiveConv(); if (!conv) return;
   if (!await showConfirm(`确定要重新${isAi ? '生成此回复' : '发送这条消息'}吗？`)) return;
@@ -720,14 +848,14 @@ async function retryMessage(idx, isAi) {
   }
   
   const userMsgContent = conv.messages[targetIdx].content;
-  conv.messages = conv.messages.slice(0, targetIdx); // 安全截断数组
+  conv.messages = conv.messages.slice(0, targetIdx); 
   
   const input = $1('user-input');
   input.value = userMsgContent; 
   saveState(); 
   renderChatPage(); 
   
-  input.dispatchEvent(new Event('input')); // 触发输入框高度重计算（不聚焦，防止键盘弹出）
+  input.dispatchEvent(new Event('input')); 
   sendMessage();
 }
 
@@ -879,7 +1007,10 @@ on('import-file', 'change', e => {
   reader.onload = async ev => {
     try {
       const data = JSON.parse(ev.target.result); if (!Array.isArray(data.assistants)) throw new Error();
-      if (await showConfirm('导入将合并数据（不会删除现有助手），确定继续？')) {
+      if (await showConfirm('导入将合并数据（不会删除现有数据），确定继续？')) {
+        if (data.groups && Array.isArray(data.groups)) {
+          data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
+        }
         data.assistants.forEach(importedA => {
           const fixed = fixAsst(importedA); const idx = state.assistants.findIndex(a => a.id === fixed.id);
           if (idx > -1) state.assistants[idx] = fixed; else state.assistants.push(fixed);
@@ -951,7 +1082,6 @@ on('model-chip-btn', 'click', e => {
   showDropdown(e.currentTarget, items, id => { 
       if (ast) { 
           ast.modelId = id; 
-          // 修正不支持的推理参数，确保传参和UI显示正确
           const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
           if (!validOpts.includes(ast.reasoningEffort)) {
               if (ast.reasoningEffort === 'max') ast.reasoningEffort = 'high';
@@ -1043,7 +1173,7 @@ async function sendMessage() {
       if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings();
   }
   
-  inputEl.value = ''; inputEl.style.height = 'auto'; // 清空并重置高度（此操作不会触发键盘）
+  inputEl.value = ''; inputEl.style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
@@ -1162,7 +1292,8 @@ on('close-topics', 'click', closeAll);
 on('close-settings', 'click', closeAll);
 on('overlay', 'click', closeAll);
 
-setupPWA(); applyTheme(); renderAstList();
+setupPWA(); applyTheme(); 
+renderAstList();
 state.activeAstId = null; saveState();
 })();
 </script>
