@@ -730,7 +730,7 @@ function renderChatPage() {
   
   $1('chat-asst-name').textContent = `${a.name}${a.conversations.length ? ` (${a.conversations.length})` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
-  $1('chat-nav-tokens').textContent = formatK(c ? calcConvTokens(c, a.systemPrompt) : estimateTokens(a.systemPrompt));
+  $1('chat-nav-tokens').textContent = c ? `(${c.messages.length})` : '(0)';
   $1('model-chip-label').textContent = m.name;
   $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
 
@@ -1183,7 +1183,7 @@ async function sendMessage() {
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
 
   let currentTokens = calcConvTokens(c, a.systemPrompt);
-  $1('chat-nav-tokens').textContent = formatK(currentTokens);
+  $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
   let body = {}, url = '', headers = {};
   if (!isDeepSeek(a.modelId)) {
@@ -1256,7 +1256,7 @@ async function sendMessage() {
                   am.content += delta.content; 
               }
           }
-          $1('chat-nav-tokens').textContent = formatK(currentTokens); 
+          $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
           updateLive(ai, am);
         } catch(e) {}
       }
