@@ -135,8 +135,12 @@
 
     /* EDIT MODAL */
     .edit-card { position:absolute; top:12vh; height:75vh; left:6px; right:6px; background:var(--bg-secondary); display:flex; flex-direction:column; border-radius:var(--radius-lg); box-shadow:0 10px 30px rgba(0,0,0,0.2); overflow:hidden; animation:msgIn .3s ease-out; }
-    .edit-card-body { flex:1; display:flex; padding:12px; overflow:hidden; }
-    .edit-card-body textarea { flex:1; width:100%; border:none; background:transparent; color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; overflow-y:auto; }
+    .edit-card-body { flex:1; display:flex; flex-direction:column; padding:12px 16px; overflow:hidden; gap:8px; }
+    .edit-card-body textarea { width:100%; border:none; background:transparent; color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; overflow-y:auto; }
+    #edit-textarea { flex:1; }
+    #edit-reasoning-textarea { display:none; height:35%; border-bottom:1px dashed var(--border-subtle); padding-bottom:8px; color:var(--text-secondary); font-style:italic; font-size:13px; flex-shrink:0; }
+    #edit-reasoning-textarea.show { display:block; }
+    #edit-toggle-reasoning-btn:active, #edit-toggle-reasoning-btn.active { background:var(--bg-tertiary); color:var(--text-primary); border-color:var(--accent); }
     .edit-card-foot { display:flex; gap:10px; padding:14px 16px; border-top:0.5px solid var(--border-subtle); background:var(--bg-secondary); }
     .edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; font-size:14px; }
     .edit-save-btn { background:var(--accent); color:#fff; }
@@ -357,7 +361,14 @@
   <!-- EDIT MODAL -->
   <div class="edit-overlay" id="edit-overlay">
     <div class="edit-card">
-      <div class="edit-card-body"><textarea id="edit-textarea" placeholder="输入消息内容…"></textarea></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 0; flex-shrink: 0;">
+        <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">✏️ 编辑消息</span>
+        <button id="edit-toggle-reasoning-btn" style="background: transparent; border: 1.5px solid var(--border-subtle); color: var(--text-secondary); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all var(--tr);">🧠 思考过程</button>
+      </div>
+      <div class="edit-card-body">
+        <textarea id="edit-reasoning-textarea" placeholder="输入思考过程…"></textarea>
+        <textarea id="edit-textarea" placeholder="输入消息内容…"></textarea>
+      </div>
       <div class="edit-card-foot">
         <button class="edit-cancel-btn" id="edit-cancel-btn">取消</button>
         <button class="edit-save-btn" id="edit-save-btn">保存</button>
@@ -449,9 +460,7 @@ const estimateTokens = str => {
   const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) || []).length;
   return Math.ceil(zhCnt + (str.length - zhCnt) * 0.25);
 };
-// 气泡展示：单条消息含思考过程的消耗 Token
 const getMsgTokens = m => estimateTokens(m.content) + estimateTokens(m.reasoning);
-// 历史上下文计算：历史记录发送时不含思考过程
 const getContextTokens = m => estimateTokens(m.content);
 const calcConvContextTokens = (c, p) => c.messages.reduce((t, m) => t + getContextTokens(m), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
@@ -734,8 +743,10 @@ function makeMsg(msg, idx) {
   const isAi = msg.role === 'assistant';
   const d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
 
-  const thinkTimeHTML = msg.thinkTime ? `<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;">(${msg.thinkTime}s)</span>` : '';
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程${thinkTimeHTML}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const isNote = !!msg.isNote;
+  const thinkTimeHTML = (msg.thinkTime && !isNote) ? `<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;">(${msg.thinkTime}s)</span>` : '';
+  const rLabel = isNote ? '📝 消息备注' : '🧠 思考过程';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}${thinkTimeHTML}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
@@ -796,14 +807,57 @@ function renderMessages() {
 }
 
 // ==================== EDIT MODAL ====================
-function openEditModal(msg, idx, conv) { editingMsg = msg; editingIdx = idx; editingConv = conv; $1('edit-textarea').value = msg.content; $1('edit-overlay').classList.add('show'); }
-function closeEditModal() { $1('edit-overlay').classList.remove('show'); editingMsg = null; }
-function saveEdit() {
-  if (!editingMsg) return; const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
-  editingMsg.content = val; saveState(); renderChatPage(); closeEditModal(); toast('✅ 已保存');
+function openEditModal(msg, idx, conv) { 
+  editingMsg = msg; editingIdx = idx; editingConv = conv; 
+  $1('edit-textarea').value = msg.content || ''; 
+  $1('edit-reasoning-textarea').value = msg.reasoning || '';
+  
+  const isNoteMode = !msg.reasoning || msg.isNote;
+  $1('edit-toggle-reasoning-btn').textContent = isNoteMode ? '📝 消息备注' : '🧠 思考过程';
+  $1('edit-reasoning-textarea').placeholder = isNoteMode ? '输入消息备注…' : '输入思考过程…';
+  
+  $1('edit-reasoning-textarea').classList.remove('show');
+  $1('edit-toggle-reasoning-btn').classList.remove('active');
+  
+  $1('edit-overlay').classList.add('show'); 
 }
+
+function closeEditModal() { $1('edit-overlay').classList.remove('show'); editingMsg = null; }
+
+function saveEdit() {
+  if (!editingMsg) return; 
+  const val = $1('edit-textarea').value.trim(); 
+  const rval = $1('edit-reasoning-textarea').value.trim();
+  if (!val && !rval) return toast('内容不能为空');
+  
+  const isNoteMode = $1('edit-toggle-reasoning-btn').textContent.includes('备注');
+  
+  editingMsg.content = val; 
+  editingMsg.reasoning = rval || '';
+  
+  if (rval) {
+    if (isNoteMode) {
+      editingMsg.isNote = true;
+      delete editingMsg.thinkTime; // 彻底清除原有思考时间
+    } else {
+      delete editingMsg.isNote;
+    }
+  } else {
+    delete editingMsg.isNote;
+  }
+  
+  saveState(); renderChatPage(); closeEditModal(); toast('✅ 已保存');
+}
+
 on('edit-cancel-btn', 'click', closeEditModal); on('edit-save-btn', 'click', saveEdit);
 on('edit-textarea', 'keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
+on('edit-reasoning-textarea', 'keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(); } });
+on('edit-toggle-reasoning-btn', 'click', () => {
+  const ta = $1('edit-reasoning-textarea'), btn = $1('edit-toggle-reasoning-btn');
+  const isShow = ta.classList.toggle('show');
+  btn.classList.toggle('active', isShow);
+  if (isShow) ta.focus();
+});
 
 // ==================== TOPIC LIST ====================
 function renderTopicList() {
@@ -915,8 +969,11 @@ function applyAndSaveSettings() {
 }
 
 function exportData() {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
-  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
+  const payload = { _meta: { version: 9, date: new Date().toISOString() }, data: state };
+  const a = document.createElement('a'); 
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })); 
+  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`; 
+  a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
 }
 
 on('import-file', 'change', e => {
@@ -924,12 +981,27 @@ on('import-file', 'change', e => {
   const reader = new FileReader();
   reader.onload = async ev => {
     try {
-      const data = JSON.parse(ev.target.result); if (!Array.isArray(data.assistants)) throw new Error();
-      if (await showConfirm('导入将合并数据（不会删除现有数据），确定继续？')) {
-        if (data.groups && Array.isArray(data.groups)) data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
+      const parsed = JSON.parse(ev.target.result);
+      // 兼容旧版直出和新版包裹格式
+      const data = parsed._meta ? parsed.data : parsed; 
+      if (!Array.isArray(data.assistants)) throw new Error('Invalid format');
+      
+      if (await showConfirm('导入将“深度合并”数据（原有话题不会丢失）')) {
+        if (Array.isArray(data.groups)) {
+          data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
+        }
         data.assistants.forEach(importedA => {
-          const fixed = fixAsst(importedA), idx = state.assistants.findIndex(a => a.id === fixed.id);
-          if (idx > -1) state.assistants[idx] = fixed; else state.assistants.push(fixed);
+          const fixed = fixAsst(importedA);
+          const existing = state.assistants.find(a => a.id === fixed.id);
+          if (existing) {
+            // 深入合并已有助手内的对话（按 ID 排重插入）
+            fixed.conversations.forEach(ic => {
+              if (!existing.conversations.find(c => c.id === ic.id)) existing.conversations.push(ic);
+            });
+            Object.assign(existing, { ...fixed, conversations: existing.conversations });
+          } else {
+            state.assistants.push(fixed);
+          }
         });
         Object.assign(state, {
           activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey,
