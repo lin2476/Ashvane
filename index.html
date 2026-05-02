@@ -969,10 +969,13 @@ function applyAndSaveSettings() {
 }
 
 function exportData() {
-  const payload = { _meta: { version: 9, date: new Date().toISOString() }, data: state };
+  const now = new Date();
+  // 根据用户本地时区拼接正确的 YYYY-MM-DD 格式
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const payload = { _meta: { version: 9, date: now.toISOString() }, data: state };
   const a = document.createElement('a'); 
   a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })); 
-  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`; 
+  a.download = `ai-chat-backup-${dateStr}.json`; 
   a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
 }
 
