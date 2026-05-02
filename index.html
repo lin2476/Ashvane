@@ -89,10 +89,9 @@
     .nav-btn.accent { background:var(--accent); color:#fff; }
     .nav-tokens { font-size:9px; background:rgba(128,128,128,0.12); padding:2px 5px; border-radius:8px; color:var(--text-secondary); font-family:var(--mono); margin-left:4px; font-weight:600; line-height:1; }
 
-    /* CHAT */
+    /* CHAT & WELCOME */
     #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px; scroll-behavior:smooth; }
     #messages { display:flex; flex-direction:column; gap:8px; max-width:100%; }
-
     .welcome { flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 20px; text-align:center; opacity:0; animation:fadeIn .4s .1s forwards; }
     @keyframes fadeIn { to { opacity:1; transform:translateY(0); } }
     .welcome .emoji { font-size:48px; margin-bottom:10px; animation:float 3s ease-in-out infinite; }
@@ -336,7 +335,7 @@
         <span class="asst-name" id="chat-asst-name">助手</span>
         <div class="topic-row" id="topic-toggle">
           <span class="topic-name" id="chat-topic-name">新话题</span>
-          <span class="nav-tokens" id="chat-nav-tokens">0k</span>
+          <span class="nav-tokens" id="chat-nav-tokens">(0)</span>
           <span class="topic-arr">▾</span>
         </div>
       </div>
@@ -438,21 +437,23 @@
 (() => {
 'use strict';
 
-// ==================== UTILS ====================
+// ==================== UTILS & TOKENS ====================
 const $1 = s => document.getElementById(s);
-const on = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.addEventListener(evt, cb); };
-const off = (id, evt, cb) => { const el = typeof id === 'string' ? $1(id) : id; if(el) el.removeEventListener(evt, cb); };
+const on = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.addEventListener(evt, cb);
+const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEventListener(evt, cb);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
 
-// ==================== TOKENS CALCULATION ====================
 const estimateTokens = str => {
   if (!str) return 0;
-  const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) ||[]).length;
+  const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) || []).length;
   return Math.ceil(zhCnt + (str.length - zhCnt) * 0.25);
 };
+// 气泡展示：单条消息含思考过程的消耗 Token
 const getMsgTokens = m => estimateTokens(m.content) + estimateTokens(m.reasoning);
-const calcConvTokens = (c, p) => c.messages.reduce((t, m) => t + getMsgTokens(m), estimateTokens(p));
+// 历史上下文计算：历史记录发送时不含思考过程
+const getContextTokens = m => estimateTokens(m.content);
+const calcConvContextTokens = (c, p) => c.messages.reduce((t, m) => t + getContextTokens(m), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
 
 // ==================== STATE & MODELS ====================
@@ -462,7 +463,7 @@ let abortCtrl = null, streaming = false;
 let editingMsg = null, editingIdx = -1, editingConv = null;
 const generationTimers = {};
 
-const DS_MODELS =[
+const DS_MODELS = [
   { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎' },
   { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '⚡' }
 ];
@@ -482,11 +483,10 @@ function loadState() {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) {
       const p = JSON.parse(r);
-      if (!p.groups || !p.groups.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
+      if (!p.groups?.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
       loaded = { ...loaded, ...p };
     }
   } catch(e) {}
-  
   loaded.assistants = (loaded.assistants || []).map(fixAsst);
   return loaded;
 }
@@ -577,14 +577,11 @@ function populateGroupSelect(defaultGid) {
 function renderAstList() {
   const l = $1('ast-list');
   if (!state.assistants.length && state.groups.length <= 1) {
-    l.innerHTML = '<div class="empty">还没有助手，点击右上角 ＋ 创建</div>';
-    return;
+    l.innerHTML = '<div class="empty">还没有助手，点击右上角 ＋ 创建</div>'; return;
   }
-  
-  let html = '';
-  state.groups.forEach(g => {
+  l.innerHTML = state.groups.map(g => {
     const asts = state.assistants.filter(a => a.groupId === g.id);
-    html += `
+    return `
       <div class="ast-group" data-gid="${g.id}">
         <div class="ast-group-header">
           <div class="ast-group-title"><span class="arr ${g.expanded ? 'open' : ''}">▶</span> ${esc(g.name)} <span class="ast-group-count">(${asts.length})</span></div>
@@ -593,7 +590,7 @@ function renderAstList() {
             ${g.id !== 'default' ? `<button class="icon-btn group-more" title="分组操作">⋮</button>` : ''}
           </div>
         </div>
-        <div class="ast-group-list ${g.expanded ? 'open' : ''}" data-gid="${g.id}">
+        <div class="ast-group-list ${g.expanded ? 'open' : ''}">
           ${asts.map(a => {
             const m = getModelInfo(a.modelId);
             return `<div class="ast-card" data-id="${a.id}">
@@ -607,105 +604,73 @@ function renderAstList() {
             </div>`;
           }).join('')}
         </div>
-      </div>
-    `;
-  });
-  l.innerHTML = html;
+      </div>`;
+  }).join('');
 }
 
 on('add-group-btn', 'click', () => {
   const name = prompt('请输入新建的分组名称');
-  if (name && name.trim()) {
-    state.groups.push({ id: genId(), name: name.trim(), expanded: true });
-    saveState(); renderAstList();
-  }
+  if (name && name.trim()) { state.groups.push({ id: genId(), name: name.trim(), expanded: true }); saveState(); renderAstList(); }
 });
 
-on('ast-list', 'click', async e => {
+function handleGroupMore(gid, btn) {
+  showDropdown(btn, [{ label: '重命名分组', value: 'rename', icon: '✏️ ' }, { label: '删除分组', value: 'delete', icon: '🗑 ' }], async val => {
+    const g = state.groups.find(x => x.id === gid); if (!g) return;
+    if (val === 'rename') {
+      const newName = prompt('重命名分组', g.name);
+      if (newName && newName.trim()) { g.name = newName.trim(); saveState(); renderAstList(); }
+    } else if (val === 'delete') {
+      if (!await showConfirm(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) return;
+      state.assistants.forEach(a => { if (a.groupId === gid) a.groupId = 'default'; });
+      state.groups = state.groups.filter(x => x.id !== gid);
+      const defG = state.groups.find(x => x.id === 'default'); if (defG) defG.expanded = true;
+      saveState(); renderAstList();
+    }
+  });
+}
+
+function handleAstMore(id, btn) {
+  const ast = state.assistants.find(a => a.id === id);
+  const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
+  const groupIdx = groupAsts.findIndex(a => a.id === id);
+  const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '📁 ' }));
+  const items = [ ...moveItems, ...(moveItems.length ? [{ isHeader: true, label: '操作' }] : []), { label: '删除助手', value: 'delete', icon: '🗑 ' } ];
+
+  if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '⬆️ ' });
+  if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '⬇️ ' });
+
+  showDropdown(btn, items, async val => {
+    if (val === 'delete') {
+      if (!await showConfirm('确定要删除此助手吗？')) return;
+      state.assistants = state.assistants.filter(a => a.id !== id);
+      if (state.activeAstId === id) state.activeAstId = null;
+      saveState(); renderAstList();
+    } else if (val === 'order_up' || val === 'order_down') {
+      const targetAst = val === 'order_up' ? groupAsts[groupIdx - 1] : groupAsts[groupIdx + 1];
+      const idx1 = state.assistants.findIndex(a => a.id === ast.id);
+      const idx2 = state.assistants.findIndex(a => a.id === targetAst.id);
+      [state.assistants[idx1], state.assistants[idx2]] = [state.assistants[idx2], state.assistants[idx1]];
+      saveState(); renderAstList();
+    } else if (val.startsWith('move_')) {
+      ast.groupId = val.replace('move_', '');
+      const tg = state.groups.find(g => g.id === ast.groupId); if (tg) tg.expanded = true;
+      saveState(); renderAstList();
+    }
+  });
+}
+
+on('ast-list', 'click', e => {
   const groupHead = e.target.closest('.ast-group-header');
   if (groupHead) {
     const gid = groupHead.parentElement.dataset.gid;
-    
-    if (e.target.closest('.add-to-group')) {
-      e.stopPropagation();
-      populateGroupSelect(gid);
-      openSheet('add-ast-sheet');
-      return;
-    }
-    
-    const moreBtn = e.target.closest('.group-more');
-    if (moreBtn) {
-      e.stopPropagation();
-      showDropdown(moreBtn, [
-        { label: '重命名分组', value: 'rename', icon: '✏️ ' },
-        { label: '删除分组', value: 'delete', icon: '🗑 ' }
-      ], async val => {
-        const g = state.groups.find(x => x.id === gid);
-        if (!g) return;
-        
-        if (val === 'rename') {
-          const newName = prompt('重命名分组', g.name);
-          if (newName && newName.trim()) { g.name = newName.trim(); saveState(); renderAstList(); }
-        } else if (val === 'delete') {
-          if (!await showConfirm(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) return;
-          state.assistants.forEach(a => { if (a.groupId === gid) a.groupId = 'default'; });
-          state.groups = state.groups.filter(x => x.id !== gid);
-          const defG = state.groups.find(x => x.id === 'default'); if (defG) defG.expanded = true;
-          saveState(); renderAstList();
-        }
-      });
-      return;
-    }
-
-    const g = state.groups.find(x => x.id === gid);
-    if (g) { g.expanded = !g.expanded; saveState(); renderAstList(); }
+    if (e.target.closest('.add-to-group')) { e.stopPropagation(); populateGroupSelect(gid); return openSheet('add-ast-sheet'); }
+    if (e.target.closest('.group-more')) { e.stopPropagation(); return handleGroupMore(gid, e.target.closest('.group-more')); }
+    const g = state.groups.find(x => x.id === gid); if (g) { g.expanded = !g.expanded; saveState(); renderAstList(); }
     return;
   }
-
   const card = e.target.closest('.ast-card'); if (!card) return;
-  const id = card.dataset.id;
-  
-  const astMoreBtn = e.target.closest('.ast-more');
-  if (astMoreBtn) {
-    e.stopPropagation();
-    const ast = state.assistants.find(a => a.id === id);
-    const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
-    const groupIdx = groupAsts.findIndex(a => a.id === id);
-
-    const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '📁 ' }));
-    const items = [
-      ...moveItems,
-      ...(moveItems.length ? [{ isHeader: true, label: '操作' }] : []),
-      { label: '删除助手', value: 'delete', icon: '🗑 ' }
-    ];
-
-    if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '⬆️ ' });
-    if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '⬇️ ' });
-
-    showDropdown(astMoreBtn, items, async val => {
-      if (val === 'delete') {
-        if (!await showConfirm('确定要删除此助手吗？')) return;
-        state.assistants = state.assistants.filter(a => a.id !== id);
-        if (state.activeAstId === id) state.activeAstId = null;
-        saveState(); renderAstList();
-      } else if (val === 'order_up' || val === 'order_down') {
-        const targetAst = val === 'order_up' ? groupAsts[groupIdx - 1] : groupAsts[groupIdx + 1];
-        const idx1 = state.assistants.findIndex(a => a.id === ast.id);
-        const idx2 = state.assistants.findIndex(a => a.id === targetAst.id);
-        [state.assistants[idx1], state.assistants[idx2]] = [state.assistants[idx2], state.assistants[idx1]];
-        saveState(); renderAstList();
-      } else if (val.startsWith('move_')) {
-        const targetGid = val.replace('move_', '');
-        ast.groupId = targetGid;
-        const tg = state.groups.find(g => g.id === targetGid);
-        if (tg) tg.expanded = true;
-        saveState(); renderAstList();
-      }
-    });
-    return;
-  }
-
-  goToChat(id);
+  if (e.target.closest('.ast-more')) { e.stopPropagation(); return handleAstMore(card.dataset.id, e.target.closest('.ast-more')); }
+  goToChat(card.dataset.id);
 });
 
 on('add-ast-btn', 'click', () => { populateGroupSelect('default'); openSheet('add-ast-sheet'); });
@@ -725,18 +690,14 @@ on('create-ast', 'click', () => {
 // ==================== CHAT PAGE ====================
 function renderChatPage() {
   const a = getActiveAst(); if (!a) return goToAsts();
-  const c = getActiveConv(a);
-  const m = getModelInfo(a.modelId);
-  
+  const c = getActiveConv(a); const m = getModelInfo(a.modelId);
   $1('chat-asst-name').textContent = `${a.name}${a.conversations.length ? ` (${a.conversations.length})` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = c ? `(${c.messages.length})` : '(0)';
   $1('model-chip-label').textContent = m.name;
   $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
-
   const R_LABELS = { off: '关闭', low: 'Low', high: 'High', max: 'Max' };
   $1('reasoning-label').textContent = `推理：${R_LABELS[a.reasoningEffort] || a.reasoningEffort}`;
-  
   renderMessages();
 }
 
@@ -746,48 +707,32 @@ const md = t => { if (!t) return ''; try { return marked.parse(t); } catch(e) { 
 
 function enhanceCodeBlocks(container) {
   container.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
-    if (pre.dataset.enhanced) return;
-    pre.dataset.enhanced = '1';
-
+    if (pre.dataset.enhanced) return; pre.dataset.enhanced = '1';
     const code = pre.querySelector('code');
     const lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'code-block-wrapper collapsed';
+    const wrapper = document.createElement('div'); wrapper.className = 'code-block-wrapper collapsed';
     wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn">复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
-    
-    pre.parentNode.insertBefore(wrapper, pre); 
-    wrapper.appendChild(pre);
+    pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
 
     on(wrapper.querySelector('.copy-btn'), 'click', e => {
-      e.stopPropagation(); 
-      copyText((code || pre).textContent || '').then(() => { 
-        e.target.textContent = '✓'; 
-        clearTimeout(e.target._t);
-        e.target._t = setTimeout(() => e.target.textContent = '复制', 1200); 
+      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { 
+        e.target.textContent = '✓'; clearTimeout(e.target._t); e.target._t = setTimeout(() => e.target.textContent = '复制', 1200); 
       });
     });
     on(wrapper.querySelector('.fold-btn'), 'click', e => {
       e.stopPropagation(); const isCol = wrapper.classList.toggle('collapsed'); e.target.textContent = isCol ? '展开' : '折叠';
     });
-    if (code && !code.dataset.hl) { 
-      try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} 
-    }
+    if (code && !code.dataset.hl) { try { hljs.highlightElement(code); code.dataset.hl = '1'; } catch(e) {} }
   });
-
   container.querySelectorAll('table:not(.table-wrapper table)').forEach(table => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'table-wrapper';
-      table.parentNode.insertBefore(wrapper, table);
-      wrapper.appendChild(table);
+      const wrapper = document.createElement('div'); wrapper.className = 'table-wrapper';
+      table.parentNode.insertBefore(wrapper, table); wrapper.appendChild(table);
   });
 }
 
 function makeMsg(msg, idx) {
   const isAi = msg.role === 'assistant';
-  const d = document.createElement('div'); 
-  d.className = `msg ${isAi ? 'ai' : 'user'}`; 
-  d.dataset.index = idx;
+  const d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
 
   const thinkTimeHTML = msg.thinkTime ? `<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;">(${msg.thinkTime}s)</span>` : '';
   const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>🧠 思考过程${thinkTimeHTML}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
@@ -804,27 +749,17 @@ function makeMsg(msg, idx) {
       <div class="msg-tokens">${tokenDisplay}</div>
       <div class="actions-right">${buttonsHtml}</div>
     </div>`;
-  enhanceCodeBlocks(d); 
-  return d;
+  enhanceCodeBlocks(d); return d;
 }
 
 on('messages', 'click', async e => {
-  const hint = e.target.closest('.welcome-hint');
-  if (hint) { $1('user-input').value = hint.dataset.prompt; return sendMessage(); }
-
-  const rhead = e.target.closest('.rhead');
-  if (rhead) { rhead.classList.toggle('open'); rhead.nextElementSibling.classList.toggle('open'); return; }
-
+  const hint = e.target.closest('.welcome-hint'); if (hint) { $1('user-input').value = hint.dataset.prompt; return sendMessage(); }
+  const rhead = e.target.closest('.rhead'); if (rhead) { rhead.classList.toggle('open'); rhead.nextElementSibling.classList.toggle('open'); return; }
   const btn = e.target.closest('button[data-a]');
   if (btn) {
-    e.stopPropagation();
-    const act = btn.dataset.a;
-    const idx = parseInt(btn.closest('.msg').dataset.index, 10);
-    const conv = getActiveConv(); const msg = conv.messages[idx];
-    
+    e.stopPropagation(); const act = btn.dataset.a, idx = parseInt(btn.closest('.msg').dataset.index, 10), conv = getActiveConv(), msg = conv.messages[idx];
     if (act === 'cp') return copyText(msg.content).then(() => toast('已复制'));
     if (streaming) return toast('⚠️ 生成中不可操作');
-
     if (act === 'ed') openEditModal(msg, idx, conv);
     else if (act === 'del') deleteMessage(idx);
     else if (act === 're') retryMessage(idx, msg.role === 'assistant');
@@ -840,23 +775,15 @@ async function deleteMessage(idx) {
 async function retryMessage(idx, isAi) {
   const conv = getActiveConv(); if (!conv) return;
   if (!await showConfirm(`确定要重新${isAi ? '生成此回复' : '发送这条消息'}吗？`)) return;
-  
   let targetIdx = idx;
   if (isAi) {
     while (targetIdx >= 0 && conv.messages[targetIdx].role !== 'user') targetIdx--;
     if (targetIdx < 0) return toast('无法重新生成：缺少关联的用户消息');
   }
-  
   const userMsgContent = conv.messages[targetIdx].content;
   conv.messages = conv.messages.slice(0, targetIdx); 
-  
-  const input = $1('user-input');
-  input.value = userMsgContent; 
-  saveState(); 
-  renderChatPage(); 
-  
-  input.dispatchEvent(new Event('input')); 
-  sendMessage();
+  const input = $1('user-input'); input.value = userMsgContent; 
+  saveState(); renderChatPage(); input.dispatchEvent(new Event('input')); sendMessage();
 }
 
 function renderMessages() {
@@ -869,14 +796,10 @@ function renderMessages() {
 }
 
 // ==================== EDIT MODAL ====================
-function openEditModal(msg, idx, conv) {
-  editingMsg = msg; editingIdx = idx; editingConv = conv;
-  $1('edit-textarea').value = msg.content; $1('edit-overlay').classList.add('show');
-}
+function openEditModal(msg, idx, conv) { editingMsg = msg; editingIdx = idx; editingConv = conv; $1('edit-textarea').value = msg.content; $1('edit-overlay').classList.add('show'); }
 function closeEditModal() { $1('edit-overlay').classList.remove('show'); editingMsg = null; }
 function saveEdit() {
-  if (!editingMsg) return;
-  const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
+  if (!editingMsg) return; const val = $1('edit-textarea').value.trim(); if (!val) return toast('内容不能为空');
   editingMsg.content = val; saveState(); renderChatPage(); closeEditModal(); toast('✅ 已保存');
 }
 on('edit-cancel-btn', 'click', closeEditModal); on('edit-save-btn', 'click', saveEdit);
@@ -889,7 +812,7 @@ function renderTopicList() {
   
   let totalTokens = 0;
   l.innerHTML = a.conversations.map(c => {
-    const tok = calcConvTokens(c, a.systemPrompt); totalTokens += tok;
+    const tok = calcConvContextTokens(c, a.systemPrompt); totalTokens += tok;
     return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
       <span>💬</span>
       <div class="tinfo">
@@ -979,26 +902,21 @@ on('settings-body', 'input', e => {
 function applyAndSaveSettings() {
   const a = getActiveAst(); if (!a) return;
   const val = id => $1(id)?.value ?? null;
-  
   if (val('s-name') !== null) a.name = val('s-name').trim() || a.name;
   if (val('s-prompt') !== null) a.systemPrompt = val('s-prompt').trim();
   if (val('s-temp') !== null) a.temperature = parseFloat(val('s-temp'));
   if (val('s-topp') !== null) a.topP = parseFloat(val('s-topp'));
-  
   if (val('s-dskey') !== null) state.deepseekKey = val('s-dskey').trim();
   if (val('s-gmkey') !== null) state.geminiKey = val('s-gmkey').trim();
   if (val('s-gmurl') !== null) state.geminiBaseUrl = val('s-gmurl').trim();
   if (val('s-gmmodels') !== null) state.geminiModels = val('s-gmmodels').trim() || 'gemini-2.5-pro';
-
   if ($1('s-theme')) state.darkMode = $1('s-theme').classList.contains('active');
   saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('✅ 设置已保存');
 }
 
 function exportData() {
-  const a = document.createElement('a'); 
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
-  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); 
+  a.download = `ai-chat-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
 }
 
 on('import-file', 'change', e => {
@@ -1008,11 +926,9 @@ on('import-file', 'change', e => {
     try {
       const data = JSON.parse(ev.target.result); if (!Array.isArray(data.assistants)) throw new Error();
       if (await showConfirm('导入将合并数据（不会删除现有数据），确定继续？')) {
-        if (data.groups && Array.isArray(data.groups)) {
-          data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
-        }
+        if (data.groups && Array.isArray(data.groups)) data.groups.forEach(g => { if (!state.groups.find(x => x.id === g.id)) state.groups.push(g); });
         data.assistants.forEach(importedA => {
-          const fixed = fixAsst(importedA); const idx = state.assistants.findIndex(a => a.id === fixed.id);
+          const fixed = fixAsst(importedA), idx = state.assistants.findIndex(a => a.id === fixed.id);
           if (idx > -1) state.assistants[idx] = fixed; else state.assistants.push(fixed);
         });
         Object.assign(state, {
@@ -1029,43 +945,25 @@ on('import-file', 'change', e => {
 
 // FULLSCREEN PROMPT EDITOR
 const setupPromptToolbar = ta => {
-  const insert = (p, s = '') => {
-    ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end');
-    ta.focus(); ta.dispatchEvent(new Event('input'));
-  };
+  const insert = (p, s = '') => { ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input')); };
   return { bold: () => insert('**', '**'), italic: () => insert('*', '*'), code: () => insert('`', '`'), heading: () => insert('## '), list: () => insert('- '), quote: () => insert('> ') };
 };
 const ptb = setupPromptToolbar($1('fs-prompt-textarea'));
 on('fs-prompt-tb', 'click', e => { const btn = e.target.closest('button[data-md]'); if (btn && ptb[btn.dataset.md]) ptb[btn.dataset.md](); });
-const closeFsPrompt = (save) => {
-  if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; 
-  if (save) applyAndSaveSettings(); 
-  $1('fs-prompt-overlay').classList.remove('show');
-};
+const closeFsPrompt = (save) => { if ($1('s-prompt')) $1('s-prompt').value = $1('fs-prompt-textarea').value; if (save) applyAndSaveSettings(); $1('fs-prompt-overlay').classList.remove('show'); };
 on('fs-prompt-save', 'click', () => closeFsPrompt(true));
 on('fs-prompt-close', 'click', () => closeFsPrompt(false));
 
 // ==================== DROPDOWN ====================
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
-  dd.innerHTML = items.map((item, idx) => item.isHeader 
-    ? `<div class="dropdown-header">${item.label}</div>`
-    : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<span class="check">✓</span>' : ''}</div>`
-  ).join('');
-  
+  dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<span class="check">✓</span>' : ''}</div>`).join('');
   dd.style.display = 'block'; dd.style.visibility = 'hidden';
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
-  let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4;
-  if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
+  let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.top = `${top}px`; dd.style.left = `${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
   dd.style.visibility = 'visible'; dd.classList.add('show');
-  
-  const clickHandler = e => { 
-    if (e.target.closest('.dropdown-header')) return; 
-    const item = e.target.closest('.dropdown-item'); 
-    if (item) onSelect(items[item.dataset.idx].value); 
-    hideDropdown(); off(document, 'click', clickHandler); 
-  };
+  const clickHandler = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
   setTimeout(() => on(document, 'click', clickHandler), 10);
 }
 function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
@@ -1074,20 +972,13 @@ on('model-chip-btn', 'click', e => {
   if (streaming) return toast('⚠️ 生成中不可切换模型');
   e.stopPropagation(); const ast = getActiveAst();
   const items =[
-      { isHeader: true, label: 'DeepSeek API' },
-      ...DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })),
-      { isHeader: true, label: '第三方 API' },
-      ...getCustomModels().map(name => ({ label: `✨ ${name}`, value: name, selected: ast?.modelId === name }))
+      { isHeader: true, label: 'DeepSeek API' }, ...DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })),
+      { isHeader: true, label: '第三方 API' }, ...getCustomModels().map(name => ({ label: `✨ ${name}`, value: name, selected: ast?.modelId === name }))
   ];
   showDropdown(e.currentTarget, items, id => { 
       if (ast) { 
-          ast.modelId = id; 
-          const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
-          if (!validOpts.includes(ast.reasoningEffort)) {
-              if (ast.reasoningEffort === 'max') ast.reasoningEffort = 'high';
-              else if (ast.reasoningEffort === 'low') ast.reasoningEffort = 'off';
-              else ast.reasoningEffort = 'off';
-          }
+          ast.modelId = id; const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
+          if (!validOpts.includes(ast.reasoningEffort)) ast.reasoningEffort = (ast.reasoningEffort === 'max' ? 'high' : (ast.reasoningEffort === 'low' ? 'off' : 'off'));
           saveState(); renderChatPage(); toast('已切换模型'); 
       } 
   });
@@ -1095,26 +986,19 @@ on('model-chip-btn', 'click', e => {
 
 on('reasoning-btn', 'click', e => {
   if (streaming) return toast('⚠️ 生成中不可切换推理设置');
-  e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off';
-  const isDs = isDeepSeek(ast?.modelId);
-  const opts = isDs 
-    ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}]
-    :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
-
+  e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off', isDs = isDeepSeek(ast?.modelId);
+  const opts = isDs ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
   showDropdown(e.currentTarget, opts.map(o => ({ ...o, selected: o.value === cur })), val => { 
       if (ast) { ast.reasoningEffort = val; saveState(); renderChatPage(); toast({ off:'推理已关闭', low:'推理深度：Low', high:'推理深度：High', max:'推理深度：Max' }[val] || ''); } 
   });
 });
 
 // ==================== CHAT LOGIC ====================
-const scrollBottom = (force) => force && requestAnimationFrame(() => {
-    const c = $1('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
-});
+const scrollBottom = (force) => force && requestAnimationFrame(() => { const c = $1('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); });
 const setStreamingUI = stream => { $1('send-btn').style.display = stream ? 'none' : 'flex'; $1('stop-btn').style.display = stream ? 'flex' : 'none'; };
 
 function startGenTimer(idx, am) {
-  if (am.startTime) return;
-  am.startTime = Date.now();
+  if (am.startTime) return; am.startTime = Date.now();
   generationTimers[idx] = setInterval(() => {
     const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .gen-time`);
     if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
@@ -1124,54 +1008,66 @@ function startGenTimer(idx, am) {
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
   const isThinking = msg.content.length === 0; 
-  
   if (msg.reasoning) { 
       let rb = bub.querySelector('.rblock');
       if (!rb) { 
-          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
-          rb = bub.querySelector('.rblock');
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); rb = bub.querySelector('.rblock');
       }
-      
       const ttEl = rb.querySelector('.think-time');
-      if (isThinking && msg.startTime) {
-          ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
-      }
-
+      if (isThinking && msg.startTime) ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
       if (!isThinking && !rb.dataset.autoClosed) {
-          rb.querySelector('.rhead').classList.remove('open');
-          rb.querySelector('.rbody').classList.remove('open');
-          rb.dataset.autoClosed = '1';
-          if (msg.startTime && !msg.thinkTime) {
-              msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0);
-              if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`;
-          }
+          rb.querySelector('.rhead').classList.remove('open'); rb.querySelector('.rbody').classList.remove('open'); rb.dataset.autoClosed = '1';
+          if (msg.startTime && !msg.thinkTime) { msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0); if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`; }
       }
       rb.querySelector('.rbody').textContent = msg.reasoning;
   }
-
   let mc = bub.querySelector('.markdown-body');
-  if (!mc) { 
-      bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>');
-      mc = bub.querySelector('.markdown-body');
-  }
-  mc.innerHTML = md(msg.content); 
-  enhanceCodeBlocks(bub);
-
+  if (!mc) { bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>'); mc = bub.querySelector('.markdown-body'); }
+  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
   if (tokensEl) tokensEl.textContent = '🏷️ ' + formatK(getMsgTokens(msg));
 }
 
+function getApiConfig(a, c) {
+  if (isDeepSeek(a.modelId)) {
+    const body = { model: a.modelId, stream: true, messages:[{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))] };
+    if (a.reasoningEffort === 'off') Object.assign(body, { temperature: a.temperature, top_p: a.topP, thinking: { type: 'disabled' } }); else Object.assign(body, { reasoning_effort: a.reasoningEffort, thinking: { type: 'enabled' } });
+    return { url: 'https://api.deepseek.com/chat/completions', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.deepseekKey}` }, body };
+  } else {
+    const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiKey };
+    if (state.geminiKey.startsWith('sk-') || state.geminiKey.startsWith('Bearer ')) headers['Authorization'] = state.geminiKey.startsWith('Bearer ') ? state.geminiKey : `Bearer ${state.geminiKey}`;
+    const contents = [];
+    for (const m of c.messages.slice(0, -1)) {
+      const role = m.role === 'user' ? 'user' : 'model', parts = (m.thoughtSignatures ||[]).map(sig => ({ thoughtSignature: sig })); parts.push({ text: m.content || ' ' });
+      if (contents.length > 0 && contents[contents.length - 1].role === role) contents[contents.length - 1].parts.push(...parts); else contents.push({ role, parts });
+    }
+    const body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
+    if (a.systemPrompt) body.systemInstruction = { role: "system", parts: [{ text: a.systemPrompt }] };
+    if (a.reasoningEffort !== 'off') body.generationConfig.thinkingConfig = a.modelId.includes('gemini-3') ? { includeThoughts: true, thinkingLevel: a.reasoningEffort === 'low' ? 'LOW' : 'HIGH' } : { includeThoughts: true, thinkingBudget: a.reasoningEffort === 'low' ? 1024 : 8192 };
+    return { url: `${(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '')}/v1beta/models/${a.modelId}:streamGenerateContent?alt=sse`, headers, body };
+  }
+}
+
+function parseChunk(modelId, chunk, am) {
+  if (!isDeepSeek(modelId)) {
+    for (const part of (chunk.candidates?.[0]?.content?.parts ||[])) {
+      if (part.thoughtSignature || part.thought_signature) { am.thoughtSignatures ??=[]; am.thoughtSignatures.push(part.thoughtSignature || part.thought_signature); }
+      if (part.thought === true || String(part.thought) === "true") am.reasoning += (part.text || ''); else if (part.text) am.content += part.text;
+    }
+  } else {
+    const delta = chunk.choices?.[0]?.delta; if (!delta) return;
+    if (delta.reasoning_content) am.reasoning += delta.reasoning_content;
+    if (delta.content) am.content += delta.content;
+  }
+}
+
 async function sendMessage() {
   if (streaming) return;
-  const inputEl = $1('user-input');
-  const txt = inputEl.value.trim(); if (!txt) return;
+  const inputEl = $1('user-input'), txt = inputEl.value.trim(); if (!txt) return;
   const a = getActiveAst(); if (!a) return;
   
-  if (isDeepSeek(a.modelId)) {
-      if (!state.deepseekKey) return toast('请先设置 DeepSeek API Key') || openSettings();
-  } else {
-      if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings();
-  }
+  if (isDeepSeek(a.modelId)) { if (!state.deepseekKey) return toast('请先设置 DeepSeek API Key') || openSettings(); } 
+  else { if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings(); }
   
   inputEl.value = ''; inputEl.style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
@@ -1181,42 +1077,11 @@ async function sendMessage() {
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, thinkTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
-
-  let currentTokens = calcConvTokens(c, a.systemPrompt);
   $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
-  let body = {}, url = '', headers = {};
-  if (!isDeepSeek(a.modelId)) {
-      url = `${(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '')}/v1beta/models/${a.modelId}:streamGenerateContent?alt=sse`;
-      headers = { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiKey };
-      if (state.geminiKey.startsWith('sk-') || state.geminiKey.startsWith('Bearer ')) headers['Authorization'] = state.geminiKey.startsWith('Bearer ') ? state.geminiKey : `Bearer ${state.geminiKey}`;
-      
-      let contents =[];
-      for (const m of c.messages.slice(0, -1)) {
-          const role = m.role === 'user' ? 'user' : 'model';
-          const parts = (m.thoughtSignatures ||[]).map(sig => ({ thoughtSignature: sig }));
-          parts.push({ text: m.content || ' ' });
-          if (contents.length > 0 && contents[contents.length - 1].role === role) contents[contents.length - 1].parts.push(...parts);
-          else contents.push({ role, parts });
-      }
-      
-      body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
-      if (a.systemPrompt) body.systemInstruction = { role: "system", parts: [{ text: a.systemPrompt }] };
-      if (a.reasoningEffort !== 'off') {
-          const isV3 = a.modelId.includes('gemini-3');
-          body.generationConfig.thinkingConfig = isV3 
-              ? { includeThoughts: true, thinkingLevel: a.reasoningEffort === 'low' ? 'LOW' : 'HIGH' }
-              : { includeThoughts: true, thinkingBudget: a.reasoningEffort === 'low' ? 1024 : 8192 };
-      }
-  } else {
-      url = 'https://api.deepseek.com/chat/completions';
-      headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.deepseekKey}` };
-      body = { model: a.modelId, stream: true, messages:[{ role: 'system', content: a.systemPrompt }, ...c.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))] };
-      if (a.reasoningEffort === 'off') Object.assign(body, { temperature: a.temperature, top_p: a.topP, thinking: { type: 'disabled' } });
-      else Object.assign(body, { reasoning_effort: a.reasoningEffort, thinking: { type: 'enabled' } });
-  }
-
+  const { url, headers, body } = getApiConfig(a, c);
   abortCtrl = new AbortController();
+
   try {
     startGenTimer(ai, am); 
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
@@ -1229,36 +1094,7 @@ async function sendMessage() {
       for (let t of lines) {
         t = t.trim(); if (!t || !t.startsWith('data: ')) continue;
         const dataStr = t.slice(6); if (dataStr === '[DONE]') continue;
-        try {
-          const chunk = JSON.parse(dataStr);
-          if (!isDeepSeek(a.modelId)) {
-              for (const part of (chunk.candidates?.[0]?.content?.parts ||[])) {
-                  if (part.thoughtSignature || part.thought_signature) {
-                      am.thoughtSignatures ??=[];
-                      am.thoughtSignatures.push(part.thoughtSignature || part.thought_signature);
-                  }
-                  if (part.thought === true || String(part.thought) === "true") {
-                      currentTokens += estimateTokens(part.text || ''); 
-                      am.reasoning += (part.text || '');
-                  } else if (part.text) {
-                      currentTokens += estimateTokens(part.text); 
-                      am.content += part.text;
-                  }
-              }
-          } else {
-              const delta = chunk.choices?.[0]?.delta; if (!delta) continue;
-              if (delta.reasoning_content) { 
-                  currentTokens += estimateTokens(delta.reasoning_content); 
-                  am.reasoning += delta.reasoning_content; 
-              }
-              if (delta.content) { 
-                  currentTokens += estimateTokens(delta.content); 
-                  am.content += delta.content; 
-              }
-          }
-          $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
-          updateLive(ai, am);
-        } catch(e) {}
+        try { parseChunk(a.modelId, JSON.parse(dataStr), am); $1('chat-nav-tokens').textContent = `(${c.messages.length})`; updateLive(ai, am); } catch(e) {}
       }
     }
   } catch (err) { if (err.name !== 'AbortError') am.content = am.content || `❌ 错误：${err.message}`; }
@@ -1266,8 +1102,7 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
-    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; 
-    delete am.startTime; 
+    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; delete am.startTime; 
     saveState(); renderChatPage();
   }
 }
@@ -1292,9 +1127,7 @@ on('close-topics', 'click', closeAll);
 on('close-settings', 'click', closeAll);
 on('overlay', 'click', closeAll);
 
-setupPWA(); applyTheme(); 
-renderAstList();
-state.activeAstId = null; saveState();
+setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState();
 })();
 </script>
 </body>
