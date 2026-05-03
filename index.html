@@ -453,7 +453,7 @@ const $1 = s => document.getElementById(s);
 const on = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.addEventListener(evt, cb);
 const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEventListener(evt, cb);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
 const estimateTokens = str => {
   if (!str) return 0;
@@ -468,9 +468,7 @@ const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
 // ==================== STATE & MODELS ====================
 const STORAGE_KEY = 'ai_chat_v8';
 let state = loadState();
-let abortCtrl = null, streaming = false;
-let editingMsg = null, editingIdx = -1, editingConv = null;
-const generationTimers = {};
+let abortCtrl = null, streaming = false, editingMsg = null;
 
 const DS_MODELS = [
   { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎' },
@@ -514,7 +512,9 @@ function fixAsst(a) {
     conversations: (a.conversations ||[]).map(c => ({ 
       id: c.id || genId(), title: c.title || '新话题', 
       messages: (c.messages ||[]).map(m => {
-        if (m.reasoningTime && !m.genTime) { m.genTime = m.reasoningTime; delete m.reasoningTime; }
+        if (m.reasoningTime && !m.genTime) { m.genTime = m.reasoningTime; }
+        delete m.reasoningTime;
+        delete m.thinkTime; // 彻底清除可能存在的旧有思考时间字段
         return m;
       })
     })),
@@ -744,9 +744,8 @@ function makeMsg(msg, idx) {
   const d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
 
   const isNote = !!msg.isNote;
-  const thinkTimeHTML = (msg.thinkTime && !isNote) ? `<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;">(${msg.thinkTime}s)</span>` : '';
   const rLabel = isNote ? '📝 消息备注' : '🧠 思考过程';
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}${thinkTimeHTML}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
@@ -771,7 +770,7 @@ on('messages', 'click', async e => {
     e.stopPropagation(); const act = btn.dataset.a, idx = parseInt(btn.closest('.msg').dataset.index, 10), conv = getActiveConv(), msg = conv.messages[idx];
     if (act === 'cp') return copyText(msg.content).then(() => toast('已复制'));
     if (streaming) return toast('⚠️ 生成中不可操作');
-    if (act === 'ed') openEditModal(msg, idx, conv);
+    if (act === 'ed') openEditModal(msg);
     else if (act === 'del') deleteMessage(idx);
     else if (act === 're') retryMessage(idx, msg.role === 'assistant');
   }
@@ -807,8 +806,8 @@ function renderMessages() {
 }
 
 // ==================== EDIT MODAL ====================
-function openEditModal(msg, idx, conv) { 
-  editingMsg = msg; editingIdx = idx; editingConv = conv; 
+function openEditModal(msg) { 
+  editingMsg = msg;
   $1('edit-textarea').value = msg.content || ''; 
   $1('edit-reasoning-textarea').value = msg.reasoning || '';
   
@@ -838,7 +837,6 @@ function saveEdit() {
   if (rval) {
     if (isNoteMode) {
       editingMsg.isNote = true;
-      delete editingMsg.thinkTime; // 彻底清除原有思考时间
     } else {
       delete editingMsg.isNote;
     }
@@ -970,7 +968,6 @@ function applyAndSaveSettings() {
 
 function exportData() {
   const now = new Date();
-  // 根据用户本地时区拼接正确的 YYYY-MM-DD 格式
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const payload = { _meta: { version: 9, date: now.toISOString() }, data: state };
   const a = document.createElement('a'); 
@@ -990,7 +987,6 @@ on('import-file', 'change', e => {
       
       if (await showConfirm('导入将“深度合并”数据（原有话题不会丢失，新分支将自动追加）')) {
         
-        // 1. 深度合并分组：防重名与ID叠加
         if (Array.isArray(data.groups)) {
           data.groups.forEach(g => { 
             if (!state.groups.find(x => x.id === g.id || x.name === g.name)) {
@@ -999,11 +995,9 @@ on('import-file', 'change', e => {
           });
         }
 
-        // 2. 深度合并助手及话题数据
         data.assistants.forEach(importedA => {
           const fixed = fixAsst(importedA);
           
-          // 修正导入助手的分组ID，确保能放到正确的本地同名组下
           const originGroup = (data.groups || []).find(g => g.id === fixed.groupId);
           let localGroup = state.groups.find(g => g.id === fixed.groupId);
           if (!localGroup && originGroup) {
@@ -1011,46 +1005,35 @@ on('import-file', 'change', e => {
           }
           fixed.groupId = localGroup ? localGroup.id : 'default';
 
-          // 优先通过 ID 匹配现有助手，若不存在则通过名称匹配
           let existing = state.assistants.find(a => a.id === fixed.id);
           if (!existing) {
             existing = state.assistants.find(a => a.name.trim() === fixed.name.trim());
           }
 
           if (existing) {
-            // 助手已存在，仅在现有助手下合并其中不存在的差异话题
             fixed.conversations.forEach(ic => {
-              // 检查是否已经存在一模一样的话题 (ID、名称、消息数全等视为绝对相同)
               const isExactSame = existing.conversations.some(c => 
                 c.id === ic.id && c.title === ic.title && c.messages.length === ic.messages.length
               );
-              if (isExactSame) return; // 已经存在，跳过
+              if (isExactSame) return; 
 
-              // 检查 ID 是否产生冲突
               const conflictById = existing.conversations.find(c => c.id === ic.id);
               if (conflictById) {
-                // ID 相同，但标题或消息数不同，说明这是来自另一台设备的衍生/分叉对话！
-                // 此时不进行粗暴忽略，赋予导入的话题新 ID，作为独立分支追加，100%防止你的修改丢失
                 ic.id = genId();
                 existing.conversations.push(ic);
               } else {
-                // 若无 ID 冲突，检查是否因旧版重置等原因造成仅内容重复的话题副本
                 const isDuplicateContent = existing.conversations.some(c => 
                   c.title === ic.title && c.messages.length === ic.messages.length && ic.messages.length > 0
                 );
-                if (isDuplicateContent) return; // 视为内容重复，跳过
-                
-                // 完全陌生且无冲突的话题，正常追加
+                if (isDuplicateContent) return; 
                 existing.conversations.push(ic);
               }
             });
           } else {
-            // 助手在本地完全不存在，直接作为新助手添加
             state.assistants.push(fixed);
           }
         });
         
-        // 3. 合并全局设置信息 (优先保留本地设置，空缺由导入补充)
         Object.assign(state, {
           activeAstId: data.activeAstId ?? state.activeAstId, 
           deepseekKey: data.deepseekKey ?? state.deepseekKey,
@@ -1124,27 +1107,19 @@ on('reasoning-btn', 'click', e => {
 const scrollBottom = (force) => force && requestAnimationFrame(() => { const c = $1('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); });
 const setStreamingUI = stream => { $1('send-btn').style.display = stream ? 'none' : 'flex'; $1('stop-btn').style.display = stream ? 'flex' : 'none'; };
 
-function startGenTimer(idx, am) {
-  if (am.startTime) return; am.startTime = Date.now();
-  generationTimers[idx] = setInterval(() => {
-    const el = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .gen-time`);
-    if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
-  }, 1000);
-}
-
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
   const isThinking = msg.content.length === 0; 
   if (msg.reasoning) { 
       let rb = bub.querySelector('.rblock');
       if (!rb) { 
-          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程<span class="think-time" style="opacity:0.7;font-size:10px;font-weight:normal;margin-left:4px;"></span></span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); rb = bub.querySelector('.rblock');
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
+          rb = bub.querySelector('.rblock');
       }
-      const ttEl = rb.querySelector('.think-time');
-      if (isThinking && msg.startTime) ttEl.textContent = `(${((Date.now() - msg.startTime) / 1000).toFixed(0)}s)`;
       if (!isThinking && !rb.dataset.autoClosed) {
-          rb.querySelector('.rhead').classList.remove('open'); rb.querySelector('.rbody').classList.remove('open'); rb.dataset.autoClosed = '1';
-          if (msg.startTime && !msg.thinkTime) { msg.thinkTime = ((Date.now() - msg.startTime) / 1000).toFixed(0); if (ttEl) ttEl.textContent = `(${msg.thinkTime}s)`; }
+          rb.querySelector('.rhead').classList.remove('open'); 
+          rb.querySelector('.rbody').classList.remove('open'); 
+          rb.dataset.autoClosed = '1';
       }
       rb.querySelector('.rbody').textContent = msg.reasoning;
   }
@@ -1201,16 +1176,22 @@ async function sendMessage() {
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   saveState(); renderMessages(); scrollBottom(true);
 
-  const am = { role: 'assistant', content: '', reasoning: '', genTime: null, thinkTime: null, modelId: a.modelId };
+  const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
   saveState(); renderMessages(); setStreamingUI(true); streaming = true;
   $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
   const { url, headers, body } = getApiConfig(a, c);
   abortCtrl = new AbortController();
+  let genTimer;
 
   try {
-    startGenTimer(ai, am); 
+    am.startTime = Date.now();
+    genTimer = setInterval(() => {
+      const el = document.querySelector(`#messages .msg.ai[data-index="${ai}"] .gen-time`);
+      if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
+    }, 1000);
+
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
     if (!resp.ok) { let em = `HTTP ${resp.status}`; try { em = (await resp.json()).error?.message || em; } catch(e){} throw new Error(em); }
     
@@ -1227,9 +1208,9 @@ async function sendMessage() {
   } catch (err) { if (err.name !== 'AbortError') am.content = am.content || `❌ 错误：${err.message}`; }
   finally {
     streaming = false; abortCtrl = null; setStreamingUI(false);
-    if (generationTimers[ai]) { clearInterval(generationTimers[ai]); delete generationTimers[ai]; }
+    if (genTimer) clearInterval(genTimer);
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
-    if (am.startTime && am.content.length === 0 && !am.thinkTime) am.thinkTime = am.genTime; delete am.startTime; 
+    delete am.startTime; 
     saveState(); renderChatPage();
   }
 }
