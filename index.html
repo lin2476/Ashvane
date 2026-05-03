@@ -560,7 +560,8 @@ function showConfirm(msg) {
 function setupPWA() {
   const manifest = {
     name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
-    start_url: location.href.split('?')[0], display: 'standalone', orientation: 'portrait',
+    // 在启动URL后增加时间戳参数，强制 PWA 每次安装/启动时绕过旧缓存加载最新代码
+    start_url: location.href.split('?')[0] + '?v=' + new Date().getTime(), display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
     icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
   };
