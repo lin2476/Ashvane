@@ -445,7 +445,7 @@
 </div>
 
 <script>
-(() => {
+(async () => {
 'use strict';
 
 // ==================== UTILS & TOKENS ====================
@@ -465,9 +465,47 @@ const getContextTokens = m => estimateTokens(m.content);
 const calcConvContextTokens = (c, p) => c.messages.reduce((t, m) => t + getContextTokens(m), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
 
-// ==================== STATE & MODELS ====================
+// ==================== DATABASE (IndexedDB) ====================
+// 采用 IndexedDB 替代 LocalStorage，突破 5MB 限制，最高可存 GB 级数据
 const STORAGE_KEY = 'ai_chat_v8';
-let state = loadState();
+const IDB = {
+  db: null,
+  init() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('AIChatDB', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('store');
+      req.onsuccess = e => { this.db = e.target.result; resolve(); };
+      req.onerror = e => reject(e.target.error);
+    });
+  },
+  get(key) {
+    return new Promise((resolve, reject) => {
+      if (!this.db) return resolve(null);
+      const tx = this.db.transaction('store', 'readonly');
+      const req = tx.objectStore('store').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = e => reject(e.target.error);
+    });
+  },
+  set(key, val) {
+    return new Promise((resolve, reject) => {
+      if (!this.db) return reject('No DB');
+      const tx = this.db.transaction('store', 'readwrite');
+      const req = tx.objectStore('store').put(val, key);
+      req.onsuccess = () => resolve();
+      req.onerror = e => reject(e.target.error);
+    });
+  }
+};
+
+// ==================== STATE & MODELS ====================
+let state = {
+  assistants:[], groups: [{ id: 'default', name: '默认分组', expanded: true }], 
+  activeAstId: null, deepseekKey: '', geminiKey: '', 
+  geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
+  geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode: false
+};
+
 let abortCtrl = null, streaming = false, editingMsg = null;
 
 const DS_MODELS = [
@@ -479,27 +517,34 @@ const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '✨', na
 const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
 const getCustomModels = () => (state.geminiModels || '').split(',').map(s => s.trim()).filter(Boolean);
 
-function loadState() {
-  let loaded = { 
-    assistants:[], groups: [{ id: 'default', name: '默认分组', expanded: true }], 
-    activeAstId: null, deepseekKey: '', geminiKey: '', 
-    geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
-    geminiModels: 'gemini-2.5-pro, gemini-2.0-flash-thinking-exp', darkMode: false 
-  };
+async function loadState() {
   try {
-    const r = localStorage.getItem(STORAGE_KEY);
-    if (r) {
-      const p = JSON.parse(r);
-      if (!p.groups?.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
-      loaded = { ...loaded, ...p };
+    let p = await IDB.get(STORAGE_KEY);
+    if (!p) {
+      // 兼容老版本：如果 IndexedDB 没数据，尝试从 localStorage 迁移
+      const r = localStorage.getItem(STORAGE_KEY);
+      if (r) {
+        p = JSON.parse(r);
+        await IDB.set(STORAGE_KEY, p); 
+      }
     }
-  } catch(e) {}
-  loaded.assistants = (loaded.assistants || []).map(fixAsst);
-  return loaded;
+    if (p) {
+      if (!p.groups?.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
+      state = { ...state, ...p };
+    }
+  } catch(e) {
+    console.warn("读取数据失败, 使用默认状态", e);
+  }
+  state.assistants = (state.assistants || []).map(fixAsst);
 }
 
+// 采用防抖机制，防止在高频对话或流式输出时频繁写入磁盘造成卡顿
+let saveTimer = null;
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) { toast('⚠️ 存储空间不足'); }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    IDB.set(STORAGE_KEY, state).catch(() => toast('⚠️ 存储失败，空间不足或浏览器拦截'));
+  }, 300);
 }
 
 function fixAsst(a) {
@@ -514,7 +559,7 @@ function fixAsst(a) {
       messages: (c.messages ||[]).map(m => {
         if (m.reasoningTime && !m.genTime) { m.genTime = m.reasoningTime; }
         delete m.reasoningTime;
-        delete m.thinkTime; // 彻底清除可能存在的旧有思考时间字段
+        delete m.thinkTime; 
         return m;
       })
     })),
@@ -560,7 +605,6 @@ function showConfirm(msg) {
 function setupPWA() {
   const manifest = {
     name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
-    // 在启动URL后增加时间戳参数，强制 PWA 每次安装/启动时绕过旧缓存加载最新代码
     start_url: location.href.split('?')[0] + '?v=' + new Date().getTime(), display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
     icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
@@ -970,7 +1014,7 @@ function applyAndSaveSettings() {
 function exportData() {
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const payload = { _meta: { version: 9, date: now.toISOString() }, data: state };
+  const payload = { _meta: { version: 10, date: now.toISOString() }, data: state };
   const a = document.createElement('a'); 
   a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })); 
   a.download = `ai-chat-backup-${dateStr}.json`; 
@@ -995,6 +1039,9 @@ on('import-file', 'change', e => {
             }
           });
         }
+
+        let importedAstCount = 0;
+        let importedConvCount = 0;
 
         data.assistants.forEach(importedA => {
           const fixed = fixAsst(importedA);
@@ -1022,16 +1069,20 @@ on('import-file', 'change', e => {
               if (conflictById) {
                 ic.id = genId();
                 existing.conversations.push(ic);
+                importedConvCount++;
               } else {
                 const isDuplicateContent = existing.conversations.some(c => 
                   c.title === ic.title && c.messages.length === ic.messages.length && ic.messages.length > 0
                 );
                 if (isDuplicateContent) return; 
                 existing.conversations.push(ic);
+                importedConvCount++;
               }
             });
           } else {
             state.assistants.push(fixed);
+            importedAstCount++;
+            importedConvCount += fixed.conversations.length;
           }
         });
         
@@ -1044,7 +1095,8 @@ on('import-file', 'change', e => {
           darkMode: data.darkMode ?? state.darkMode
         });
 
-        saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); toast('✅ 数据已合并');
+        saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
+        toast(`✅ 成功导入${importedAstCount}个助手${importedConvCount}个话题`);
       }
     } catch(err) { 
       toast('❌ 文件格式错误或数据损坏'); 
@@ -1236,6 +1288,9 @@ on('close-topics', 'click', closeAll);
 on('close-settings', 'click', closeAll);
 on('overlay', 'click', closeAll);
 
+// 初始化启动
+await IDB.init().catch(console.error);
+await loadState();
 setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState();
 })();
 </script>
