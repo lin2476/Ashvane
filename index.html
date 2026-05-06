@@ -6,7 +6,7 @@
   <title>AI Chat</title>
 
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AI Chat">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
@@ -603,13 +603,26 @@ function showConfirm(msg) {
 
 // ==================== PWA & THEME ====================
 function setupPWA() {
+  // 1. 生成 Manifest (将 start_url 改为固定路径，防止系统将其识别为不同的网页)
   const manifest = {
     name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
-    start_url: location.href.split('?')[0] + '?v=' + new Date().getTime(), display: 'standalone', orientation: 'portrait',
+    start_url: location.pathname, display: 'standalone', orientation: 'portrait',
     background_color: '#f0f0f5', theme_color: '#4f46e5',
     icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
   };
   $1('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
+
+  // 2. 动态注册 Service Worker (使得浏览器将其识别为完整 PWA，触发系统级安装提示)
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => self.clients.claim());
+      self.addEventListener('fetch', e => {}); // 拦截请求，满足 PWA 离线特性的最低审查要求
+    `;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(err => console.warn('PWA 注册失败', err));
+  }
 }
 
 function applyTheme() {
