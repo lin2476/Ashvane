@@ -74,7 +74,10 @@ async function loadState() {
     let p = await IDB.get(STORAGE_KEY);
     if (!p) {
       const r = localStorage.getItem(STORAGE_KEY);
-      if (r) { p = JSON.parse(r); await IDB.set(STORAGE_KEY, p); }
+      if (r) {
+        p = JSON.parse(r);
+        await IDB.set(STORAGE_KEY, p); 
+      }
     }
     if (p) {
       if (!p.groups?.length) p.groups =[{ id: 'default', name: '默认分组', expanded: true }];
@@ -170,13 +173,13 @@ function applyTheme() {
 
 // ==================== NAVIGATION ====================
 function goToAsts() { $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); }
-
 function goToChat(id) { 
   state.activeAstId = id; saveState(); 
   $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); 
   renderChatPage(); closeAll(); 
   userScrolledUp = false; 
-  scrollBottom(false); // 直接到底部读取，不显示滚动动画
+  // 进入对话瞬间跳转底部，取消平滑动画延迟
+  scrollBottom(true, false); 
 }
 
 // ==================== ASSISTANT LIST ====================
@@ -311,48 +314,22 @@ function renderChatPage() {
   renderMessages();
 }
 
-// ==================== MARKDOWN WITH KaTeX EXTENSION ====================
+// ==================== MARKDOWN & MATH RENDERING ====================
+// 使用官方的 marked-katex 插件彻底清理替换复杂的正则逻辑
+if (window.markedKatex) {
+  marked.use(window.markedKatex({ throwOnError: false }));
+}
 marked.setOptions({ breaks: true, gfm: true });
-
-// 通过 marked 的官方 Extension 机制解析数学公式，不仅清爽而且更稳定
-const blockMathExt = {
-  name: 'blockMath',
-  level: 'block',
-  start(src) { return src.match(/\$\$|\\\[/)?.index; },
-  tokenizer(src) {
-    const match = src.match(/^(?:\$\$|\\\[)([\s\S]+?)(?:\$\$|\\\])/);
-    if (match) return { type: 'blockMath', raw: match[0], text: match[1].trim() };
-  },
-  renderer(token) {
-    if (window.katex) {
-      try { return katex.renderToString(token.text, { displayMode: true, throwOnError: false }); } catch(e) {}
-    }
-    return `<div class="katex-display">$$${esc(token.text)}$$</div>`;
-  }
-};
-
-const inlineMathExt = {
-  name: 'inlineMath',
-  level: 'inline',
-  start(src) { return src.match(/\$|\\\(/)?.index; },
-  tokenizer(src) {
-    const match = src.match(/^\\\(([\s\S]+?)\\\)/) || src.match(/^\$(?!\s)([^$\n]+?)(?<!\s)\$(?![\w$])/);
-    if (match) return { type: 'inlineMath', raw: match[0], text: match[1].trim() };
-  },
-  renderer(token) {
-    if (window.katex) {
-      try { return katex.renderToString(token.text, { displayMode: false, throwOnError: false }); } catch(e) {}
-    }
-    return `<span class="katex-inline">$${esc(token.text)}$</span>`;
-  }
-};
-
-// 挂载官方插件支持
-marked.use({ extensions: [blockMathExt, inlineMathExt] });
 
 const md = t => { 
   if (!t) return ''; 
-  try { return marked.parse(t); } catch(e) { return esc(t).replace(/\n/g, '<br>'); }
+  // 非常简洁地将某些大模型特有的 LaTeX 圆/方括号符号统一转换为标准的 marked-katex 识别格式 ($ 和 $$)
+  const text = String(t).replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$').replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
+  try {
+    return marked.parse(text); 
+  } catch(e) { 
+    return esc(text).replace(/\n/g, '<br>'); 
+  }
 };
 
 function enhanceCodeBlocks(container) {
@@ -527,7 +504,8 @@ on('topic-list', 'click', async e => {
   a.activeConvId = cid; saveState(); closeAll(); 
   renderChatPage(); renderTopicList(); 
   userScrolledUp = false; 
-  scrollBottom(false); // 取消过度动画，快速直达
+  // 切换话题直接从底部加载，不使用动画过渡
+  scrollBottom(true, false);
 });
 
 function startRename(cid) {
@@ -538,12 +516,14 @@ function startRename(cid) {
   const finish = () => { const nt = inp.value.trim(); if (nt && nt !== conv.title) { conv.title = nt; saveState(); renderChatPage(); } renderTopicList(); };
   on(inp, 'blur', finish); on(inp, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
 }
+
 on('new-topic', 'click', () => { 
   const a = getActiveAst(); if (!a) return; 
   a.activeConvId = null; saveState(); closeAll(); 
   renderChatPage(); 
   userScrolledUp = false; 
-  scrollBottom(false); // 取消过度动画，快速直达
+  // 新建话题直接跳转，关闭动画
+  scrollBottom(true, false);
 });
 
 // ==================== SETTINGS ====================
@@ -702,7 +682,7 @@ on('model-chip-btn', 'click', e => {
   ];
   showDropdown(e.currentTarget, items, id => { 
       if (ast) { 
-          ast.modelId = id; const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
+          ast.modelId = id; const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] :['off', 'low', 'high'];
           if (!validOpts.includes(ast.reasoningEffort)) ast.reasoningEffort = (ast.reasoningEffort === 'max' ? 'high' : (ast.reasoningEffort === 'low' ? 'off' : 'off'));
           saveState(); renderChatPage(); toast('<i class="ph-fill ph-check-circle"></i> 已切换模型'); 
       } 
@@ -735,11 +715,11 @@ on('chat-container', 'scroll', function() {
   $1('scroll-down').classList.toggle('show', dist > 200 && $1('messages').children.length > 1); 
 });
 
-const scrollBottom = (force) => {
+// 核心优化：彻底分离“瞬时跳转”与“平滑动画”以防抖拉扯
+const scrollBottom = (force, smooth = false) => {
   if (force || (!userScrolledUp && !isTouching)) {
     requestAnimationFrame(() => { 
-      // 使用 force ? 'smooth' : 'auto' 来分别表示平滑滚动与即刻跳转到底部
-      chatC.scrollTo({ top: chatC.scrollHeight, behavior: force ? 'smooth' : 'auto' }); 
+      chatC.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); 
     });
   }
 };
@@ -799,7 +779,7 @@ function getApiConfig(a, c) {
       if (contents.length > 0 && contents[contents.length - 1].role === role) contents[contents.length - 1].parts.push(...parts); else contents.push({ role, parts });
     }
     const body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
-    if (a.systemPrompt) body.systemInstruction = { role: "system", parts:[{ text: a.systemPrompt }] };
+    if (a.systemPrompt) body.systemInstruction = { role: "system", parts: [{ text: a.systemPrompt }] };
     if (a.reasoningEffort !== 'off') body.generationConfig.thinkingConfig = a.modelId.includes('gemini-3') ? { includeThoughts: true, thinkingLevel: a.reasoningEffort === 'low' ? 'LOW' : 'HIGH' } : { includeThoughts: true, thinkingBudget: a.reasoningEffort === 'low' ? 1024 : 8192 };
     return { url: `${(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '')}/v1beta/models/${a.modelId}:streamGenerateContent?alt=sse`, headers, body };
   }
@@ -831,7 +811,9 @@ async function sendMessage() {
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   
   userScrolledUp = false; 
-  saveState(); renderMessages(); scrollBottom(true);
+  saveState(); renderMessages(); 
+  // 手动发送消息时保留平滑滚动（有较好交互体验）
+  scrollBottom(true, true);
 
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
@@ -863,7 +845,8 @@ async function sendMessage() {
           parseChunk(a.modelId, JSON.parse(dataStr), am); 
           $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
           updateLive(ai, am); 
-          scrollBottom(false); 
+          // 极速文字流式输出时关闭动画，确保文字与底部强关联，不卡顿
+          scrollBottom(false, false); 
         } catch(e) {}
       }
     }
@@ -889,8 +872,8 @@ on('stop-btn', 'click', () => abortCtrl?.abort());
 on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
 on('user-input', 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
 
-// 通过设置 false 快速到底部（取消动画过渡来防止 AI 输入快时的闪烁/回弹）
-on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(false); });
+// 点击悬浮的回到最新消息，立刻跳转取消平滑滚动，解决AI过快时的动画跳跃卡顿
+on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(true, false); });
 
 on('chat-back', 'click', goToAsts);
 on('topic-toggle', 'click', e => { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
