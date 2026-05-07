@@ -7,7 +7,6 @@ const on = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.addEventList
 const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEventListener(evt, cb);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
-const vibrate = (ms = 10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {} };
 
 const estimateTokens = str => {
   if (!str) return 0;
@@ -825,7 +824,7 @@ async function sendMessage() {
 
   const { url, headers, body } = getApiConfig(a, c);
   abortCtrl = new AbortController();
-  let genTimer, firstChunk = true;
+  let genTimer;
 
   try {
     am.startTime = Date.now();
@@ -840,7 +839,6 @@ async function sendMessage() {
     const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '';
     while (true) {
       const { done, value } = await reader.read(); if (done) break;
-      if (firstChunk) { vibrate(10); firstChunk = false; } // 触觉反馈：AI 开始输出了
       buf += dec.decode(value, { stream: true }); const lines = buf.split('\n'); buf = lines.pop() || '';
       for (let t of lines) {
         t = t.trim(); if (!t || !t.startsWith('data: ')) continue;
@@ -855,7 +853,6 @@ async function sendMessage() {
     }
   } catch (err) { if (err.name !== 'AbortError') am.content = am.content || `❌ 错误：${err.message}`; }
   finally {
-    vibrate(10); // 触觉反馈：输出结束
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (genTimer) clearInterval(genTimer);
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
