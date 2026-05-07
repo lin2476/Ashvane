@@ -12,34 +12,31 @@
   <meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0a0a10" media="(prefers-color-scheme: dark)">
   
-  <!-- 动态 manifest，确保单文件也能触发 PWA 安装 -->
   <link rel="manifest" id="pwa-manifest">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100' rx='22'/><text x='50' y='68' text-anchor='middle' font-size='52'>🤖</text></svg>">
 
-  <!-- 引入 Phosphor Icons (轻量级高质量 SVG 字体图标) -->
   <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
-
-  <!-- 外部依赖: 全局使用 defer 防止渲染阻塞 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <!-- 将 KaTeX 的 CSS 改为异步加载，避免阻塞首屏 FCP -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" media="print" onload="this.media='all'">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
+  <!-- 引入官方扩展替代原有的正则逻辑 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension/lib/index.umd.js" defer></script>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
-  <!-- 精简为引入单个包含常用语言的打包版本，节省 7 个 HTTP 请求 -->
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
 
-  <!-- 引入 CSS -->
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div id="app">
   <!-- ASSISTANTS PAGE -->
   <div class="page active" id="ast-page">
-    <div class="navbar">
-      <div class="nav-left nav-spacer"></div>
+    <div class="navbar flex items-center justify-between">
+      <div class="nav-left nav-spacer flex items-center"></div>
       <div class="nav-center"><span class="asst-name">AI Chat</span></div>
-      <div class="nav-right nav-spacer-right">
+      <div class="nav-right nav-spacer-right flex items-center">
         <button class="nav-btn btn-transparent" id="add-group-btn" title="新建分组"><i class="ph ph-folder-plus"></i></button>
         <button class="nav-btn accent" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
       </div>
@@ -51,26 +48,26 @@
 
   <!-- CHAT PAGE -->
   <div class="chat-page" id="chat-page">
-    <div class="navbar">
-      <div class="nav-left"><button class="nav-btn" id="chat-back"><i class="ph ph-arrow-left"></i></button></div>
+    <div class="navbar flex items-center justify-between">
+      <div class="nav-left flex items-center"><button class="nav-btn" id="chat-back"><i class="ph ph-arrow-left"></i></button></div>
       <div class="nav-center" id="chat-title-area">
         <span class="asst-name" id="chat-asst-name">助手</span>
-        <div class="topic-row" id="topic-toggle">
+        <div class="topic-row flex items-center" id="topic-toggle">
           <span class="topic-name" id="chat-topic-name">新话题</span>
           <span class="nav-tokens" id="chat-nav-tokens">(0)</span>
           <span class="topic-arr"><i class="ph ph-caret-down"></i></span>
         </div>
       </div>
-      <div class="nav-right"><button class="nav-btn" id="settings-btn" aria-label="打开设置"><i class="ph ph-gear"></i></button></div>
+      <div class="nav-right flex items-center"><button class="nav-btn" id="settings-btn" aria-label="打开设置"><i class="ph ph-gear"></i></button></div>
     </div>
     <div id="chat-container"><div id="messages"></div></div>
-    <button class="scroll-down" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
-    <div id="input-bar">
-      <div class="inp-wrap"><textarea id="user-input" rows="1" placeholder="输入消息，Enter 换行..." autofocus></textarea></div>
+    <button class="scroll-down flex items-center justify-center" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
+    <div id="input-bar" class="flex items-end">
+      <div class="inp-wrap flex flex-1"><textarea id="user-input" rows="1" placeholder="输入消息，Enter 换行..." autofocus></textarea></div>
     </div>
-    <div id="bottom-bar">
-      <button id="model-chip-btn"><span class="micon"><i class="ph ph-brain"></i></span><span id="model-chip-label">模型</span> <i class="ph ph-caret-down"></i></button>
-      <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> <i class="ph ph-caret-down"></i></button>
+    <div id="bottom-bar" class="flex items-center">
+      <button id="model-chip-btn" class="flex items-center"><span class="micon"><i class="ph ph-brain"></i></span><span id="model-chip-label">模型</span> <i class="ph ph-caret-down"></i></button>
+      <button id="reasoning-btn" class="flex items-center"><span id="reasoning-label">推理：关闭</span> <i class="ph ph-caret-down"></i></button>
       <button id="send-btn"><i class="ph-fill ph-paper-plane-right"></i></button>
       <button id="stop-btn" class="hidden"><i class="ph-fill ph-stop-circle"></i></button>
     </div>
@@ -79,7 +76,7 @@
   <!-- EDIT MODAL -->
   <div class="edit-overlay" id="edit-overlay">
     <div class="edit-card">
-      <div class="edit-card-header">
+      <div class="edit-card-header flex items-center justify-between">
         <span class="edit-title"><i class="ph ph-pencil-simple"></i> 编辑消息</span>
         <button id="edit-toggle-reasoning-btn" class="edit-toggle-btn"><i class="ph ph-brain"></i> 思考过程</button>
       </div>
@@ -107,10 +104,10 @@
 
   <div class="overlay" id="overlay"></div>
 
-  <!-- TOPICS DRAWER -->
-  <div class="drawer drawer-right" id="topics-drawer">
-    <div class="drawer-head">
-      <h3 class="flex-center"><i class="ph ph-list-dashes" style="margin-right:6px"></i> 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
+  <!-- TOPICS DRAWER (已调整为左侧抽屉) -->
+  <div class="drawer drawer-left" id="topics-drawer">
+    <div class="drawer-head flex items-center justify-between">
+      <h3 class="flex items-center"><i class="ph ph-list-dashes" style="margin-right:6px"></i> 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
       <button class="nav-btn" id="close-topics"><i class="ph ph-x"></i></button>
     </div>
     <div class="drawer-body">
@@ -121,7 +118,7 @@
 
   <!-- SETTINGS DRAWER -->
   <div class="drawer drawer-right" id="settings-drawer">
-    <div class="drawer-head"><h3><i class="ph ph-gear"></i> 设置</h3><button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button></div>
+    <div class="drawer-head flex items-center justify-between"><h3><i class="ph ph-gear"></i> 设置</h3><button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button></div>
     <div class="drawer-body" id="settings-body"></div>
   </div>
 
@@ -138,12 +135,12 @@
 
   <!-- FULLSCREEN PROMPT EDITOR -->
   <div class="fs-prompt-overlay" id="fs-prompt-overlay">
-    <div class="fs-prompt-head">
+    <div class="fs-prompt-head flex items-center justify-between">
       <span class="prompt-title"><i class="ph ph-pencil-simple"></i> 编辑系统提示词</span>
       <button class="nav-btn" id="fs-prompt-close"><i class="ph ph-x"></i></button>
     </div>
     <div class="fs-prompt-body">
-      <div class="prompt-toolbar" id="fs-prompt-tb">
+      <div class="prompt-toolbar flex items-center" id="fs-prompt-tb">
         <button data-md="bold" title="粗体">B</button>
         <button data-md="italic" title="斜体"><i>I</i></button>
         <button data-md="code" title="代码">&lt;/&gt;</button>
@@ -158,11 +155,10 @@
 
   <!-- COMMON WIDGETS -->
   <div class="dropdown-menu" id="dropdown-menu"></div>
-  <div class="toast" id="toast"></div>
+  <div class="toast flex items-center" id="toast"></div>
   <input type="file" id="import-file" accept=".json" class="hidden">
 </div>
 
-<!-- 引入 JS (放到末尾并使用 defer) -->
 <script src="./script.js" defer></script>
 </body>
 </html>
