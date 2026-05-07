@@ -156,6 +156,23 @@ function showConfirm(msg) {
   });
 }
 
+function showInputPrompt(msg, defaultVal = '') {
+  return new Promise(resolve => {
+    $1('custom-prompt-msg').textContent = msg;
+    const inp = $1('custom-prompt-input');
+    inp.value = defaultVal;
+    $1('custom-prompt-overlay').classList.add('show');
+    inp.focus();
+    
+    const cleanup = () => { $1('custom-prompt-overlay').classList.remove('show'); off('custom-prompt-ok', 'click', onOk); off('custom-prompt-cancel', 'click', onCancel); off(inp, 'keydown', onKey); };
+    const onOk = () => { cleanup(); resolve(inp.value); }; 
+    const onCancel = () => { cleanup(); resolve(null); };
+    const onKey = e => { if (e.key === 'Enter') onOk(); if (e.key === 'Escape') onCancel(); };
+    
+    on('custom-prompt-ok', 'click', onOk); on('custom-prompt-cancel', 'click', onCancel); on(inp, 'keydown', onKey);
+  });
+}
+
 // ==================== PWA & THEME ====================
 function setupPWA() {
   const manifest = {
@@ -230,8 +247,8 @@ function renderAstList() {
   }).join('');
 }
 
-on('add-group-btn', 'click', () => {
-  const name = prompt('请输入新建的分组名称');
+on('add-group-btn', 'click', async () => {
+  const name = await showInputPrompt('请输入新建的分组名称');
   if (name && name.trim()) { state.groups.push({ id: genId(), name: name.trim(), expanded: true }); saveState(); renderAstList(); }
 });
 
@@ -239,7 +256,7 @@ function handleGroupMore(gid, btn) {
   showDropdown(btn,[{ label: '重命名分组', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' }, { label: '删除分组', value: 'delete', icon: '<i class="ph ph-trash"></i>' }], async val => {
     const g = state.groups.find(x => x.id === gid); if (!g) return;
     if (val === 'rename') {
-      const newName = prompt('重命名分组', g.name);
+      const newName = await showInputPrompt('重命名分组', g.name);
       if (newName && newName.trim()) { g.name = newName.trim(); saveState(); renderAstList(); }
     } else if (val === 'delete') {
       if (!await showConfirm(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) return;
@@ -659,7 +676,7 @@ on('import-file', 'change', e => {
 // FULLSCREEN PROMPT EDITOR
 const setupPromptToolbar = ta => {
   const insert = (p, s = '') => { ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input')); };
-  return { bold: () => insert('**', '**'), italic: () => insert('*', '*'), code: () => insert('`', '`'), heading: () => insert('## '), list: () => insert('- '), quote: () => insert('> ') };
+  return { undo: () => { ta.focus(); document.execCommand('undo'); }, redo: () => { ta.focus(); document.execCommand('redo'); }, bold: () => insert('**', '**'), italic: () => insert('*', '*'), code: () => insert('`', '`'), heading: () => insert('## '), list: () => insert('- '), quote: () => insert('> ') };
 };
 const ptb = setupPromptToolbar($1('fs-prompt-textarea'));
 on('fs-prompt-tb', 'click', e => { const btn = e.target.closest('button[data-md]'); if (btn && ptb[btn.dataset.md]) ptb[btn.dataset.md](); });
