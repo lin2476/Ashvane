@@ -1,11 +1,19 @@
 (async () => {
 'use strict';
 
+// 动态注册 marked-katex 扩展
+if (window.markedKatex) {
+  marked.use(window.markedKatex({ throwOnError: false }));
+}
+
 // ==================== UTILS & TOKENS ====================
 const $1 = s => document.getElementById(s);
 const on = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.addEventListener(evt, cb);
 const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEventListener(evt, cb);
-const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+// 使用原生且极速的 randomUUID 取代旧有的拼接 ID
+const genId = () => crypto.randomUUID();
+
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
 const estimateTokens = str => {
@@ -80,7 +88,7 @@ async function loadState() {
       }
     }
     if (p) {
-      if (!p.groups?.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
+      if (!p.groups?.length) p.groups =[{ id: 'default', name: '默认分组', expanded: true }];
       state = { ...state, ...p };
     }
   } catch(e) { console.warn("读取数据失败, 使用默认状态", e); }
@@ -150,7 +158,6 @@ function showConfirm(msg) {
 
 // ==================== PWA & THEME ====================
 function setupPWA() {
-  // 1. 动态生成 Manifest
   const manifest = {
     name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
     start_url: location.pathname, display: 'standalone', orientation: 'portrait',
@@ -160,7 +167,6 @@ function setupPWA() {
   const manifestTag = $1('pwa-manifest');
   if (manifestTag) manifestTag.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
   
-  // 2. 动态注册 Service Worker (这是手机端触发“安装应用”的关键)
   if ('serviceWorker' in navigator) {
     const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => self.clients.claim()); self.addEventListener('fetch', e => {});`;
     navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(e=>{});
@@ -175,11 +181,13 @@ function applyTheme() {
 
 // ==================== NAVIGATION ====================
 function goToAsts() { $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); }
+
+// 解决从助手直接点击跳转时的从上向下过渡动画 (false 切断动画直接滚到底部)
 function goToChat(id) { 
   state.activeAstId = id; saveState(); 
   $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); 
   renderChatPage(); closeAll(); 
-  userScrolledUp = false; scrollBottom(true); 
+  userScrolledUp = false; scrollBottom(false); 
 }
 
 // ==================== ASSISTANT LIST ====================
@@ -197,9 +205,9 @@ function renderAstList() {
     const asts = state.assistants.filter(a => a.groupId === g.id);
     return `
       <div class="ast-group" data-gid="${g.id}">
-        <div class="ast-group-header">
+        <div class="ast-group-header flex items-center justify-between">
           <div class="ast-group-title"><i class="ph ph-caret-right arr ${g.expanded ? 'open' : ''}"></i> ${esc(g.name)} <span class="ast-group-count">(${asts.length})</span></div>
-          <div class="ast-group-actions">
+          <div class="ast-group-actions flex items-center">
             <button class="icon-btn add-to-group" title="添加到此分组"><i class="ph ph-plus"></i></button>
             ${g.id !== 'default' ? `<button class="icon-btn group-more" title="分组操作"><i class="ph ph-dots-three-vertical"></i></button>` : ''}
           </div>
@@ -207,11 +215,11 @@ function renderAstList() {
         <div class="ast-group-list ${g.expanded ? 'open' : ''}">
           ${asts.map(a => {
             const m = getModelInfo(a.modelId);
-            return `<div class="ast-card" data-id="${a.id}">
+            return `<div class="ast-card flex items-center" data-id="${a.id}">
               <span class="ast-icon">${m.icon}</span>
               <div class="ast-info">
                 <div class="ast-name">${esc(a.name)}</div>
-                <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span></div>
+                <div class="ast-meta flex items-center"><span>${m.icon} ${esc(m.name)}</span><span><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span></div>
                 <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
               </div>
               <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
@@ -248,7 +256,7 @@ function handleAstMore(id, btn) {
   const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
   const groupIdx = groupAsts.findIndex(a => a.id === id);
   const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '<i class="ph ph-folder-simple"></i>' }));
-  const items =[ ...moveItems, ...(moveItems.length ? [{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' } ];
+  const items =[ ...moveItems, ...(moveItems.length ?[{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' } ];
 
   if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
   if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
@@ -314,43 +322,14 @@ function renderChatPage() {
   renderMessages();
 }
 
-// ==================== MESSAGES & MARKDOWN WITH KaTeX ====================
+// ==================== MESSAGES & MARKDOWN ====================
 marked.setOptions({ breaks: true, gfm: true });
 
-const processMath = (text) => {
-  if (!text) return { text: '', blocks: [] };
-  const blocks =[];
-  const rep = (display, tex) => { blocks.push({ display, tex }); return `⚗️MATH_${blocks.length - 1}⚗️`; };
-  
-  const codeBlocks =[];
-  text = text.replace(/```[\s\S]*?```/g, m => { codeBlocks.push(m); return `⚗️CODE_${codeBlocks.length - 1}⚗️`; });
-  text = text.replace(/`[^`\n]+`/g, m => { codeBlocks.push(m); return `⚗️CODE_${codeBlocks.length - 1}⚗️`; });
-
-  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, p1) => rep(true, p1));
-  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, p1) => rep(true, p1));
-  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (m, p1) => rep(false, p1));
-  text = text.replace(/(^|[^\\$])\$(?!\s)([^$\n]+?)(?<!\s)\$(?![\w$])/g, (m, p1, p2) => p1 + rep(false, p2));
-
-  for (let i = 0; i < codeBlocks.length; i++) { text = text.replace(`⚗️CODE_${i}⚗️`, codeBlocks[i]); }
-  return { text, blocks };
-};
-
+// 完全移除了庞大又易出错的自定义数学公式正则，交由 marked-katex 极速渲染
 const md = t => { 
   if (!t) return ''; 
-  const { text, blocks } = processMath(t);
   let html = '';
-  try { html = marked.parse(text); } catch(e) { html = esc(text).replace(/\n/g, '<br>'); }
-  for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i];
-    let rendered = '';
-    if (window.katex) {
-      try { rendered = katex.renderToString(b.tex, { displayMode: b.display, throwOnError: false }); }
-      catch(e) { rendered = esc(b.display ? `$$${b.tex}$$` : `$${b.tex}$`); }
-    } else {
-      rendered = esc(b.display ? `$$${b.tex}$$` : `$${b.tex}$`);
-    }
-    html = html.split(`⚗️MATH_${i}⚗️`).join(rendered);
-  }
+  try { html = marked.parse(t); } catch(e) { html = esc(t).replace(/\n/g, '<br>'); }
   return html; 
 };
 
@@ -360,7 +339,7 @@ function enhanceCodeBlocks(container) {
     const code = pre.querySelector('code');
     const lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
     const wrapper = document.createElement('div'); wrapper.className = 'code-block-wrapper collapsed';
-    wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn"><i class="ph ph-copy"></i> 复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
+    wrapper.innerHTML = `<div class="code-block-header flex items-center justify-between"><span class="code-lang">${lang}</span><div class="code-btns flex items-center"><button class="code-btn copy-btn"><i class="ph ph-copy"></i> 复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
     pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
 
     on(wrapper.querySelector('.copy-btn'), 'click', e => {
@@ -387,7 +366,7 @@ function makeMsg(msg, idx) {
 
   const isNote = !!msg.isNote;
   const rLabel = isNote ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程';
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}</span><i class="ph ph-caret-right arr"></i></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead flex items-center"><span>${rLabel}</span><i class="ph ph-caret-right arr"></i></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
   const badgeHtml = mInfo.custom ? `<i class="ph-fill ph-sparkle"></i> ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   
@@ -398,8 +377,8 @@ function makeMsg(msg, idx) {
   const timeDisplay = isAi ? `<span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
-    <div class="msg-actions">
-      <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>${timeDisplay}` : ''}</div>
+    <div class="msg-actions flex items-center">
+      <div class="actions-left flex items-center">${isAi ? `<span class="badge">${badgeHtml}</span>${timeDisplay}` : ''}</div>
       <div class="msg-tokens">${tokenDisplay}</div>
       <div class="actions-right">${isAi ? aiActions : userActions}</div>
     </div>`;
@@ -498,13 +477,13 @@ function renderTopicList() {
   let totalTokens = 0;
   l.innerHTML = a.conversations.map(c => {
     const tok = calcConvContextTokens(c, a.systemPrompt); totalTokens += tok;
-    return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
+    return `<div class="topic-item flex items-center ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
       <span><i class="ph ph-chat-teardrop-text"></i></span>
       <div class="tinfo">
-        <div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
+        <div class="ttitle-wrap flex items-center"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
         <div class="tmeta">${c.messages.length} 条消息</div>
       </div>
-      <div class="tact"><button class="topic-btn" data-edit title="重命名"><i class="ph ph-pencil-simple"></i></button><button class="topic-btn del" title="删除"><i class="ph ph-trash"></i></button></div>
+      <div class="tact flex items-center"><button class="topic-btn" data-edit title="重命名"><i class="ph ph-pencil-simple"></i></button><button class="topic-btn del" title="删除"><i class="ph ph-trash"></i></button></div>
     </div>`;
   }).join('');
   $1('drawer-total-tokens').textContent = formatK(totalTokens);
@@ -525,7 +504,9 @@ on('topic-list', 'click', async e => {
   
   a.activeConvId = cid; saveState(); closeAll(); 
   renderChatPage(); renderTopicList(); 
-  userScrolledUp = false; scrollBottom(true);
+  
+  // false 代表切除平滑动画直接贴到底部，提高手感
+  userScrolledUp = false; scrollBottom(false);
 });
 
 function startRename(cid) {
@@ -540,7 +521,7 @@ on('new-topic', 'click', () => {
   const a = getActiveAst(); if (!a) return; 
   a.activeConvId = null; saveState(); closeAll(); 
   renderChatPage(); 
-  userScrolledUp = false; scrollBottom(true);
+  userScrolledUp = false; scrollBottom(false);
 });
 
 // ==================== SETTINGS ====================
@@ -549,16 +530,16 @@ function renderSettings() {
   $1('settings-body').innerHTML = `
     <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div>
       <div class="field"><label>系统提示词</label><div style="position:relative;"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute;top:4px;right:4px;"><i class="ph ph-corners-out"></i></button></div></div>
-      <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button>
+      <div class="settings-fold"><button class="settings-fold-head flex items-center"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
-          <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
-          <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
+          <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row flex items-center"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
+          <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row flex items-center"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
         </div>
       </div>
     </div>
     <div class="section">
       <div class="settings-fold">
-        <button class="settings-fold-head"><i class="ph ph-plugs"></i> API 密钥与模型设置 <i class="ph ph-caret-right arr"></i></button>
+        <button class="settings-fold-head flex items-center"><i class="ph ph-plugs"></i> API 密钥与模型设置 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
           <div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."></div>
           <div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}" placeholder="sk-... / AIza..."></div>
@@ -567,8 +548,8 @@ function renderSettings() {
         </div>
       </div>
     </div>
-    <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
-    <div class="section"><div class="data-actions"><button id="data-export"><i class="ph ph-upload-simple"></i> 导出备份</button><button id="data-import-btn"><i class="ph ph-download-simple"></i> 导入备份</button></div></div>
+    <div class="section"><div class="t-row flex items-center justify-between"><span id="theme-label">${state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
+    <div class="section"><div class="data-actions flex items-center"><button id="data-export"><i class="ph ph-upload-simple"></i> 导出备份</button><button id="data-import-btn"><i class="ph ph-download-simple"></i> 导入备份</button></div></div>
     <button class="btn-primary mt-8" id="s-save"><i class="ph ph-floppy-disk"></i> 保存设置</button>
   `;
 }
@@ -679,7 +660,7 @@ on('fs-prompt-close', 'click', () => closeFsPrompt(false));
 // ==================== DROPDOWN ====================
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
-  dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
+  dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item flex items-center ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
   dd.style.display = 'block'; dd.style.visibility = 'hidden';
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
@@ -699,7 +680,7 @@ on('model-chip-btn', 'click', e => {
   ];
   showDropdown(e.currentTarget, items, id => { 
       if (ast) { 
-          ast.modelId = id; const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
+          ast.modelId = id; const validOpts = isDeepSeek(id) ?['off', 'high', 'max'] : ['off', 'low', 'high'];
           if (!validOpts.includes(ast.reasoningEffort)) ast.reasoningEffort = (ast.reasoningEffort === 'max' ? 'high' : (ast.reasoningEffort === 'low' ? 'off' : 'off'));
           saveState(); renderChatPage(); toast('<i class="ph-fill ph-check-circle"></i> 已切换模型'); 
       } 
@@ -764,7 +745,7 @@ function updateLive(idx, msg) {
   if (msg.reasoning) { 
       let rb = bub.querySelector('.rblock');
       if (!rb) { 
-          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span><i class="ph ph-brain"></i> 思考过程</span><i class="ph ph-caret-right arr"></i></button><div class="rbody open"></div></div>'); 
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open flex items-center"><span><i class="ph ph-brain"></i> 思考过程</span><i class="ph ph-caret-right arr"></i></button><div class="rbody open"></div></div>'); 
           rb = bub.querySelector('.rblock');
       }
       if (!isThinking && !rb.dataset.autoClosed) {
@@ -795,7 +776,7 @@ function getApiConfig(a, c) {
       if (contents.length > 0 && contents[contents.length - 1].role === role) contents[contents.length - 1].parts.push(...parts); else contents.push({ role, parts });
     }
     const body = { contents, generationConfig: { temperature: a.temperature, topP: a.topP } };
-    if (a.systemPrompt) body.systemInstruction = { role: "system", parts: [{ text: a.systemPrompt }] };
+    if (a.systemPrompt) body.systemInstruction = { role: "system", parts:[{ text: a.systemPrompt }] };
     if (a.reasoningEffort !== 'off') body.generationConfig.thinkingConfig = a.modelId.includes('gemini-3') ? { includeThoughts: true, thinkingLevel: a.reasoningEffort === 'low' ? 'LOW' : 'HIGH' } : { includeThoughts: true, thinkingBudget: a.reasoningEffort === 'low' ? 1024 : 8192 };
     return { url: `${(state.geminiBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '')}/v1beta/models/${a.modelId}:streamGenerateContent?alt=sse`, headers, body };
   }
@@ -876,7 +857,7 @@ async function sendMessage() {
 // ==================== BINDINGS ====================
 const openSheet = id => { closeDrawers(); $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
 const openDrawer = id => { $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
-const closeDrawers = () => ['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
+const closeDrawers = () =>['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show'); closeDrawers(); };
 const openSettings = () => { renderSettings(); openDrawer('settings-drawer'); };
 
@@ -884,7 +865,10 @@ on('send-btn', 'click', sendMessage);
 on('stop-btn', 'click', () => abortCtrl?.abort());
 on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
 on('user-input', 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
-on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(true); });
+
+// 在生成流输出期间禁止该按钮平滑动画（!streaming），以防和推流产生“卡顿冲突”
+on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(!streaming); });
+
 on('chat-back', 'click', goToAsts);
 on('topic-toggle', 'click', e => { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
 on('settings-btn', 'click', openSettings);
@@ -895,6 +879,6 @@ on('overlay', 'click', closeAll);
 // 初始化启动
 await IDB.init().catch(console.error);
 await loadState();
-setupPWA(); // 调用 PWA 初始化函数
+setupPWA();
 applyTheme(); renderAstList(); state.activeAstId = null; saveState();
 })();
