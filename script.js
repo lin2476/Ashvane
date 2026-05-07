@@ -52,7 +52,7 @@ const IDB = {
 
 // ==================== STATE & MODELS ====================
 let state = {
-  assistants:[], groups:[{ id: 'default', name: '默认分组', expanded: true }], 
+  assistants: [], groups:[{ id: 'default', name: '默认分组', expanded: true }], 
   activeAstId: null, deepseekKey: '', geminiKey: '', 
   geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
   geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false
@@ -61,11 +61,11 @@ let state = {
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
 const DS_MODELS =[
-  { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '💎' },
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '⚡' }
+  { id: 'deepseek-v4-pro',   name: 'DeepSeek V4 Pro',   icon: '<i class="ph-fill ph-diamond"></i>' },
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '<i class="ph-fill ph-lightning"></i>' }
 ];
 
-const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '✨', name: id, custom: true };
+const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '<i class="ph-fill ph-sparkle"></i>', name: id, custom: true };
 const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
 const getCustomModels = () => (state.geminiModels || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -80,7 +80,7 @@ async function loadState() {
       }
     }
     if (p) {
-      if (!p.groups?.length) p.groups =[{ id: 'default', name: '默认分组', expanded: true }];
+      if (!p.groups?.length) p.groups = [{ id: 'default', name: '默认分组', expanded: true }];
       state = { ...state, ...p };
     }
   } catch(e) { console.warn("读取数据失败, 使用默认状态", e); }
@@ -91,7 +91,7 @@ let saveTimer = null;
 function saveState() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    IDB.set(STORAGE_KEY, state).catch(() => toast('⚠️ 存储失败，空间不足或浏览器拦截'));
+    IDB.set(STORAGE_KEY, state).catch(() => toast('<i class="ph-fill ph-warning-circle"></i> 存储失败，空间不足或浏览器拦截'));
   }, 300);
 }
 
@@ -126,7 +126,7 @@ function ensureConv(a) {
 }
 
 function toast(m, d = 2000) {
-  const t = $1('toast'); t.textContent = m; t.classList.add('show');
+  const t = $1('toast'); t.innerHTML = m; t.classList.add('show');
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), d);
 }
 
@@ -149,20 +149,7 @@ function showConfirm(msg) {
 }
 
 // ==================== PWA & THEME ====================
-function setupPWA() {
-  const manifest = {
-    name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
-    start_url: location.pathname, display: 'standalone', orientation: 'portrait',
-    background_color: '#f0f0f5', theme_color: '#4f46e5',
-    icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
-  };
-  $1('pwa-manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
-  if ('serviceWorker' in navigator) {
-    const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => self.clients.claim()); self.addEventListener('fetch', e => {});`;
-    navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(e=>{});
-  }
-}
-
+//移除了动态 PWA manifest 的 JS 生成逻辑，改用 index.html 静态引入
 function applyTheme() {
   const d = state.darkMode;
   document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
@@ -187,17 +174,17 @@ function populateGroupSelect(defaultGid) {
 function renderAstList() {
   const l = $1('ast-list');
   if (!state.assistants.length && state.groups.length <= 1) {
-    l.innerHTML = '<div class="empty">还没有助手，点击右上角 ＋ 创建</div>'; return;
+    l.innerHTML = '<div class="empty"><i class="ph ph-ghost" style="font-size:32px; display:block; margin-bottom:8px"></i> 还没有助手，点击右上角 ＋ 创建</div>'; return;
   }
   l.innerHTML = state.groups.map(g => {
     const asts = state.assistants.filter(a => a.groupId === g.id);
     return `
       <div class="ast-group" data-gid="${g.id}">
         <div class="ast-group-header">
-          <div class="ast-group-title"><span class="arr ${g.expanded ? 'open' : ''}">▶</span> ${esc(g.name)} <span class="ast-group-count">(${asts.length})</span></div>
+          <div class="ast-group-title"><i class="ph ph-caret-right arr ${g.expanded ? 'open' : ''}"></i> ${esc(g.name)} <span class="ast-group-count">(${asts.length})</span></div>
           <div class="ast-group-actions">
-            <button class="icon-btn add-to-group" title="添加到此分组">＋</button>
-            ${g.id !== 'default' ? `<button class="icon-btn group-more" title="分组操作">⋮</button>` : ''}
+            <button class="icon-btn add-to-group" title="添加到此分组"><i class="ph ph-plus"></i></button>
+            ${g.id !== 'default' ? `<button class="icon-btn group-more" title="分组操作"><i class="ph ph-dots-three-vertical"></i></button>` : ''}
           </div>
         </div>
         <div class="ast-group-list ${g.expanded ? 'open' : ''}">
@@ -207,10 +194,10 @@ function renderAstList() {
               <span class="ast-icon">${m.icon}</span>
               <div class="ast-info">
                 <div class="ast-name">${esc(a.name)}</div>
-                <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span>${a.conversations.length} 个话题</span></div>
+                <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span></div>
                 <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
               </div>
-              <button class="ast-more">⋮</button>
+              <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
             </div>`;
           }).join('')}
         </div>
@@ -224,7 +211,7 @@ on('add-group-btn', 'click', () => {
 });
 
 function handleGroupMore(gid, btn) {
-  showDropdown(btn,[{ label: '重命名分组', value: 'rename', icon: '✏️ ' }, { label: '删除分组', value: 'delete', icon: '🗑 ' }], async val => {
+  showDropdown(btn,[{ label: '重命名分组', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' }, { label: '删除分组', value: 'delete', icon: '<i class="ph ph-trash"></i>' }], async val => {
     const g = state.groups.find(x => x.id === gid); if (!g) return;
     if (val === 'rename') {
       const newName = prompt('重命名分组', g.name);
@@ -243,11 +230,11 @@ function handleAstMore(id, btn) {
   const ast = state.assistants.find(a => a.id === id);
   const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
   const groupIdx = groupAsts.findIndex(a => a.id === id);
-  const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '📁 ' }));
-  const items =[ ...moveItems, ...(moveItems.length ?[{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '🗑 ' } ];
+  const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '<i class="ph ph-folder-simple"></i>' }));
+  const items =[ ...moveItems, ...(moveItems.length ? [{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' } ];
 
-  if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '⬆️ ' });
-  if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '⬇️ ' });
+  if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
+  if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
 
   showDropdown(btn, items, async val => {
     if (val === 'delete') {
@@ -258,8 +245,7 @@ function handleAstMore(id, btn) {
     } else if (val === 'order_up' || val === 'order_down') {
       const targetAst = val === 'order_up' ? groupAsts[groupIdx - 1] : groupAsts[groupIdx + 1];
       const idx1 = state.assistants.findIndex(a => a.id === ast.id);
-      const idx2 = state.assistants.findIndex(a => a.id === targetAst.id);
-      [state.assistants[idx1], state.assistants[idx2]] = [state.assistants[idx2], state.assistants[idx1]];
+      const idx2 = state.assistants.findIndex(a => a.id === targetAst.id);[state.assistants[idx1], state.assistants[idx2]] = [state.assistants[idx2], state.assistants[idx1]];
       saveState(); renderAstList();
     } else if (val.startsWith('move_')) {
       ast.groupId = val.replace('move_', '');
@@ -286,7 +272,7 @@ on('ast-list', 'click', e => {
 on('add-ast-btn', 'click', () => { populateGroupSelect('default'); openSheet('add-ast-sheet'); });
 
 on('create-ast', 'click', () => {
-  const n = $1('new-ast-name').value.trim(); if (!n) return toast('请输入名称');
+  const n = $1('new-ast-name').value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
   const gid = $1('new-ast-group')?.value || 'default';
   state.assistants.unshift({
     id: genId(), name: n, systemPrompt: $1('new-ast-prompt').value.trim(),
@@ -294,7 +280,7 @@ on('create-ast', 'click', () => {
     groupId: gid, conversations:[], activeConvId: null
   });
   const tg = state.groups.find(g => g.id === gid); if (tg) tg.expanded = true;
-  saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('✅ 已创建');
+  saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('<i class="ph-fill ph-check-circle"></i> 已创建');
 });
 
 // ==================== CHAT PAGE ====================
@@ -305,7 +291,7 @@ function renderChatPage() {
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = c ? `(${c.messages.length})` : '(0)';
   $1('model-chip-label').textContent = m.name;
-  $1('model-chip-btn').querySelector('.micon').textContent = m.icon;
+  $1('model-chip-btn').querySelector('.micon').innerHTML = m.icon;
   const R_LABELS = { off: '关闭', low: 'Low', high: 'High', max: 'Max' };
   $1('reasoning-label').textContent = `推理：${R_LABELS[a.reasoningEffort] || a.reasoningEffort}`;
   renderMessages();
@@ -314,7 +300,6 @@ function renderChatPage() {
 // ==================== MESSAGES & MARKDOWN WITH KaTeX ====================
 marked.setOptions({ breaks: true, gfm: true });
 
-// 安全提取数学公式和代码块，避免被 Markdown 错误转义
 const processMath = (text) => {
   if (!text) return { text: '', blocks: [] };
   const blocks =[];
@@ -358,12 +343,14 @@ function enhanceCodeBlocks(container) {
     const code = pre.querySelector('code');
     const lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
     const wrapper = document.createElement('div'); wrapper.className = 'code-block-wrapper collapsed';
-    wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn">复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
+    wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn"><i class="ph ph-copy"></i> 复制</button><button class="code-btn fold-btn">展开</button></div></div>`;
     pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
 
     on(wrapper.querySelector('.copy-btn'), 'click', e => {
       e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { 
-        e.target.textContent = '✓'; clearTimeout(e.target._t); e.target._t = setTimeout(() => e.target.textContent = '复制', 1200); 
+        e.target.innerHTML = '<i class="ph ph-check"></i> 已复制'; 
+        clearTimeout(e.target._t); 
+        e.target._t = setTimeout(() => e.target.innerHTML = '<i class="ph ph-copy"></i> 复制', 1200); 
       });
     });
     on(wrapper.querySelector('.fold-btn'), 'click', e => {
@@ -382,20 +369,22 @@ function makeMsg(msg, idx) {
   const d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
 
   const isNote = !!msg.isNote;
-  const rLabel = isNote ? '📝 消息备注' : '🧠 思考过程';
-  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}</span><span class="arr">▶</span></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
+  const rLabel = isNote ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程';
+  const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${rLabel}</span><i class="ph ph-caret-right arr"></i></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
-  const badgeHtml = mInfo.custom ? `✨ ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
-  const buttonsHtml = `<button data-a="cp" title="复制">📋</button><button data-a="ed" title="编辑">✏️</button><button data-a="del" title="删除">🗑</button><button data-a="re" title="${isAi?'重新生成':'重新发送'}">${isAi?'🔄':'↩️'}</button>`;
+  const badgeHtml = mInfo.custom ? `<i class="ph-fill ph-sparkle"></i> ${esc(mInfo.name)}` : `${mInfo.icon} ${mInfo.name}`;
   
-  const tokenDisplay = isAi ? '🏷️ ' + formatK(getMsgTokens(msg)) : '';
-  const timeDisplay = isAi ? `<span class="gen-time">⏱ ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : '';
+  const aiActions = `<button data-a="cp" title="复制"><i class="ph ph-copy"></i></button><button data-a="ed" title="编辑"><i class="ph ph-pencil-simple"></i></button><button data-a="del" title="删除"><i class="ph ph-trash"></i></button><button data-a="re" title="重新生成"><i class="ph ph-arrows-clockwise"></i></button>`;
+  const userActions = `<button data-a="cp" title="复制"><i class="ph ph-copy"></i></button><button data-a="ed" title="编辑"><i class="ph ph-pencil-simple"></i></button><button data-a="del" title="删除"><i class="ph ph-trash"></i></button><button data-a="re" title="重新发送"><i class="ph ph-arrow-u-up-left"></i></button>`;
+
+  const tokenDisplay = isAi ? '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg)) : '';
+  const timeDisplay = isAi ? `<span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : '';
 
   d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div>
     <div class="msg-actions">
       <div class="actions-left">${isAi ? `<span class="badge">${badgeHtml}</span>${timeDisplay}` : ''}</div>
       <div class="msg-tokens">${tokenDisplay}</div>
-      <div class="actions-right">${buttonsHtml}</div>
+      <div class="actions-right">${isAi ? aiActions : userActions}</div>
     </div>`;
   enhanceCodeBlocks(d); return d;
 }
@@ -406,8 +395,8 @@ on('messages', 'click', async e => {
   const btn = e.target.closest('button[data-a]');
   if (btn) {
     e.stopPropagation(); const act = btn.dataset.a, idx = parseInt(btn.closest('.msg').dataset.index, 10), conv = getActiveConv(), msg = conv.messages[idx];
-    if (act === 'cp') return copyText(msg.content).then(() => toast('已复制'));
-    if (streaming) return toast('⚠️ 生成中不可操作');
+    if (act === 'cp') return copyText(msg.content).then(() => toast('<i class="ph-fill ph-check-circle"></i> 已复制'));
+    if (streaming) return toast('<i class="ph-fill ph-warning-circle"></i> 生成中不可操作');
     if (act === 'ed') openEditModal(msg);
     else if (act === 'del') deleteMessage(idx);
     else if (act === 're') retryMessage(idx, msg.role === 'assistant');
@@ -437,7 +426,7 @@ async function retryMessage(idx, isAi) {
 function renderMessages() {
   const msgs = $1('messages'), c = getActiveConv(); msgs.innerHTML = '';
   if (!c || c.messages.length === 0) {
-    msgs.innerHTML = `<div class="welcome" style="display:flex"><div class="emoji">✨</div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算">🔬 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗">📝 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏">🐍 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划">💪 健身计划</div></div></div>`;
+    msgs.innerHTML = `<div class="welcome" style="display:flex"><div class="emoji"><i class="ph-fill ph-sparkle"></i></div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算"><i class="ph ph-microscope"></i> 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗"><i class="ph ph-pen-nib"></i> 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏"><i class="ph ph-code"></i> 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划"><i class="ph ph-barbell"></i> 健身计划</div></div></div>`;
     return;
   }
   c.messages.forEach((m, i) => msgs.appendChild(makeMsg(m, i)));
@@ -450,7 +439,7 @@ function openEditModal(msg) {
   $1('edit-reasoning-textarea').value = msg.reasoning || '';
   
   const isNoteMode = !msg.reasoning || msg.isNote;
-  $1('edit-toggle-reasoning-btn').textContent = isNoteMode ? '📝 消息备注' : '🧠 思考过程';
+  $1('edit-toggle-reasoning-btn').innerHTML = isNoteMode ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程';
   $1('edit-reasoning-textarea').placeholder = isNoteMode ? '输入消息备注…' : '输入思考过程…';
   
   $1('edit-reasoning-textarea').classList.remove('show');
@@ -467,12 +456,12 @@ function saveEdit() {
   const rval = $1('edit-reasoning-textarea').value.trim();
   if (!val && !rval) return toast('内容不能为空');
   
-  const isNoteMode = $1('edit-toggle-reasoning-btn').textContent.includes('备注');
+  const isNoteMode = $1('edit-toggle-reasoning-btn').innerHTML.includes('备注');
   editingMsg.content = val; editingMsg.reasoning = rval || '';
   
   if (rval) { if (isNoteMode) editingMsg.isNote = true; else delete editingMsg.isNote; } else delete editingMsg.isNote;
   
-  saveState(); renderChatPage(); closeEditModal(); toast('✅ 已保存');
+  saveState(); renderChatPage(); closeEditModal(); toast('<i class="ph-fill ph-check-circle"></i> 已保存');
 }
 
 on('edit-cancel-btn', 'click', closeEditModal); on('edit-save-btn', 'click', saveEdit);
@@ -493,12 +482,12 @@ function renderTopicList() {
   l.innerHTML = a.conversations.map(c => {
     const tok = calcConvContextTokens(c, a.systemPrompt); totalTokens += tok;
     return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}">
-      <span>💬</span>
+      <span><i class="ph ph-chat-teardrop-text"></i></span>
       <div class="tinfo">
         <div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
         <div class="tmeta">${c.messages.length} 条消息</div>
       </div>
-      <div class="tact"><button class="topic-btn" data-edit title="重命名">✏️</button><button class="topic-btn del" title="删除">🗑</button></div>
+      <div class="tact"><button class="topic-btn" data-edit title="重命名"><i class="ph ph-pencil-simple"></i></button><button class="topic-btn del" title="删除"><i class="ph ph-trash"></i></button></div>
     </div>`;
   }).join('');
   $1('drawer-total-tokens').textContent = formatK(totalTokens);
@@ -542,8 +531,8 @@ function renderSettings() {
   const a = getActiveAst(); if (!a) return;
   $1('settings-body').innerHTML = `
     <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div>
-      <div class="field"><label>系统提示词</label><div style="position:relative;"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute;top:4px;right:4px;">⛶</button></div></div>
-      <div class="settings-fold"><button class="settings-fold-head">⚙️ 高级参数 <span class="arr">▶</span></button>
+      <div class="field"><label>系统提示词</label><div style="position:relative;"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute;top:4px;right:4px;"><i class="ph ph-corners-out"></i></button></div></div>
+      <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
           <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
           <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
@@ -552,7 +541,7 @@ function renderSettings() {
     </div>
     <div class="section">
       <div class="settings-fold">
-        <button class="settings-fold-head">🔌 API 密钥与模型设置 <span class="arr">▶</span></button>
+        <button class="settings-fold-head"><i class="ph ph-plugs"></i> API 密钥与模型设置 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
           <div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}" placeholder="sk-..."></div>
           <div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}" placeholder="sk-... / AIza..."></div>
@@ -561,20 +550,20 @@ function renderSettings() {
         </div>
       </div>
     </div>
-    <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '🌙 暗色' : '☀️ 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
-    <div class="section"><div class="data-actions"><button id="data-export">📤 导出备份</button><button id="data-import-btn">📥 导入备份</button></div></div>
-    <button class="btn-primary" id="s-save" style="margin-top:8px">保存设置</button>
+    <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
+    <div class="section"><div class="data-actions"><button id="data-export"><i class="ph ph-upload-simple"></i> 导出备份</button><button id="data-import-btn"><i class="ph ph-download-simple"></i> 导入备份</button></div></div>
+    <button class="btn-primary mt-8" id="s-save"><i class="ph ph-floppy-disk"></i> 保存设置</button>
   `;
 }
 
 on('settings-body', 'click', e => {
-  if (e.target.id === 'data-export') exportData();
-  else if (e.target.id === 'data-import-btn') $1('import-file').click();
-  else if (e.target.id === 's-save') applyAndSaveSettings();
+  if (e.target.closest('#data-export')) exportData();
+  else if (e.target.closest('#data-import-btn')) $1('import-file').click();
+  else if (e.target.closest('#s-save')) applyAndSaveSettings();
   else {
     const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
     const themeSw = e.target.closest('#s-theme');
-    if (themeSw) { themeSw.classList.toggle('active'); $1('theme-label').textContent = themeSw.classList.contains('active') ? '🌙 暗色' : '☀️ 亮色'; }
+    if (themeSw) { themeSw.classList.toggle('active'); $1('theme-label').innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
     const fsBtn = e.target.closest('#s-prompt-fs-btn');
     if (fsBtn) { $1('fs-prompt-textarea').value = $1('s-prompt').value; $1('fs-prompt-overlay').classList.add('show'); $1('fs-prompt-textarea').focus(); }
   }
@@ -597,7 +586,7 @@ function applyAndSaveSettings() {
   if (val('s-gmurl') !== null) state.geminiBaseUrl = val('s-gmurl').trim();
   if (val('s-gmmodels') !== null) state.geminiModels = val('s-gmmodels').trim() || 'gemini-2.5-pro';
   if ($1('s-theme')) state.darkMode = $1('s-theme').classList.contains('active');
-  saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('✅ 设置已保存');
+  saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('<i class="ph-fill ph-check-circle"></i> 设置已保存');
 }
 
 function exportData() {
@@ -607,7 +596,7 @@ function exportData() {
   const a = document.createElement('a'); 
   a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })); 
   a.download = `ai-chat-backup-${dateStr}.json`; 
-  a.click(); URL.revokeObjectURL(a.href); toast('✅ 已导出备份');
+  a.click(); URL.revokeObjectURL(a.href); toast('<i class="ph-fill ph-check-circle"></i> 已导出备份');
 }
 
 on('import-file', 'change', e => {
@@ -652,9 +641,9 @@ on('import-file', 'change', e => {
           geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode
         });
         saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
-        toast(`✅ 成功导入${importedAstCount}个助手${importedConvCount}个话题`);
+        toast(`<i class="ph-fill ph-check-circle"></i> 成功导入${importedAstCount}个助手${importedConvCount}个话题`);
       }
-    } catch(err) { toast('❌ 文件格式错误或数据损坏'); console.error(err); }
+    } catch(err) { toast('<i class="ph-fill ph-warning-circle"></i> 文件格式错误或数据损坏'); console.error(err); }
   };
   reader.readAsText(file); e.target.value = '';
 });
@@ -673,7 +662,7 @@ on('fs-prompt-close', 'click', () => closeFsPrompt(false));
 // ==================== DROPDOWN ====================
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
-  dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<span class="check">✓</span>' : ''}</div>`).join('');
+  dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
   dd.style.display = 'block'; dd.style.visibility = 'hidden';
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
@@ -685,23 +674,23 @@ function showDropdown(anchor, items, onSelect) {
 function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
 
 on('model-chip-btn', 'click', e => {
-  if (streaming) return toast('⚠️ 生成中不可切换模型');
+  if (streaming) return toast('<i class="ph-fill ph-warning-circle"></i> 生成中不可切换模型');
   e.stopPropagation(); const ast = getActiveAst();
   const items =[
       { isHeader: true, label: 'DeepSeek API' }, ...DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: ast?.modelId === m.id })),
-      { isHeader: true, label: '第三方 API' }, ...getCustomModels().map(name => ({ label: `✨ ${name}`, value: name, selected: ast?.modelId === name }))
+      { isHeader: true, label: '第三方 API' }, ...getCustomModels().map(name => ({ label: `<i class="ph-fill ph-sparkle"></i> ${name}`, value: name, selected: ast?.modelId === name }))
   ];
   showDropdown(e.currentTarget, items, id => { 
       if (ast) { 
-          ast.modelId = id; const validOpts = isDeepSeek(id) ?['off', 'high', 'max'] :['off', 'low', 'high'];
+          ast.modelId = id; const validOpts = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
           if (!validOpts.includes(ast.reasoningEffort)) ast.reasoningEffort = (ast.reasoningEffort === 'max' ? 'high' : (ast.reasoningEffort === 'low' ? 'off' : 'off'));
-          saveState(); renderChatPage(); toast('已切换模型'); 
+          saveState(); renderChatPage(); toast('<i class="ph-fill ph-check-circle"></i> 已切换模型'); 
       } 
   });
 });
 
 on('reasoning-btn', 'click', e => {
-  if (streaming) return toast('⚠️ 生成中不可切换推理设置');
+  if (streaming) return toast('<i class="ph-fill ph-warning-circle"></i> 生成中不可切换推理设置');
   e.stopPropagation(); const ast = getActiveAst(), cur = ast?.reasoningEffort || 'off', isDs = isDeepSeek(ast?.modelId);
   const opts = isDs ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
   showDropdown(e.currentTarget, opts.map(o => ({ ...o, selected: o.value === cur })), val => { 
@@ -713,7 +702,6 @@ on('reasoning-btn', 'click', e => {
 let isTouching = false;
 const chatC = $1('chat-container');
 
-// 监听用户的物理交互意图，只要手放在屏幕上或操作了滚轮/滚动条，立刻接管控制权
 chatC.addEventListener('touchstart', () => isTouching = true, { passive: true });
 chatC.addEventListener('touchend', () => isTouching = false, { passive: true });
 chatC.addEventListener('touchcancel', () => isTouching = false, { passive: true });
@@ -723,20 +711,11 @@ chatC.addEventListener('wheel', () => userScrolledUp = true, { passive: true });
 
 on('chat-container', 'scroll', function() { 
   const dist = this.scrollHeight - this.scrollTop - this.clientHeight;
-  
-  if (dist <= 25) {
-    // 只要距离底部小于等于 25px，立刻重置为自动跟随模式
-    userScrolledUp = false;
-  } else if (isTouching) {
-    // 只有在手指按住屏幕并且产生了滚动时，才标记为已向上滚动，彻底暂停自动跟随
-    userScrolledUp = true;
-  }
-  
+  if (dist <= 25) userScrolledUp = false; else if (isTouching) userScrolledUp = true;
   $1('scroll-down').classList.toggle('show', dist > 200 && $1('messages').children.length > 1); 
 });
 
 const scrollBottom = (force) => {
-  // 核心拦截：如果未强制置底，且用户手指正放在屏幕上，则彻底忽略自动置底请求
   if (force || (!userScrolledUp && !isTouching)) {
     requestAnimationFrame(() => { 
       chatC.scrollTo({ top: chatC.scrollHeight, behavior: force ? 'smooth' : 'auto' }); 
@@ -744,7 +723,23 @@ const scrollBottom = (force) => {
   }
 };
 
-const setStreamingUI = stream => { $1('send-btn').style.display = stream ? 'none' : 'flex'; $1('stop-btn').style.display = stream ? 'flex' : 'none'; };
+const setStreamingUI = stream => { 
+  const sendBtn = $1('send-btn');
+  const inp = $1('user-input');
+  
+  if (stream) {
+    sendBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+    sendBtn.disabled = true;
+    inp.disabled = true;
+    $1('stop-btn').classList.remove('hidden');
+  } else {
+    sendBtn.innerHTML = '<i class="ph-fill ph-paper-plane-right"></i>';
+    sendBtn.disabled = false;
+    inp.disabled = false;
+    $1('stop-btn').classList.add('hidden');
+    setTimeout(() => inp.focus(), 10);
+  }
+};
 
 function updateLive(idx, msg) {
   const bub = document.querySelector(`#messages .msg.ai[data-index="${idx}"] .bubble`); if (!bub) return;
@@ -752,7 +747,7 @@ function updateLive(idx, msg) {
   if (msg.reasoning) { 
       let rb = bub.querySelector('.rblock');
       if (!rb) { 
-          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span>🧠 思考过程</span><span class="arr">▶</span></button><div class="rbody open"></div></div>'); 
+          bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span><i class="ph ph-brain"></i> 思考过程</span><i class="ph ph-caret-right arr"></i></button><div class="rbody open"></div></div>'); 
           rb = bub.querySelector('.rblock');
       }
       if (!isThinking && !rb.dataset.autoClosed) {
@@ -766,7 +761,7 @@ function updateLive(idx, msg) {
   if (!mc) { bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>'); mc = bub.querySelector('.markdown-body'); }
   mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
   const tokensEl = document.querySelector(`#messages .msg[data-index="${idx}"] .msg-tokens`);
-  if (tokensEl) tokensEl.textContent = '🏷️ ' + formatK(getMsgTokens(msg));
+  if (tokensEl) tokensEl.innerHTML = '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg));
 }
 
 function getApiConfig(a, c) {
@@ -807,14 +802,14 @@ async function sendMessage() {
   const inputEl = $1('user-input'), txt = inputEl.value.trim(); if (!txt) return;
   const a = getActiveAst(); if (!a) return;
   
-  if (isDeepSeek(a.modelId)) { if (!state.deepseekKey) return toast('请先设置 DeepSeek API Key') || openSettings(); } 
-  else { if (!state.geminiKey) return toast('请先设置 第三方 API Key') || openSettings(); }
+  if (isDeepSeek(a.modelId)) { if (!state.deepseekKey) return toast('<i class="ph-fill ph-warning-circle"></i> 请先设置 DeepSeek API Key') || openSettings(); } 
+  else { if (!state.geminiKey) return toast('<i class="ph-fill ph-warning-circle"></i> 请先设置 第三方 API Key') || openSettings(); }
   
   inputEl.value = ''; inputEl.style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   
-  userScrolledUp = false; // 用户主动发送消息时必定置底
+  userScrolledUp = false; 
   saveState(); renderMessages(); scrollBottom(true);
 
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
@@ -830,7 +825,7 @@ async function sendMessage() {
     am.startTime = Date.now();
     genTimer = setInterval(() => {
       const el = document.querySelector(`#messages .msg.ai[data-index="${ai}"] .gen-time`);
-      if (el) el.textContent = `⏱ ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
+      if (el) el.innerHTML = `<i class="ph ph-timer"></i> ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`;
     }, 1000);
 
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
@@ -864,7 +859,7 @@ async function sendMessage() {
 // ==================== BINDINGS ====================
 const openSheet = id => { closeDrawers(); $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
 const openDrawer = id => { $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
-const closeDrawers = () =>['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
+const closeDrawers = () => ['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show'); closeDrawers(); };
 const openSettings = () => { renderSettings(); openDrawer('settings-drawer'); };
 
@@ -883,5 +878,5 @@ on('overlay', 'click', closeAll);
 // 初始化启动
 await IDB.init().catch(console.error);
 await loadState();
-setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState();
+applyTheme(); renderAstList(); state.activeAstId = null; saveState();
 })();
