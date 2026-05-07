@@ -20,6 +20,8 @@
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
+  <!-- 引入官方的 marked-katex 扩展插件 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension/lib/index.umd.js" defer></script>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
@@ -101,7 +103,7 @@
 
   <div class="overlay" id="overlay"></div>
 
-  <!-- TOPICS DRAWER (Modified to Left) -->
+  <!-- TOPICS DRAWER: 改为 drawer-left (从左向右展开) -->
   <div class="drawer drawer-left" id="topics-drawer">
     <div class="drawer-head">
       <h3 class="flex-center"><i class="ph ph-list-dashes" style="margin-right:6px"></i> 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
@@ -113,7 +115,7 @@
     </div>
   </div>
 
-  <!-- SETTINGS DRAWER -->
+  <!-- SETTINGS DRAWER: 保持 drawer-right (从右向左展开) -->
   <div class="drawer drawer-right" id="settings-drawer">
     <div class="drawer-head"><h3><i class="ph ph-gear"></i> 设置</h3><button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button></div>
     <div class="drawer-body" id="settings-body"></div>
@@ -150,7 +152,6 @@
     </div>
   </div>
 
-  <!-- COMMON WIDGETS -->
   <div class="dropdown-menu" id="dropdown-menu"></div>
   <div class="toast" id="toast"></div>
   <input type="file" id="import-file" accept=".json" class="hidden">
