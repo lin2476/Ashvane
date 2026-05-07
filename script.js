@@ -52,7 +52,6 @@ const IDB = {
 
 // ==================== STATE & MODELS ====================
 let state = {
-  // 在初始状态中加入“全能助手”
   assistants:[{
     id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。',
     temperature: 1.0, topP: 1.0, modelId: 'deepseek-v4-pro', reasoningEffort: 'off',
@@ -90,7 +89,6 @@ async function loadState() {
       state = { ...state, ...p };
     }
   } catch(e) { console.warn("读取数据失败, 使用默认状态", e); }
-  
   
   state.assistants = state.assistants.map(fixAsst);
 }
@@ -175,15 +173,6 @@ function showInputPrompt(msg, defaultVal = '') {
 
 // ==================== PWA & THEME ====================
 function setupPWA() {
-  const manifest = {
-    name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
-    start_url: location.pathname, display: 'standalone', orientation: 'portrait',
-    background_color: '#f0f0f5', theme_color: '#4f46e5',
-    icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
-  };
-  const manifestTag = $1('pwa-manifest');
-  if (manifestTag) manifestTag.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
-  
   if ('serviceWorker' in navigator) {
     const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => self.clients.claim()); self.addEventListener('fetch', e => {});`;
     navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(e=>{});
@@ -198,23 +187,17 @@ function applyTheme() {
 
 // ==================== NAVIGATION ====================
 function goToAsts(fromHistory = false) { 
-  // 如果是点击页面UI返回按钮触发的，且当前处于聊天页状态，则直接调用原生后退
-  if (fromHistory !== true && window.history.state?.page === 'chat') {
-    window.history.back(); return;
-  }
+  if (fromHistory !== true && window.history.state?.page === 'chat') { window.history.back(); return; }
   $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); 
 }
 
 function goToChat(id, fromHistory = false) { 
   state.activeAstId = id; saveState(); 
-  // 如果不是历史记录触发的，主动追加一条历史记录
   if (fromHistory !== true) history.pushState({ page: 'chat', id }, '');
   
   $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); 
   renderChatPage(); closeAll(); 
-  userScrolledUp = false; 
-  // 进入对话瞬间跳转底部，取消平滑动画延迟
-  scrollBottom(true, false); 
+  userScrolledUp = false; scrollBottom(true, false); 
 }
 
 // ==================== ASSISTANT LIST ====================
@@ -226,7 +209,7 @@ function populateGroupSelect(defaultGid) {
 function renderAstList() {
   const l = $1('ast-list');
   if (!state.assistants.length && state.groups.length <= 1) {
-    l.innerHTML = '<div class="empty"><i class="ph ph-ghost" style="font-size:32px; display:block; margin-bottom:8px"></i> 还没有助手，点击右上角 ＋ 创建</div>'; return;
+    l.innerHTML = '<div class="empty"><i class="ph ph-ghost empty-icon"></i> 还没有助手，点击右上角 ＋ 创建</div>'; return;
   }
   l.innerHTML = state.groups.map(g => {
     const asts = state.assistants.filter(a => a.groupId === g.id);
@@ -283,7 +266,7 @@ function handleAstMore(id, btn) {
   const groupAsts = state.assistants.filter(a => a.groupId === ast.groupId);
   const groupIdx = groupAsts.findIndex(a => a.id === id);
   const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '<i class="ph ph-folder-simple"></i>' }));
-  const items =[ ...moveItems, ...(moveItems.length ? [{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' } ];
+  const items =[ ...moveItems, ...(moveItems.length ?[{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' } ];
 
   if (groupIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
   if (groupIdx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
@@ -350,21 +333,13 @@ function renderChatPage() {
 }
 
 // ==================== MARKDOWN & MATH RENDERING ====================
-// 使用官方的 marked-katex 插件彻底清理替换复杂的正则逻辑
-if (window.markedKatex) {
-  marked.use(window.markedKatex({ throwOnError: false }));
-}
+if (window.markedKatex) marked.use(window.markedKatex({ throwOnError: false }));
 marked.setOptions({ breaks: true, gfm: true });
 
 const md = t => { 
   if (!t) return ''; 
-  // 非常简洁地将某些大模型特有的 LaTeX 圆/方括号符号统一转换为标准的 marked-katex 识别格式 ($ 和 $$)
   const text = String(t).replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$').replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
-  try {
-    return marked.parse(text); 
-  } catch(e) { 
-    return esc(text).replace(/\n/g, '<br>'); 
-  }
+  try { return marked.parse(text); } catch(e) { return esc(text).replace(/\n/g, '<br>'); }
 };
 
 function enhanceCodeBlocks(container) {
@@ -456,7 +431,7 @@ async function retryMessage(idx, isAi) {
 function renderMessages() {
   const msgs = $1('messages'), c = getActiveConv(); msgs.innerHTML = '';
   if (!c || c.messages.length === 0) {
-    msgs.innerHTML = `<div class="welcome" style="display:flex"><div class="emoji"><i class="ph-fill ph-sparkle"></i></div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算"><i class="ph ph-microscope"></i> 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗"><i class="ph ph-pen-nib"></i> 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏"><i class="ph ph-code"></i> 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划"><i class="ph ph-barbell"></i> 健身计划</div></div></div>`;
+    msgs.innerHTML = `<div class="welcome"><div class="emoji"><i class="ph-fill ph-sparkle"></i></div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算"><i class="ph ph-microscope"></i> 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗"><i class="ph ph-pen-nib"></i> 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏"><i class="ph ph-code"></i> 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划"><i class="ph ph-barbell"></i> 健身计划</div></div></div>`;
     return;
   }
   c.messages.forEach((m, i) => msgs.appendChild(makeMsg(m, i)));
@@ -531,13 +506,11 @@ function handleTopicMore(cid, btn) {
 
   const items =[
     { label: '重命名话题', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' },
-    { label: '复制话题', value: 'copy', icon: '<i class="ph ph-copy"></i>' }
+    { label: '复制话题', value: 'copy', icon: '<i class="ph ph-copy"></i>' },
+    ...(convIdx > 0 ?[{ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' }] : []),
+    ...(convIdx < a.conversations.length - 1 ?[{ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' }] :[]),
+    { label: '删除话题', value: 'delete', icon: '<i class="ph ph-trash"></i>' }
   ];
-  
-  if (convIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
-  if (convIdx < a.conversations.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
-  
-  items.push({ label: '删除话题', value: 'delete', icon: '<i class="ph ph-trash"></i>' });
 
   showDropdown(btn, items, async val => {
     if (val === 'rename') {
@@ -546,10 +519,9 @@ function handleTopicMore(cid, btn) {
         conv.title = nt.trim(); saveState(); renderChatPage(); renderTopicList(); 
       }
     } else if (val === 'copy') {
-      const newConv = JSON.parse(JSON.stringify(conv)); // 深度克隆该话题的所有消息和上下文
-      newConv.id = genId();
-      newConv.title = conv.title + ' 副本';
-      a.conversations.splice(convIdx + 1, 0, newConv); // 在当前话题后面插入
+      const newConv = JSON.parse(JSON.stringify(conv)); 
+      newConv.id = genId(); newConv.title = conv.title + ' 副本';
+      a.conversations.splice(convIdx + 1, 0, newConv); 
       saveState(); renderTopicList(); toast('<i class="ph-fill ph-check-circle"></i> 已复制话题');
     } else if (val === 'order_up' || val === 'order_down') {
       const targetIdx = val === 'order_up' ? convIdx - 1 : convIdx + 1;[a.conversations[convIdx], a.conversations[targetIdx]] = [a.conversations[targetIdx], a.conversations[convIdx]];
@@ -574,18 +546,14 @@ on('topic-list', 'click', async e => {
   
   a.activeConvId = cid; saveState(); closeAll(); 
   renderChatPage(); renderTopicList(); 
-  userScrolledUp = false; 
-  // 切换话题直接从底部加载，不使用动画过渡
-  scrollBottom(true, false);
+  userScrolledUp = false; scrollBottom(true, false);
 });
 
 on('new-topic', 'click', () => { 
   const a = getActiveAst(); if (!a) return; 
   a.activeConvId = null; saveState(); closeAll(); 
   renderChatPage(); 
-  userScrolledUp = false; 
-  // 新建话题直接跳转，关闭动画
-  scrollBottom(true, false);
+  userScrolledUp = false; scrollBottom(true, false);
 });
 
 // ==================== SETTINGS ====================
@@ -593,11 +561,11 @@ function renderSettings() {
   const a = getActiveAst(); if (!a) return;
   $1('settings-body').innerHTML = `
     <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div>
-      <div class="field"><label>系统提示词</label><div style="position:relative;"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn" title="全屏编辑" style="position:absolute;top:4px;right:4px;"><i class="ph ph-corners-out"></i></button></div></div>
+      <div class="field"><label>系统提示词</label><div class="relative"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn abs-top-right" title="全屏编辑"><i class="ph ph-corners-out"></i></button></div></div>
       <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
-          <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span style="font-size:11px;color:var(--text-secondary)">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
-          <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span style="font-size:11px;color:var(--text-secondary)">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span style="font-size:11px;color:var(--text-secondary)">1</span></div></div>
+          <div class="field"><label>温度 Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span class="slider-label">2</span></div><div class="hint">官方推荐：代码/数学 0.0 | 通用 1.3 | 创意 1.5</div></div>
+          <div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span class="slider-label">1</span></div></div>
         </div>
       </div>
     </div>
@@ -722,18 +690,23 @@ on('fs-prompt-save', 'click', () => closeFsPrompt(true));
 on('fs-prompt-close', 'click', () => closeFsPrompt(false));
 
 // ==================== DROPDOWN ====================
+// 使用 CSS visibility接管原先冗杂的 JS display 计算方式
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
   dd.innerHTML = items.map((item, idx) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${idx}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
-  dd.style.display = 'block'; dd.style.visibility = 'hidden';
+  
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
-  let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
-  dd.style.top = `${top}px`; dd.style.left = `${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
-  dd.style.visibility = 'visible'; dd.classList.add('show');
+  let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; 
+  if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
+  
+  dd.style.top = `${top}px`; 
+  dd.style.left = `${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
+  dd.classList.add('show');
+  
   const clickHandler = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
   setTimeout(() => on(document, 'click', clickHandler), 10);
 }
-function hideDropdown() { const dd = $1('dropdown-menu'); dd.classList.remove('show'); dd.style.display = 'none'; }
+function hideDropdown() { $1('dropdown-menu').classList.remove('show'); }
 
 on('model-chip-btn', 'click', e => {
   if (streaming) return toast('<i class="ph-fill ph-warning-circle"></i> 生成中不可切换模型');
@@ -777,31 +750,17 @@ on('chat-container', 'scroll', function() {
   $1('scroll-down').classList.toggle('show', dist > 200 && $1('messages').children.length > 1); 
 });
 
-// 核心优化：彻底分离“瞬时跳转”与“平滑动画”以防抖拉扯
 const scrollBottom = (force, smooth = false) => {
   if (force || (!userScrolledUp && !isTouching)) {
-    requestAnimationFrame(() => { 
-      chatC.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); 
-    });
+    requestAnimationFrame(() => { chatC.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); });
   }
 };
 
 const setStreamingUI = stream => { 
-  const sendBtn = $1('send-btn');
-  const inp = $1('user-input');
-  
-  if (stream) {
-    sendBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
-    sendBtn.disabled = true;
-    inp.disabled = true;
-    $1('stop-btn').classList.remove('hidden');
-  } else {
-    sendBtn.innerHTML = '<i class="ph-fill ph-paper-plane-right"></i>';
-    sendBtn.disabled = false;
-    inp.disabled = false;
-    $1('stop-btn').classList.add('hidden');
-    // 移除了 setTimeout(() => inp.focus(), 10); 避免手机端键盘自动弹出
-  }
+  const sendBtn = $1('send-btn'), inp = $1('user-input');
+  sendBtn.innerHTML = stream ? '<i class="ph ph-spinner ph-spin"></i>' : '<i class="ph-fill ph-paper-plane-right"></i>';
+  sendBtn.disabled = stream; inp.disabled = stream;
+  $1('stop-btn').classList.toggle('hidden', !stream);
 };
 
 function updateLive(idx, msg) {
@@ -814,8 +773,7 @@ function updateLive(idx, msg) {
           rb = bub.querySelector('.rblock');
       }
       if (!isThinking && !rb.dataset.autoClosed) {
-          rb.querySelector('.rhead').classList.remove('open'); 
-          rb.querySelector('.rbody').classList.remove('open'); 
+          rb.querySelector('.rhead').classList.remove('open'); rb.querySelector('.rbody').classList.remove('open'); 
           rb.dataset.autoClosed = '1';
       }
       rb.querySelector('.rbody').textContent = msg.reasoning;
@@ -872,10 +830,7 @@ async function sendMessage() {
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt });
   if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   
-  userScrolledUp = false; 
-  saveState(); renderMessages(); 
-  // 手动发送消息时保留平滑滚动（有较好交互体验）
-  scrollBottom(true, true);
+  userScrolledUp = false; saveState(); renderMessages(); scrollBottom(true, true);
 
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId };
   c.messages.push(am); const ai = c.messages.length - 1;
@@ -883,8 +838,7 @@ async function sendMessage() {
   $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
   const { url, headers, body } = getApiConfig(a, c);
-  abortCtrl = new AbortController();
-  let genTimer;
+  abortCtrl = new AbortController(); let genTimer;
 
   try {
     am.startTime = Date.now();
@@ -906,9 +860,7 @@ async function sendMessage() {
         try { 
           parseChunk(a.modelId, JSON.parse(dataStr), am); 
           $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
-          updateLive(ai, am); 
-          // 极速文字流式输出时关闭动画，确保文字与底部强关联，不卡顿
-          scrollBottom(false, false); 
+          updateLive(ai, am); scrollBottom(false, false); 
         } catch(e) {}
       }
     }
@@ -917,8 +869,7 @@ async function sendMessage() {
     streaming = false; abortCtrl = null; setStreamingUI(false);
     if (genTimer) clearInterval(genTimer);
     am.genTime = am.startTime ? ((Date.now() - am.startTime) / 1000).toFixed(0) : null;
-    delete am.startTime; 
-    saveState(); renderChatPage();
+    delete am.startTime; saveState(); renderChatPage();
   }
 }
 
@@ -934,9 +885,7 @@ on('stop-btn', 'click', () => abortCtrl?.abort());
 on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
 on('user-input', 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
 
-// 点击悬浮的回到最新消息，立刻跳转取消平滑滚动，解决AI过快时的动画跳跃卡顿
 on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(true, false); });
-
 on('chat-back', 'click', goToAsts);
 on('topic-toggle', 'click', e => { e.stopPropagation(); renderTopicList(); openDrawer('topics-drawer'); });
 on('settings-btn', 'click', openSettings);
@@ -944,24 +893,14 @@ on('close-topics', 'click', closeAll);
 on('close-settings', 'click', closeAll);
 on('overlay', 'click', closeAll);
 
-// 初始化启动
 await IDB.init().catch(console.error);
-await loadState();
-setupPWA();
-applyTheme(); renderAstList(); state.activeAstId = null; saveState();
-
-// 注册当前为主页的历史记录
+await loadState(); setupPWA(); applyTheme(); renderAstList(); 
+state.activeAstId = null; saveState();
 history.replaceState({ page: 'home' }, '');
 
-// 监听设备的滑动返回、鼠标侧键返回、浏览器自带返回键
 window.addEventListener('popstate', e => {
-  closeAll(); // 返回时顺手关闭可能处于打开状态的抽屉或弹窗
-  if (e.state?.page === 'chat') {
-    // 可能是前进了历史记录
-    goToChat(e.state.id, true);
-  } else {
-    // 返回到了主页
-    goToAsts(true);
-  }
+  closeAll(); 
+  if (e.state?.page === 'chat') goToChat(e.state.id, true);
+  else goToAsts(true);
 });
 })();
