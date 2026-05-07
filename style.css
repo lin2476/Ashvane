@@ -197,7 +197,16 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #send-btn, #stop-btn { width: 36px; height: 36px; font-size: 18px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all var(--tr); cursor: pointer; border: none; flex-shrink: 0; }
 #send-btn { background: var(--accent); color: #fff; }
 #send-btn:disabled { background: var(--bg-tertiary); color: rgba(128,128,128,0.4); cursor: not-allowed; transform: none; }
-#stop-btn { background: var(--danger); color: #fff; }
+
+/* AI Studio 风格的动态外圈旋转停止按钮 */
+#stop-btn { background: transparent; position: relative; border-radius: 50%; }
+#stop-btn::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid var(--border-subtle); border-top-color: var(--text-primary); animation: ring-spin 1s linear infinite; transition: border-top-color var(--tr); }
+#stop-btn .stop-square { width: 12px; height: 12px; background: var(--text-primary); border-radius: 2px; z-index: 1; transition: background var(--tr); }
+/* 鼠标悬停时略微变红提示停止 */
+#stop-btn:hover .stop-square { background: var(--danger); }
+#stop-btn:hover::after { border-top-color: var(--danger); }
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+
 #send-btn:not(:disabled):active, #stop-btn:active { transform: scale(0.92); }
 
 /* DROPDOWN - 深度优化，采用透明度方案，免除JS显示隐藏的高度计算干扰 */
