@@ -197,9 +197,19 @@ function applyTheme() {
 }
 
 // ==================== NAVIGATION ====================
-function goToAsts() { $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); }
-function goToChat(id) { 
+function goToAsts(fromHistory = false) { 
+  // 如果是点击页面UI返回按钮触发的，且当前处于聊天页状态，则直接调用原生后退
+  if (fromHistory !== true && window.history.state?.page === 'chat') {
+    window.history.back(); return;
+  }
+  $1('ast-page').classList.add('active'); $1('chat-page').classList.remove('active'); renderAstList(); 
+}
+
+function goToChat(id, fromHistory = false) { 
   state.activeAstId = id; saveState(); 
+  // 如果不是历史记录触发的，主动追加一条历史记录
+  if (fromHistory !== true) history.pushState({ page: 'chat', id }, '');
+  
   $1('ast-page').classList.remove('active'); $1('chat-page').classList.add('active'); 
   renderChatPage(); closeAll(); 
   userScrolledUp = false; 
@@ -939,4 +949,19 @@ await IDB.init().catch(console.error);
 await loadState();
 setupPWA();
 applyTheme(); renderAstList(); state.activeAstId = null; saveState();
+
+// 注册当前为主页的历史记录
+history.replaceState({ page: 'home' }, '');
+
+// 监听设备的滑动返回、鼠标侧键返回、浏览器自带返回键
+window.addEventListener('popstate', e => {
+  closeAll(); // 返回时顺手关闭可能处于打开状态的抽屉或弹窗
+  if (e.state?.page === 'chat') {
+    // 可能是前进了历史记录
+    goToChat(e.state.id, true);
+  } else {
+    // 返回到了主页
+    goToAsts(true);
+  }
+});
 })();
