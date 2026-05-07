@@ -52,7 +52,13 @@ const IDB = {
 
 // ==================== STATE & MODELS ====================
 let state = {
-  assistants: [], groups:[{ id: 'default', name: '默认分组', expanded: true }], 
+  // 在初始状态中加入“全能助手”
+  assistants:[{
+    id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是简单扮演特定角色，而是动态适配用户的真实需求。',
+    temperature: 1.0, topP: 1.0, modelId: 'deepseek-v4-pro', reasoningEffort: 'off',
+    groupId: 'default', conversations: [], activeConvId: null
+  }], 
+  groups:[{ id: 'default', name: '默认分组', expanded: true }], 
   activeAstId: null, deepseekKey: '', geminiKey: '', 
   geminiBaseUrl: 'https://generativelanguage.googleapis.com', 
   geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false
@@ -84,7 +90,9 @@ async function loadState() {
       state = { ...state, ...p };
     }
   } catch(e) { console.warn("读取数据失败, 使用默认状态", e); }
-  state.assistants = (state.assistants ||[]).map(fixAsst);
+  
+  
+  state.assistants = state.assistants.map(fixAsst);
 }
 
 let saveTimer = null;
@@ -738,7 +746,7 @@ const setStreamingUI = stream => {
     sendBtn.disabled = false;
     inp.disabled = false;
     $1('stop-btn').classList.add('hidden');
-    setTimeout(() => inp.focus(), 10);
+    // 移除了 setTimeout(() => inp.focus(), 10); 避免手机端键盘自动弹出
   }
 };
 
