@@ -149,7 +149,24 @@ function showConfirm(msg) {
 }
 
 // ==================== PWA & THEME ====================
-//移除了动态 PWA manifest 的 JS 生成逻辑，改用 index.html 静态引入
+function setupPWA() {
+  // 1. 动态生成 Manifest
+  const manifest = {
+    name: 'AI Chat', short_name: 'AI Chat', description: 'AI Assistant App',
+    start_url: location.pathname, display: 'standalone', orientation: 'portrait',
+    background_color: '#f0f0f5', theme_color: '#4f46e5',
+    icons:[{ src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect fill="#4f46e5" width="192" height="192" rx="36"/><text x="96" y="124" text-anchor="middle" font-size="96">🤖</text></svg>')}`, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable' }]
+  };
+  const manifestTag = $1('pwa-manifest');
+  if (manifestTag) manifestTag.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type:'application/json' }));
+  
+  // 2. 动态注册 Service Worker (这是手机端触发“安装应用”的关键)
+  if ('serviceWorker' in navigator) {
+    const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => self.clients.claim()); self.addEventListener('fetch', e => {});`;
+    navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(e=>{});
+  }
+}
+
 function applyTheme() {
   const d = state.darkMode;
   document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
@@ -878,5 +895,6 @@ on('overlay', 'click', closeAll);
 // 初始化启动
 await IDB.init().catch(console.error);
 await loadState();
+setupPWA(); // 调用 PWA 初始化函数
 applyTheme(); renderAstList(); state.activeAstId = null; saveState();
 })();
