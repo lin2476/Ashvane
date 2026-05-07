@@ -224,13 +224,10 @@ function renderAstList() {
         </div>
         <div class="ast-group-list ${g.expanded ? 'open' : ''}">
           ${asts.map(a => {
-            const m = getModelInfo(a.modelId);
             return `<div class="ast-card" data-id="${a.id}">
-              <span class="ast-icon">${m.icon}</span>
               <div class="ast-info">
                 <div class="ast-name">${esc(a.name)}</div>
-                <div class="ast-meta"><span>${m.icon} ${esc(m.name)}</span><span><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span></div>
-                <div class="ast-prompt">${esc(a.systemPrompt).substring(0,40)}</div>
+                <div class="ast-prompt">${esc((a.systemPrompt || '').substring(0, 60))}${(a.systemPrompt || '').length > 60 ? '...' : ''}</div>
               </div>
               <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
             </div>`;
@@ -322,7 +319,7 @@ on('create-ast', 'click', () => {
 function renderChatPage() {
   const a = getActiveAst(); if (!a) return goToAsts();
   const c = getActiveConv(a); const m = getModelInfo(a.modelId);
-  $1('chat-asst-name').textContent = `${a.name}${a.conversations.length ? ` (${a.conversations.length})` : ''}`;
+  $1('chat-asst-name').innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph ph-chat-centered-text" style="font-weight:normal; opacity:0.8; margin-left:4px;"></i> ${a.conversations.length}` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = c ? `(${c.messages.length})` : '(0)';
   $1('model-chip-label').textContent = m.name;
@@ -492,7 +489,7 @@ function renderTopicList() {
         <div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
         <div class="tmeta">${c.messages.length} 条消息</div>
       </div>
-      <div class="tact"><button class="topic-btn topic-more" title="话题操作"><i class="ph ph-dots-three-vertical"></i></button></div>
+      <button class="ast-more topic-more" title="话题操作"><i class="ph ph-dots-three-vertical"></i></button>
     </div>`;
   }).join('');
   $1('drawer-total-tokens').textContent = formatK(totalTokens);
