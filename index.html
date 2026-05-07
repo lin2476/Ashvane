@@ -61,14 +61,20 @@
     </div>
     <div id="chat-container"><div id="messages"></div></div>
     <button class="scroll-down" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
-    <div id="input-bar">
-      <div class="inp-wrap"><textarea id="user-input" rows="1" placeholder="输入消息，Enter 换行..." autofocus></textarea></div>
-    </div>
-    <div id="bottom-bar">
-      <button id="model-chip-btn"><span class="micon"><i class="ph ph-brain"></i></span><span id="model-chip-label">模型</span> <i class="ph ph-caret-down"></i></button>
-      <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> <i class="ph ph-caret-down"></i></button>
-      <button id="send-btn"><i class="ph-fill ph-paper-plane-right"></i></button>
-      <button id="stop-btn" class="hidden"><i class="ph-fill ph-stop-circle"></i></button>
+    <div id="input-container">
+      <div id="input-box">
+        <textarea id="user-input" rows="1" placeholder="给助手发送消息，Enter 换行..." autofocus></textarea>
+        <div id="bottom-bar">
+          <div class="toolbar-left">
+            <button id="model-chip-btn"><span class="micon"><i class="ph ph-brain"></i></span><span id="model-chip-label">模型</span> <i class="ph ph-caret-down"></i></button>
+            <button id="reasoning-btn"><span id="reasoning-label">推理：关闭</span> <i class="ph ph-caret-down"></i></button>
+          </div>
+          <div class="toolbar-right">
+            <button id="send-btn"><i class="ph-fill ph-paper-plane-right"></i></button>
+            <button id="stop-btn" class="hidden"><i class="ph-fill ph-stop-circle"></i></button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
