@@ -170,11 +170,12 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 
 /* FLOATING INPUT BOX (Lobe Chat / AI Studio Style) */
 #input-container { padding: 8px 14px calc(14px + var(--safe-b)); background: var(--bg-primary); flex-shrink: 0; z-index: 100; }
-#input-box { display: flex; flex-direction: column; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 20px; transition: all var(--tr); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+#input-box { display: flex; flex-direction: column; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 20px; transition: all var(--tr); box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; }
 #input-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light), 0 4px 20px rgba(0,0,0,0.04); }
 [data-theme="dark"] #input-box { box-shadow: 0 4px 24px rgba(0,0,0,0.25); border-color: rgba(255,255,255,0.08); }
 
-#user-input { flex: 1; border: none; background: transparent; color: inherit; font-size: 15px; line-height: 1.6; resize: none; outline: none; padding: 14px 16px 6px; max-height: 220px; font-family: inherit; width: 100%; transition: opacity .2s; }
+#user-input { border: none; background: transparent; color: inherit; font-size: 15px; line-height: 1.6; resize: none; outline: none; padding: 14px 16px 6px; max-height: 220px; font-family: inherit; width: 100%; transition: opacity .2s; }
+#user-input::-webkit-scrollbar-track { margin-top: 14px; margin-bottom: 4px; }
 #user-input::placeholder { color: var(--text-secondary); opacity: 0.6; }
 #user-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
