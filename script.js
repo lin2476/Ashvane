@@ -758,8 +758,8 @@ const scrollBottom = (force, smooth = false) => {
 
 const setStreamingUI = stream => { 
   const sendBtn = $1('send-btn'), inp = $1('user-input');
-  sendBtn.innerHTML = stream ? '<i class="ph ph-spinner ph-spin"></i>' : '<i class="ph-fill ph-paper-plane-right"></i>';
-  sendBtn.disabled = stream; inp.disabled = stream;
+  sendBtn.classList.toggle('hidden', stream);
+  inp.disabled = stream;
   $1('stop-btn').classList.toggle('hidden', !stream);
 };
 
