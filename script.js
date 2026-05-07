@@ -507,10 +507,50 @@ function renderTopicList() {
         <div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div>
         <div class="tmeta">${c.messages.length} 条消息</div>
       </div>
-      <div class="tact"><button class="topic-btn" data-edit title="重命名"><i class="ph ph-pencil-simple"></i></button><button class="topic-btn del" title="删除"><i class="ph ph-trash"></i></button></div>
+      <div class="tact"><button class="topic-btn topic-more" title="话题操作"><i class="ph ph-dots-three-vertical"></i></button></div>
     </div>`;
   }).join('');
   $1('drawer-total-tokens').textContent = formatK(totalTokens);
+}
+
+function handleTopicMore(cid, btn) {
+  const a = getActiveAst(); if (!a) return;
+  const convIdx = a.conversations.findIndex(c => c.id === cid);
+  if (convIdx < 0) return;
+  const conv = a.conversations[convIdx];
+
+  const items =[
+    { label: '重命名话题', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' },
+    { label: '复制话题', value: 'copy', icon: '<i class="ph ph-copy"></i>' }
+  ];
+  
+  if (convIdx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
+  if (convIdx < a.conversations.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
+  
+  items.push({ label: '删除话题', value: 'delete', icon: '<i class="ph ph-trash"></i>' });
+
+  showDropdown(btn, items, async val => {
+    if (val === 'rename') {
+      const nt = await showInputPrompt('重命名话题', conv.title);
+      if (nt && nt.trim() && nt.trim() !== conv.title) { 
+        conv.title = nt.trim(); saveState(); renderChatPage(); renderTopicList(); 
+      }
+    } else if (val === 'copy') {
+      const newConv = JSON.parse(JSON.stringify(conv)); // 深度克隆该话题的所有消息和上下文
+      newConv.id = genId();
+      newConv.title = conv.title + ' 副本';
+      a.conversations.splice(convIdx + 1, 0, newConv); // 在当前话题后面插入
+      saveState(); renderTopicList(); toast('<i class="ph-fill ph-check-circle"></i> 已复制话题');
+    } else if (val === 'order_up' || val === 'order_down') {
+      const targetIdx = val === 'order_up' ? convIdx - 1 : convIdx + 1;[a.conversations[convIdx], a.conversations[targetIdx]] = [a.conversations[targetIdx], a.conversations[convIdx]];
+      saveState(); renderTopicList();
+    } else if (val === 'delete') {
+      if (!await showConfirm('确定要删除此话题吗？')) return;
+      a.conversations.splice(convIdx, 1);
+      if (a.activeConvId === cid) a.activeConvId = a.conversations[0]?.id || null;
+      saveState(); renderChatPage(); renderTopicList();
+    }
+  });
 }
 
 on('topic-list', 'click', async e => {
@@ -518,13 +558,9 @@ on('topic-list', 'click', async e => {
   const item = e.target.closest('.topic-item'); if (!item) return;
   const cid = item.dataset.cid;
 
-  if (e.target.closest('.del')) {
-    e.stopPropagation(); if (!await showConfirm('确定删除此话题？')) return;
-    a.conversations = a.conversations.filter(c => c.id !== cid);
-    if (a.activeConvId === cid) a.activeConvId = a.conversations[0]?.id || null;
-    saveState(); renderChatPage(); renderTopicList(); return;
+  if (e.target.closest('.topic-more')) {
+    e.stopPropagation(); return handleTopicMore(cid, e.target.closest('.topic-more'));
   }
-  if (e.target.closest('[data-edit]')) { e.stopPropagation(); return startRename(cid); }
   
   a.activeConvId = cid; saveState(); closeAll(); 
   renderChatPage(); renderTopicList(); 
@@ -532,15 +568,6 @@ on('topic-list', 'click', async e => {
   // 切换话题直接从底部加载，不使用动画过渡
   scrollBottom(true, false);
 });
-
-function startRename(cid) {
-  const a = getActiveAst(), conv = a?.conversations.find(c => c.id === cid); if (!conv) return;
-  const tinfo = document.querySelector(`.topic-item[data-cid="${cid}"] .tinfo`); if (!tinfo) return;
-  tinfo.innerHTML = `<input class="topic-rename-input" value="${esc(conv.title)}" maxlength="40">`;
-  const inp = tinfo.querySelector('input'); inp.focus(); inp.select();
-  const finish = () => { const nt = inp.value.trim(); if (nt && nt !== conv.title) { conv.title = nt; saveState(); renderChatPage(); } renderTopicList(); };
-  on(inp, 'blur', finish); on(inp, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = conv.title; inp.blur(); } });
-}
 
 on('new-topic', 'click', () => { 
   const a = getActiveAst(); if (!a) return; 
