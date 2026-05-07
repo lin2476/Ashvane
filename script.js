@@ -54,7 +54,7 @@ const IDB = {
 let state = {
   // 在初始状态中加入“全能助手”
   assistants:[{
-    id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是简单扮演特定角色，而是动态适配用户的真实需求。',
+    id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。',
     temperature: 1.0, topP: 1.0, modelId: 'deepseek-v4-pro', reasoningEffort: 'off',
     groupId: 'default', conversations: [], activeConvId: null
   }], 
