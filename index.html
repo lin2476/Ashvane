@@ -20,7 +20,6 @@
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
-  <!-- 引入官方的 marked-katex 扩展插件 -->
   <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension/lib/index.umd.js" defer></script>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
@@ -111,7 +110,7 @@
   <div class="confirm-overlay" id="custom-prompt-overlay">
     <div class="confirm-card">
       <div class="confirm-msg" id="custom-prompt-msg">请输入</div>
-      <div class="field" style="margin-bottom:16px;"><input type="text" id="custom-prompt-input" style="text-align:center;"></div>
+      <div class="field mb-16"><input type="text" id="custom-prompt-input" class="text-center"></div>
       <div class="confirm-actions">
         <button class="confirm-cancel" id="custom-prompt-cancel">取消</button>
         <button class="confirm-ok" id="custom-prompt-ok">确定</button>
@@ -121,7 +120,7 @@
 
   <div class="overlay" id="overlay"></div>
 
-  <!-- TOPICS DRAWER: 改为 drawer-left (从左向右展开) -->
+  <!-- TOPICS DRAWER -->
   <div class="drawer drawer-left" id="topics-drawer">
     <div class="drawer-head">
       <h3 class="flex-center"><i class="ph ph-list-dashes" style="margin-right:6px"></i> 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
@@ -133,7 +132,7 @@
     </div>
   </div>
 
-  <!-- SETTINGS DRAWER: 保持 drawer-right (从右向左展开) -->
+  <!-- SETTINGS DRAWER -->
   <div class="drawer drawer-right" id="settings-drawer">
     <div class="drawer-head"><h3><i class="ph ph-gear"></i> 设置</h3><button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button></div>
     <div class="drawer-body" id="settings-body"></div>
@@ -160,7 +159,7 @@
       <div class="prompt-toolbar" id="fs-prompt-tb">
         <button data-md="undo" title="撤销"><i class="ph ph-arrow-u-up-left"></i></button>
         <button data-md="redo" title="重做"><i class="ph ph-arrow-u-up-right"></i></button>
-        <div style="width:1px;height:16px;background:var(--border-subtle);margin:0 4px;"></div>
+        <div class="toolbar-divider"></div>
         <button data-md="heading" title="标题">H</button>
         <button data-md="bold" title="粗体">B</button>
         <button data-md="list" title="列表">•</button>
