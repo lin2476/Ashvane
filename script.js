@@ -45,7 +45,15 @@ let state = {
 };
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
-const DS_MODELS =[{ id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icon: '<i class="ph-fill ph-diamond"></i>' }, { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: '<i class="ph-fill ph-lightning"></i>' }];
+
+// 精心手工定制专属 SVG 图标：钻石(Pro) 与 闪电(Flash)
+const iconDSPro = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10 13 10-13-5-7H7z"/><path d="M2 9h20"/><path d="M12 22L8 9m4 13l4-13"/><path d="M8 9L12 2l4 7"/></svg>`;
+const iconDSFlash = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+
+const DS_MODELS =[
+  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icon: iconDSPro }, 
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: iconDSFlash }
+];
 
 const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '<i class="ph-fill ph-sparkle"></i>', name: id, custom: true };
 const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
@@ -181,7 +189,7 @@ function handleGroupMore(gid, btn) {
 function handleAstMore(id, btn) {
   const ast = state.assistants.find(a => a.id === id), groupAsts = state.assistants.filter(a => a.groupId === ast.groupId), idx = groupAsts.findIndex(a => a.id === id);
   const moveItems = state.groups.filter(g => g.id !== ast.groupId).map(g => ({ label: `移动到：${g.name}`, value: `move_${g.id}`, icon: '<i class="ph ph-folder-simple"></i>' }));
-  const items =[...moveItems, ...(moveItems.length ? [{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' }];
+  const items =[...moveItems, ...(moveItems.length ?[{ isHeader: true, label: '操作' }] :[]), { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' }];
   if (idx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
   if (idx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
 
@@ -227,8 +235,10 @@ function renderChatPage() {
   $1('chat-asst-name').innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph ph-chat-centered-text" style="font-weight:normal; opacity:0.8; margin-left:4px;"></i> ${a.conversations.length}` : ''}`;
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = `(${c ? c.messages.length : 0})`;
-  $1('model-chip-label').textContent = m.name; $1('model-chip-btn').querySelector('.micon').innerHTML = m.icon;
-  $1('reasoning-label').textContent = `推理：${{ off: '关闭', low: 'Low', high: 'High', max: 'Max' }[a.reasoningEffort] || a.reasoningEffort}`;
+  
+  // 极简工具栏：只更新按钮内部图标
+  $1('input-tools-btn').innerHTML = m.icon;
+  
   renderMessages();
 }
 
@@ -322,7 +332,7 @@ function renderTopicList() {
 
 function handleTopicMore(cid, btn) {
   const a = getActiveAst(), idx = a?.conversations.findIndex(c => c.id === cid); if (idx < 0) return; const conv = a.conversations[idx];
-  const items =[{ label: '重命名话题', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' }, { label: '复制话题', value: 'copy', icon: '<i class="ph ph-copy"></i>' }, ...(idx > 0 ?[{ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' }] : []), ...(idx < a.conversations.length - 1 ?[{ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' }] :[]), { label: '删除话题', value: 'delete', icon: '<i class="ph ph-trash"></i>' }];
+  const items =[{ label: '重命名话题', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' }, { label: '复制话题', value: 'copy', icon: '<i class="ph ph-copy"></i>' }, ...(idx > 0 ?[{ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' }] :[]), ...(idx < a.conversations.length - 1 ?[{ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' }] :[]), { label: '删除话题', value: 'delete', icon: '<i class="ph ph-trash"></i>' }];
   showDropdown(btn, items, async val => {
     if (val === 'rename') { const nt = await showDialog('重命名话题', true, conv.title); if (nt?.trim() && nt.trim() !== conv.title) { conv.title = nt.trim(); saveState(); renderChatPage(); renderTopicList(); } }
     else if (val === 'copy') { const nc = JSON.parse(JSON.stringify(conv)); nc.id = genId(); nc.title += ' 副本'; a.conversations.splice(idx + 1, 0, nc); saveState(); renderTopicList(); toast('已复制话题'); }
@@ -398,7 +408,7 @@ on('fs-prompt-tb', 'click', e => { const btn = e.target.closest('button[data-md]
 on('fs-prompt-save', 'click', () => { $1('s-prompt').value = ta.value; $1('s-save').click(); $1('fs-prompt-overlay').classList.remove('show'); });
 on('fs-prompt-close', 'click', () => { $1('s-prompt').value = ta.value; $1('fs-prompt-overlay').classList.remove('show'); });
 
-// ==================== DROPDOWN & DROPDOWN LOGIC ====================
+// ==================== Lobe Chat 风格：统一设置下拉菜单 ====================
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
   dd.innerHTML = items.map((item, i) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${i}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
@@ -411,16 +421,30 @@ function showDropdown(anchor, items, onSelect) {
 }
 const hideDropdown = () => $1('dropdown-menu').classList.remove('show');
 
-on('model-chip-btn', 'click', e => {
-  if (streaming) return toast('生成中不可切换模型');
-  e.stopPropagation(); const a = getActiveAst();
-  showDropdown(e.currentTarget,[{ isHeader: true, label: 'DeepSeek API' }, ...DS_MODELS.map(m => ({ label: `${m.icon} ${m.name}`, value: m.id, selected: a?.modelId === m.id })), { isHeader: true, label: '第三方 API' }, ...getCustomModels().map(n => ({ label: `<i class="ph-fill ph-sparkle"></i> ${n}`, value: n, selected: a?.modelId === n }))], id => { if (a) { a.modelId = id; const v = isDeepSeek(id) ? ['off', 'high', 'max'] :['off', 'low', 'high']; if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off'; saveState(); renderChatPage(); toast('已切换模型'); } });
-});
+// 单一按钮触发展示（模型 + 推理深度一站式解决）
+on('input-tools-btn', 'click', e => {
+  if (streaming) return toast('生成中不可切换设置');
+  e.stopPropagation(); const a = getActiveAst(); if (!a) return;
+  const rOpts = isDeepSeek(a.modelId) ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
 
-on('reasoning-btn', 'click', e => {
-  if (streaming) return toast('生成中不可切换推理设置');
-  e.stopPropagation(); const a = getActiveAst();
-  showDropdown(e.currentTarget, (isDeepSeek(a?.modelId) ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}]).map(o => ({ ...o, selected: o.value === a?.reasoningEffort })), val => { if (a) { a.reasoningEffort = val; saveState(); renderChatPage(); } });
+  showDropdown(e.currentTarget,[
+    { isHeader: true, label: 'DeepSeek 模型' },
+    ...DS_MODELS.map(m => ({ label: m.name, value: `model_${m.id}`, selected: a.modelId === m.id, icon: m.icon })),
+    { isHeader: true, label: '第三方 API 模型' },
+    ...getCustomModels().map(n => ({ label: n, value: `model_${n}`, selected: a.modelId === n, icon: '<i class="ph-fill ph-sparkle"></i>' })),
+    { isHeader: true, label: '推理深度 (当前模型)' },
+    ...rOpts.map(o => ({ label: o.label, value: `reasoning_${o.value}`, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' }))
+  ], val => {
+    if (val.startsWith('model_')) {
+      a.modelId = val.replace('model_', '');
+      const v = isDeepSeek(a.modelId) ? ['off', 'high', 'max'] :['off', 'low', 'high'];
+      if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off';
+      toast('已切换模型');
+    } else {
+      a.reasoningEffort = val.replace('reasoning_', '');
+    }
+    saveState(); renderChatPage();
+  });
 });
 
 // ==================== CHAT STREAM & EVENTS ====================
@@ -452,7 +476,7 @@ function getApiConfig(a, c) {
     const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': state.geminiKey };
     if (/^(sk-|Bearer )/.test(state.geminiKey)) headers['Authorization'] = state.geminiKey.startsWith('Bearer ') ? state.geminiKey : `Bearer ${state.geminiKey}`;
     const contents = msgs.reduce((acc, m) => {
-      const parts = [...(m.thoughtSignatures || []).map(s => ({ thoughtSignature: s })), { text: m.content || ' ' }];
+      const parts =[...(m.thoughtSignatures || []).map(s => ({ thoughtSignature: s })), { text: m.content || ' ' }];
       if (acc.length && acc[acc.length - 1].role === (m.role === 'user' ? 'user' : 'model')) acc[acc.length - 1].parts.push(...parts); else acc.push({ role: m.role === 'user' ? 'user' : 'model', parts });
       return acc;
     },[]);
