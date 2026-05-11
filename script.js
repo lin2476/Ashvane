@@ -236,8 +236,10 @@ function renderChatPage() {
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = `(${c ? c.messages.length : 0})`;
   
-  // 极简工具栏：只更新按钮内部图标
-  $1('input-tools-btn').innerHTML = m.icon;
+  // 独立更新：模型只显示LOGO图标，推理按钮显示图标+参数文本
+  $1('model-chip-btn').innerHTML = m.icon;
+  const rText = { off: '关闭', low: 'Low', high: 'High', max: 'Max' }[a.reasoningEffort] || a.reasoningEffort;
+  $1('reasoning-btn').innerHTML = `<i class="ph ph-brain"></i><span>${rText}</span>`;
   
   renderMessages();
 }
@@ -421,29 +423,30 @@ function showDropdown(anchor, items, onSelect) {
 }
 const hideDropdown = () => $1('dropdown-menu').classList.remove('show');
 
-// 单一按钮触发展示（模型 + 推理深度一站式解决）
-on('input-tools-btn', 'click', e => {
-  if (streaming) return toast('生成中不可切换设置');
+// 分离的模型切换按钮
+on('model-chip-btn', 'click', e => {
+  if (streaming) return toast('生成中不可切换模型');
   e.stopPropagation(); const a = getActiveAst(); if (!a) return;
-  const rOpts = isDeepSeek(a.modelId) ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
-
   showDropdown(e.currentTarget,[
     { isHeader: true, label: 'DeepSeek 模型' },
-    ...DS_MODELS.map(m => ({ label: m.name, value: `model_${m.id}`, selected: a.modelId === m.id, icon: m.icon })),
+    ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.icon })),
     { isHeader: true, label: '第三方 API 模型' },
-    ...getCustomModels().map(n => ({ label: n, value: `model_${n}`, selected: a.modelId === n, icon: '<i class="ph-fill ph-sparkle"></i>' })),
-    { isHeader: true, label: '推理深度 (当前模型)' },
-    ...rOpts.map(o => ({ label: o.label, value: `reasoning_${o.value}`, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' }))
-  ], val => {
-    if (val.startsWith('model_')) {
-      a.modelId = val.replace('model_', '');
-      const v = isDeepSeek(a.modelId) ? ['off', 'high', 'max'] :['off', 'low', 'high'];
-      if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off';
-      toast('已切换模型');
-    } else {
-      a.reasoningEffort = val.replace('reasoning_', '');
-    }
-    saveState(); renderChatPage();
+    ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: '<i class="ph-fill ph-sparkle"></i>' }))
+  ], id => {
+    a.modelId = id;
+    const v = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
+    if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off';
+    saveState(); renderChatPage(); toast('已切换模型');
+  });
+});
+
+// 分离的推理深度切换按钮
+on('reasoning-btn', 'click', e => {
+  if (streaming) return toast('生成中不可切换推理设置');
+  e.stopPropagation(); const a = getActiveAst(); if (!a) return;
+  const rOpts = isDeepSeek(a.modelId) ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
+  showDropdown(e.currentTarget, rOpts.map(o => ({ label: o.label, value: o.value, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' })), val => {
+    a.reasoningEffort = val; saveState(); renderChatPage();
   });
 });
 
