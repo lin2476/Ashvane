@@ -187,11 +187,13 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #user-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #bottom-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 10px 12px; }
-.toolbar-right { display: flex; align-items: center; gap: 8px; }
+.toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
 
-/* Lobe Chat Style Integrated Tool Button */
-#input-tools-btn { width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border-subtle); color: var(--text-secondary); background: transparent; font-size: 16px; cursor: pointer; transition: all var(--tr); display: flex; align-items: center; justify-content: center; }
-#input-tools-btn:hover, #input-tools-btn:active { background: var(--bg-tertiary); color: var(--accent); border-color: var(--accent); }
+/* 分离后的模型与推理按钮样式 */
+#model-chip-btn, #reasoning-btn { height: 32px; border-radius: 10px; border: 1px solid var(--border-subtle); color: var(--text-secondary); background: transparent; font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--tr); display: flex; align-items: center; justify-content: center; }
+#model-chip-btn { width: 32px; font-size: 16px; padding: 0; }
+#reasoning-btn { width: auto; padding: 0 10px; gap: 6px; }
+#model-chip-btn:hover, #reasoning-btn:hover, #model-chip-btn:active, #reasoning-btn:active { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--accent); }
 
 #send-btn, #stop-btn { width: 36px; height: 36px; font-size: 18px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all var(--tr); cursor: pointer; border: none; flex-shrink: 0; }
 #send-btn { background: var(--accent); color: #fff; }
