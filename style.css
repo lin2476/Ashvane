@@ -16,7 +16,6 @@
   --accent-light: #1e1b4b; --code-bg: #1a1a26; --code-header-bg: rgba(255,255,255,0.05);
 }
 
-/* Reset & Custom Scrollbar */
 *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
 html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg-primary); color:var(--text-primary); -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
 #app { display:flex; flex-direction:column; height:100%; max-width:700px; margin:0 auto; position:relative; overflow:hidden; background:var(--bg-primary); }
@@ -25,7 +24,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.25); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.4); }
 
-/* Global Icons & Shared Utilities */
 .ph, .ph-fill { vertical-align: text-bottom; }
 .hidden { display: none !important; }
 .mt-8 { margin-top: 8px; }
@@ -38,14 +36,14 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .toolbar-divider { width: 1px; height: 16px; background: var(--border-subtle); margin: 0 4px; }
 
 .btn-transparent { font-size: 18px; background: transparent; }
-.nav-spacer { width: 70px; }
-.nav-spacer-right { width: 70px; justify-content: flex-end; gap: 8px; }
+.nav-spacer, .nav-spacer-right { width: 70px; }
+.nav-spacer-right { justify-content: flex-end; gap: 8px; }
 .edit-title, .prompt-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .edit-toggle-btn { background: transparent; border: 1.5px solid var(--border-subtle); color: var(--text-secondary); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all var(--tr); }
 .btn-save-prompt { margin-left: auto; background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; font-size: 15px !important; }
 .scrollable-container { flex: 1; overflow-y: auto; padding: 10px 12px; }
 
-/* Flex Alignments */
+/* Flex All */
 .navbar, .nav-left, .nav-right, .topic-row, .rhead, .code-block-header, .code-btns, #input-bar, #bottom-bar, #model-chip-btn, #reasoning-btn, .drawer-head, .topic-item, .settings-fold-head, .prompt-toolbar, .fs-prompt-head, .slider-row, .t-row, .data-actions, .dropdown-item, .ttitle-wrap, .msg-actions, .actions-left, .ast-group-actions, .flex-center, .edit-card-header, .ast-group-header { display:flex; align-items:center; }
 .navbar, .drawer-head, .t-row, .code-block-header, .fs-prompt-head, .edit-card-header, .ast-group-header { justify-content:space-between; }
 .flex-center { justify-content: center; }
@@ -54,19 +52,39 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .nav-btn, #send-btn, #stop-btn, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
 .nav-btn:active, .icon-btn:active, #stop-btn:active, #send-btn:not(:disabled):active { transform:scale(.9); }
 .welcome-hint:active { transform:scale(.97); }
-.btn-primary, .confirm-actions button, .edit-card-foot button, .data-actions button { cursor:pointer; transition:all var(--tr); font-weight:600; border:none; display:flex; align-items:center; justify-content:center; gap:6px; }
+.btn-primary, .data-actions button { cursor:pointer; transition:all var(--tr); font-weight:600; border:none; display:flex; align-items:center; justify-content:center; gap:6px; }
 
 /* Inputs */
 .field input, .field textarea, .field select, .topic-rename-input { width:100%; padding:9px 12px; border:1.5px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-tertiary); color:inherit; font-size:13px; font-family:inherit; outline:none; transition:border-color var(--tr); }
 .field input:focus, .field textarea:focus, .field select:focus, .topic-rename-input:focus { border-color:var(--accent); }
 
-/* Overlays & Modals */
-.edit-overlay, .confirm-overlay, .fs-prompt-overlay, .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none; }
-.fs-prompt-overlay { background:var(--bg-secondary); z-index:400; flex-direction:column; will-change: transform; }
-.edit-overlay { z-index:250; flex-direction:column; overscroll-behavior:none; will-change: transform; }
-.confirm-overlay { z-index:500; align-items:center; justify-content:center; }
-.overlay { opacity:0; pointer-events:none; transition:opacity .3s; display:block; }
-.edit-overlay.show, .confirm-overlay.show, .fs-prompt-overlay.show, .overlay.show { opacity:1; pointer-events:auto; display:flex; }
+/* Overlays & Modals Unified */
+.overlay, .overlay-full, .edit-overlay, .fs-prompt-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none; opacity:0; transition:opacity .3s; will-change: transform; }
+.overlay.show, .overlay-full.show, .edit-overlay.show, .fs-prompt-overlay.show { display:flex; opacity:1; pointer-events:auto; }
+.overlay-full { z-index:500; align-items:center; justify-content:center; }
+.edit-overlay { z-index:250; flex-direction:column; overscroll-behavior:none; }
+.fs-prompt-overlay { z-index:400; background:var(--bg-secondary); flex-direction:column; }
+
+/* Modal Cards Unified */
+.modal-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
+.modal-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; white-space:pre-wrap; }
+.modal-actions { display:flex; gap:10px; justify-content:center; }
+.modal-actions button { flex:1; padding:10px 0; border-radius:14px; font-size:14px; border:none; cursor:pointer; font-weight:600; transition:all var(--tr); }
+.btn-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
+.btn-cancel:active { background:rgba(128,128,128,.12); }
+.btn-ok { background:var(--accent); color:#fff; }
+.btn-ok:active { opacity:.85; transform:scale(.97); }
+
+/* Edit Card specifics */
+.edit-card { position:absolute; top:12vh; height:75vh; left:6px; right:6px; background:var(--bg-secondary); display:flex; flex-direction:column; border-radius:var(--radius-lg); box-shadow:0 10px 30px rgba(0,0,0,0.2); overflow:hidden; animation:msgIn .3s ease-out; }
+.edit-card-header { padding: 12px 16px 0; flex-shrink: 0; }
+.edit-card-body { flex:1; display:flex; flex-direction:column; padding:12px 16px; overflow:hidden; gap:8px; }
+.edit-card-body textarea { width:100%; border:none; background:transparent; color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; overflow-y:auto; }
+#edit-textarea { flex:1; }
+#edit-reasoning-textarea { display:none; height:35%; border-bottom:1px dashed var(--border-subtle); padding-bottom:8px; color:var(--text-secondary); font-style:italic; font-size:13px; flex-shrink:0; }
+#edit-reasoning-textarea.show { display:block; }
+#edit-toggle-reasoning-btn:active, #edit-toggle-reasoning-btn.active { background:var(--bg-tertiary); color:var(--text-primary); border-color:var(--accent); }
+.edit-card-foot { padding:14px 16px; border-top:0.5px solid var(--border-subtle); background:var(--bg-secondary); }
 
 /* NAVBAR & TOKENS */
 .navbar { padding:calc(6px + var(--safe-t)) 10px 6px; background:rgba(250, 250, 250, 0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:0.5px solid var(--border-subtle); z-index:100; flex-shrink:0; gap:4px; }[data-theme="dark"] .navbar { background:rgba(17, 17, 24, 0.85); }
@@ -125,22 +143,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .msg-actions button { padding:4px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:14px; cursor:pointer; transition:all var(--tr); font-weight:500; }
 .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
-/* EDIT MODAL */
-.edit-card { position:absolute; top:12vh; height:75vh; left:6px; right:6px; background:var(--bg-secondary); display:flex; flex-direction:column; border-radius:var(--radius-lg); box-shadow:0 10px 30px rgba(0,0,0,0.2); overflow:hidden; animation:msgIn .3s ease-out; }
-.edit-card-header { padding: 12px 16px 0; flex-shrink: 0; }
-.edit-card-body { flex:1; display:flex; flex-direction:column; padding:12px 16px; overflow:hidden; gap:8px; }
-.edit-card-body textarea { width:100%; border:none; background:transparent; color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; overflow-y:auto; }
-#edit-textarea { flex:1; }
-#edit-reasoning-textarea { display:none; height:35%; border-bottom:1px dashed var(--border-subtle); padding-bottom:8px; color:var(--text-secondary); font-style:italic; font-size:13px; flex-shrink:0; }
-#edit-reasoning-textarea.show { display:block; }
-#edit-toggle-reasoning-btn:active, #edit-toggle-reasoning-btn.active { background:var(--bg-tertiary); color:var(--text-primary); border-color:var(--accent); }
-.edit-card-foot { display:flex; gap:10px; padding:14px 16px; border-top:0.5px solid var(--border-subtle); background:var(--bg-secondary); }
-.edit-card-foot button { flex:1; padding:12px 0; border-radius:16px; font-size:14px; }
-.edit-save-btn { background:var(--accent); color:#fff; }
-.edit-save-btn:active { opacity:.85; transform:scale(.98); }
-.edit-cancel-btn { background:var(--bg-tertiary); color:var(--text-secondary); }
-.edit-cancel-btn:active { background:rgba(128,128,128,.12); }
-
 /* MARKDOWN & KaTeX */
 .bubble :is(h1,h2,h3) { margin:10px 0 4px; font-size:1.05em; }
 .bubble p { margin:4px 0; }
@@ -151,7 +153,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .bubble code { background:var(--bg-tertiary); padding:2px 5px; border-radius:3px; font-family:var(--mono); font-size:.86em; }
 .bubble blockquote { border-left:2px solid var(--accent); padding-left:12px; margin:6px 0; color:var(--text-secondary); opacity:.85; }
 
-/* KaTeX & Tables */
 .katex-display { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding-bottom: 2px; }
 .katex-display::-webkit-scrollbar { display: none; }
 .katex { font-size: 1.05em; }
@@ -197,18 +198,14 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #send-btn { background: var(--accent); color: #fff; }
 #send-btn:disabled { background: var(--bg-tertiary); color: rgba(128,128,128,0.4); cursor: not-allowed; transform: none; }
 
-/* AI Studio 风格的动态外圈旋转停止按钮 */
 #stop-btn { background: transparent; position: relative; border-radius: 50%; }
 #stop-btn::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid var(--border-subtle); border-top-color: var(--text-primary); animation: ring-spin 1s linear infinite; transition: border-top-color var(--tr); }
 #stop-btn .stop-square { width: 12px; height: 12px; background: var(--text-primary); border-radius: 2px; z-index: 1; transition: background var(--tr); }
-/* 鼠标悬停时略微变红提示停止 */
 #stop-btn:hover .stop-square { background: var(--danger); }
 #stop-btn:hover::after { border-top-color: var(--danger); }
 @keyframes ring-spin { to { transform: rotate(360deg); } }
 
-#send-btn:not(:disabled):active, #stop-btn:active { transform: scale(0.92); }
-
-/* DROPDOWN - 深度优化，采用透明度方案，免除JS显示隐藏的高度计算干扰 */
+/* DROPDOWN */
 .dropdown-menu { position:fixed; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:0 4px 14px rgba(0,0,0,.15); z-index:500; min-width:140px; padding:4px; max-height:40vh; overflow-y:auto; opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-4px); transition:opacity 0.15s, visibility 0.15s, transform 0.15s; }
 .dropdown-menu.show { opacity:1; visibility:visible; pointer-events:auto; transform:translateY(0); }
 .dropdown-menu .dropdown-item { padding:8px 12px; font-size:13px; cursor:pointer; border-radius:var(--radius-sm); gap:8px; color:inherit; transition:background .15s; }
@@ -304,15 +301,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .tsw.active::after { transform:translateX(18px); }
 
 /* UI Widgets */
-.confirm-card { background:var(--bg-secondary); border-radius:18px; padding:20px 24px; max-width:300px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; animation:msgIn .2s ease-out; }
-.confirm-msg { font-size:15px; font-weight:600; margin-bottom:18px; line-height:1.5; white-space:pre-wrap; }
-.confirm-actions { display:flex; gap:10px; justify-content:center; }
-.confirm-actions button { flex:1; padding:10px 0; border-radius:14px; font-size:14px; }
-.confirm-cancel { background:var(--bg-tertiary); color:var(--text-secondary); }
-.confirm-cancel:active { background:rgba(128,128,128,.12); }
-.confirm-ok { background:var(--danger); color:#fff; }
-.confirm-ok:active { opacity:.85; transform:scale(.97); }
-
 .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:9px 18px; border-radius:18px; font-size:13px; z-index:500; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.3); display: flex; align-items: center; gap: 6px; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 .scroll-down { position:fixed; bottom:140px; right:16px; width:36px; height:36px; border:1px solid var(--border-subtle); background:var(--bg-secondary); font-size:20px; color: var(--text-secondary); z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; }
