@@ -12,20 +12,16 @@
   <meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0a0a10" media="(prefers-color-scheme: dark)">
   
-  <!-- 【核心修复】：直接注入Base64编码的完整 PWA Manifest 清单，无需外挂 json 文件 -->
   <link rel="manifest" id="pwa-manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQUkgQ2hhdCIsInNob3J0X25hbWUiOiJBSSBDaGF0Iiwic3RhcnRfdXJsIjoiLi8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmMGY1IiwidGhlbWVfY29sb3IiOiIjNGY0NmU1IiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NyZWN0IGZpbGw9JyUyMzRmNDZlNScgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMicvJTNFJTNDdGV4dCB4PSc1MCcgeT0nNjgnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nNTInJTNFJUYwJTlGJUE0JTk2JTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiIxOTJ4MTkyIDUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100' rx='22'/><text x='50' y='68' text-anchor='middle' font-size='52'>🤖</text></svg>">
 
   <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension/lib/index.umd.js" defer></script>
-  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
-
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -40,9 +36,7 @@
         <button class="nav-btn accent" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
       </div>
     </div>
-    <div class="scrollable-container">
-      <div id="ast-list"></div>
-    </div>
+    <div class="scrollable-container"><div id="ast-list"></div></div>
   </div>
 
   <!-- CHAT PAGE -->
@@ -57,10 +51,11 @@
           <span class="topic-arr"><i class="ph ph-caret-down"></i></span>
         </div>
       </div>
-      <div class="nav-right"><button class="nav-btn" id="settings-btn" aria-label="打开设置"><i class="ph ph-gear"></i></button></div>
+      <div class="nav-right"><button class="nav-btn" id="settings-btn"><i class="ph ph-gear"></i></button></div>
     </div>
     <div id="chat-container"><div id="messages"></div></div>
     <button class="scroll-down" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
+    
     <div id="input-container">
       <div id="input-box">
         <textarea id="user-input" rows="1" placeholder="给助手发送消息，Enter 换行..." autofocus></textarea>
@@ -89,32 +84,21 @@
         <textarea id="edit-reasoning-textarea" placeholder="输入思考过程…"></textarea>
         <textarea id="edit-textarea" placeholder="输入消息内容…"></textarea>
       </div>
-      <div class="edit-card-foot">
-        <button class="edit-cancel-btn" id="edit-cancel-btn">取消</button>
-        <button class="edit-save-btn" id="edit-save-btn">保存</button>
+      <div class="modal-actions edit-card-foot">
+        <button class="btn-cancel" id="edit-cancel-btn">取消</button>
+        <button class="btn-ok" id="edit-save-btn">保存</button>
       </div>
     </div>
   </div>
 
-  <!-- CONFIRM DIALOG -->
-  <div class="confirm-overlay" id="confirm-overlay">
-    <div class="confirm-card">
-      <div class="confirm-msg" id="confirm-msg">确定要执行此操作吗？</div>
-      <div class="confirm-actions">
-        <button class="confirm-cancel" id="confirm-cancel">取消</button>
-        <button class="confirm-ok" id="confirm-ok">确定</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CUSTOM PROMPT DIALOG -->
-  <div class="confirm-overlay" id="custom-prompt-overlay">
-    <div class="confirm-card">
-      <div class="confirm-msg" id="custom-prompt-msg">请输入</div>
-      <div class="field mb-16"><input type="text" id="custom-prompt-input" class="text-center"></div>
-      <div class="confirm-actions">
-        <button class="confirm-cancel" id="custom-prompt-cancel">取消</button>
-        <button class="confirm-ok" id="custom-prompt-ok">确定</button>
+  <!-- MULTIPURPOSE DIALOG (Confirm & Prompt) -->
+  <div class="overlay-full" id="dialog-overlay">
+    <div class="modal-card">
+      <div class="modal-msg" id="dialog-msg"></div>
+      <div class="field mb-16 hidden" id="dialog-input-wrap"><input type="text" id="dialog-input" class="text-center"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="dialog-cancel">取消</button>
+        <button class="btn-ok" id="dialog-ok">确定</button>
       </div>
     </div>
   </div>
