@@ -46,11 +46,12 @@ let state = {
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
-const iconDSWhale = `<svg viewBox="0 0 64 64" width="1.1em" height="1.1em" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M32 10C18 10 6 22 6 36c0 4 2 8 5.5 10.5C15 49 19.5 50 24 50c11 0 20-8 22.5-18 1-4 3.5-7 7.5-7 3.5 0 5 3 5 7 0 3-2 6-5 7 1.5 2 4 3 6 3 2 0 4-2 4-5 0-15-14-27-32-27zm-12 18a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>`;
+const iconDSPro = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10 13 10-13-5-7H7z"/><path d="M2 9h20"/><path d="M12 22L8 9m4 13l4-13"/><path d="M8 9L12 2l4 7"/></svg>`;
+const iconDSFlash = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
 
 const DS_MODELS =[
-  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icon: iconDSWhale }, 
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: iconDSWhale }
+  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icon: iconDSPro }, 
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: iconDSFlash }
 ];
 
 const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '<i class="ph-fill ph-sparkle"></i>', name: id, custom: true };
