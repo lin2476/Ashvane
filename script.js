@@ -432,16 +432,31 @@ on('settings-body', 'click', e => {
     state.webdavUser = user; state.webdavToken = token; saveState();
     
     toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
+    const backupName = getBackupName();
     const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
+    const authHeader = 'Basic ' + btoa(`${user}:${token}`);
     
-    fetch(`/webdav-proxy/AIChat/${getBackupName()}`, {
+    fetch(`/webdav-proxy/AIChat/${backupName}`, {
       method: 'PUT', 
-      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
+      headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, 
       body: data
     })
     .then(async res => { 
-      if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); 
-      else throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '坚果云拒绝'}]`);
+      if(!(res.ok || res.status === 201 || res.status === 204)) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '坚果云拒绝'}]`);
+      
+      // 核心修改：上传成功后，用标准的 GET/PUT 更新云端的 backup_index.json，绕过 PROPFIND 限制
+      let indexData =[];
+      try {
+        const idxRes = await fetch(`/webdav-proxy/AIChat/backup_index.json`, { method: 'GET', headers: { 'Authorization': authHeader } });
+        if (idxRes.ok) indexData = await idxRes.json();
+      } catch(e) {}
+      
+      if (!Array.isArray(indexData)) indexData =[];
+      if (!indexData.includes(backupName)) {
+        indexData.unshift(backupName); // 将最新的备份名加到最前面
+        await fetch(`/webdav-proxy/AIChat/backup_index.json`, { method: 'PUT', headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, body: JSON.stringify(indexData) });
+      }
+      toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功');
     })
     .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
   }
@@ -451,33 +466,27 @@ on('settings-body', 'click', e => {
     state.webdavUser = user; state.webdavToken = token; saveState();
     
     const pullBtn = e.target.closest('#data-pull');
+    const authHeader = 'Basic ' + btoa(`${user}:${token}`);
     toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
     
-    // 使用 WebDAV PROPFIND 获取目录文件列表
-    fetch('/webdav-proxy/AIChat/', {
-      method: 'PROPFIND', 
-      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Depth': '1' }
+    // 核心修改：不再使用被 Vercel 拦截的 PROPFIND，改为直接 GET 拉取 backup_index.json
+    fetch('/webdav-proxy/AIChat/backup_index.json', {
+      method: 'GET', 
+      headers: { 'Authorization': authHeader }
     })
     .then(async res => { 
-      if(!res.ok) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '读取云端目录失败，请确认文件夹是否创建'}]`);
-      return res.text(); 
+      if(!res.ok) throw new Error(`${res.status} [${res.status===404 ? '云端暂无索引文件，请先推送一次备份' : '获取索引失败'}]`);
+      return res.json(); 
     })
-    .then(async xml => {
-      // 解析 WebDAV 的 XML 响应，筛选所有 json 文件
-      const doc = new DOMParser().parseFromString(xml, 'text/xml');
-      const files = Array.from(doc.getElementsByTagNameNS('*', 'href'))
-        .map(n => decodeURIComponent(n.textContent.split('/').pop()))
-        .filter(n => n.endsWith('.json'))
-        .sort().reverse(); // 反序，优先展示最新备份
-
-      if (!files.length) throw new Error('云端没有找到相关的 JSON 备份文件');
+    .then(async files => {
+      if (!Array.isArray(files) || !files.length) throw new Error('云端备份列表为空');
 
       // 将文件渲染在下拉菜单中
       showDropdown(pullBtn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...files.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
         toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${val}...`);
         try {
-          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) } });
-          if (!r.ok) throw new Error('文件下载失败');
+          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': authHeader } });
+          if (!r.ok) throw new Error(`文件下载失败 (HTTP ${r.status})，可能已被手动删除`);
           const json = await r.json();
           if (await mergeData(json.data || json, '云端拉取将深度合并原有话题，确认拉取该备份吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
         } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
