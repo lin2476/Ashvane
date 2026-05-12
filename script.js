@@ -469,10 +469,10 @@ on('settings-body', 'click', e => {
     const authHeader = 'Basic ' + btoa(`${user}:${token}`);
     toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
     
-    // 核心修改：不再使用被 Vercel 拦截的 PROPFIND，改为直接 GET 拉取 backup_index.json
+    // 修改1：强制添加 Cache-Control 阻止浏览器缓存旧的索引文件
     fetch('/webdav-proxy/AIChat/backup_index.json', {
       method: 'GET', 
-      headers: { 'Authorization': authHeader }
+      headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache, no-store, must-revalidate' }
     })
     .then(async res => { 
       if(!res.ok) throw new Error(`${res.status} [${res.status===404 ? '云端暂无索引文件，请先推送一次备份' : '获取索引失败'}]`);
@@ -481,11 +481,37 @@ on('settings-body', 'click', e => {
     .then(async files => {
       if (!Array.isArray(files) || !files.length) throw new Error('云端备份列表为空');
 
-      // 将文件渲染在下拉菜单中
-      showDropdown(pullBtn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...files.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
+      toast('<i class="ph ph-hourglass"></i> 正在校验云端文件真实性...');
+
+      // 修改2：利用 HEAD 方法并发检查文件是否真实存在（只会请求文件头，不下载内容，速度极快）
+      const checkResults = await Promise.all(files.map(async f => {
+        try {
+          const r = await fetch(`/webdav-proxy/AIChat/${f}`, { 
+            method: 'HEAD', 
+            headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache' } 
+          });
+          return r.ok ? f : null;
+        } catch(e) { return null; }
+      }));
+      
+      const validFiles = checkResults.filter(Boolean); // 过滤掉返回 null（被删除）的文件
+      
+      if (!validFiles.length) throw new Error('云端备份实际已全部被删除，请重新推送');
+
+      // 修改3：如果发现有你在云端手动删掉的失效记录，静默把干净的列表重新写回云端进行覆盖，修正同步状态
+      if (validFiles.length < files.length) {
+        fetch(`/webdav-proxy/AIChat/backup_index.json`, { 
+          method: 'PUT', 
+          headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(validFiles) 
+        }).catch(()=>{});
+      }
+
+      // 将过滤后真实存在的文件渲染在下拉菜单中
+      showDropdown(pullBtn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...validFiles.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
         toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${val}...`);
         try {
-          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': authHeader } });
+          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache' } });
           if (!r.ok) throw new Error(`文件下载失败 (HTTP ${r.status})，可能已被手动删除`);
           const json = await r.json();
           if (await mergeData(json.data || json, '云端拉取将深度合并原有话题，确认拉取该备份吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
