@@ -9,7 +9,7 @@ const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
 const padZero = n => n.toString().padStart(2, '0');
-const getBackupName = () => { const d = new Date(); return `AIChatBackup-${d.getFullYear()}-${padZero(d.getMonth()+1)}${padZero(d.getDate())}${padZero(d.getHours())}${padZero(d.getMinutes())}.json`; };
+const getBackupName = () => { const d = new Date(); return `AIChatBackup-${d.getFullYear()}-${padZero(d.getMonth()+1)}${padZero(d.getDate())}-${padZero(d.getHours())}${padZero(d.getMinutes())}.json`; };
 
 const estimateTokens = str => {
   if (!str) return 0;
