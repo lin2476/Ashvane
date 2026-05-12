@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/webdav/:match*",
+      "destination": "https://dav.jianguoyun.com/dav/:match*"
+    }
+  ]
+}
