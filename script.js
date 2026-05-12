@@ -9,11 +9,10 @@ const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
 const padZero = n => n.toString().padStart(2, '0');
-
-// 新增：统一备份名称获取函数
 const getBackupName = () => {
-  const n = new Date();
-  return `AIChatBackup-${n.getFullYear()}${padZero(n.getMonth()+1)}${padZero(n.getDate())}-${padZero(n.getHours())}${padZero(n.getMinutes())}${padZero(n.getSeconds())}.json`;
+  const d = new Date();
+  // 统一输出类似：AIChatBackup-2026-05131217.json
+  return `AIChatBackup-${d.getFullYear()}-${padZero(d.getMonth()+1)}${padZero(d.getDate())}${padZero(d.getHours())}${padZero(d.getMinutes())}.json`;
 };
 
 const estimateTokens = str => {
@@ -107,23 +106,6 @@ function fixAsst(a) {
       messages: (c.messages ||[]).map(m => ({ ...m, genTime: m.genTime || m.reasoningTime })) 
     }))
   };
-}
-
-// 提取优化：合并本地导入及云端同步的数据拉取算法
-async function mergeData(data, source = '导入') {
-  if (await showDialog(`${source}将深度合并原有话题，新分支自动追加，确认操作吗？`)) {
-    (data.groups ||[]).forEach(g => { if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); });
-    data.assistants?.forEach(ia => {
-      const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name));
-      fa.groupId = lg ? lg.id : DEFAULT_GRP;
-      const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
-      if (ex) {
-        fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); 
-      } else state.assistants.push(fa);
-    });
-    Object.assign(state, { activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode, webdavUser: data.webdavUser ?? state.webdavUser, webdavToken: data.webdavToken ?? state.webdavToken });
-    saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); toast(`<i class="ph-fill ph-check-circle"></i> ${source}成功`);
-  }
 }
 
 const getActiveAst = () => state.assistants.find(a => a.id === state.activeAstId) || null;
@@ -404,7 +386,7 @@ function renderSettings() {
           <div class="field"><label>坚果云账号</label><input type="text" id="s-webdavUser" value="${esc(state.webdavUser || '')}" placeholder="坚果云登录邮箱"></div>
           <div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="坚果云的第三方应用密码"></div>
           <div class="data-actions"><button id="data-push"><i class="ph ph-cloud-arrow-up"></i> 推送至云端</button><button id="data-pull"><i class="ph ph-cloud-arrow-down"></i> 从云端拉取</button></div>
-          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制。点击拉取后可选择历史云端备份文件进行合并。</div>
+          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制。</div>
         </div>
       </div>
     </div>
@@ -416,7 +398,25 @@ function renderSettings() {
   `;
 }
 
-// 事件代理：设置界面的点击事件优化
+// 提取数据深合并公共逻辑，大大降低了本地导入和云端拉取的代码冗余
+async function mergeData(data, promptMsg) {
+  if (!await showDialog(promptMsg)) return false;
+  (data.groups ||[]).forEach(g => { if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); });
+  data.assistants?.forEach(ia => {
+    const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name));
+    fa.groupId = lg ? lg.id : DEFAULT_GRP;
+    const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
+    if (ex) fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); else state.assistants.push(fa);
+  });
+  Object.assign(state, { 
+    activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, 
+    geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode,
+    webdavUser: data.webdavUser ?? state.webdavUser, webdavToken: data.webdavToken ?? state.webdavToken
+  });
+  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
+  return true;
+}
+
 on('settings-body', 'click', e => {
   if (e.target.closest('#data-export')) {
     const a = document.createElement('a'); 
@@ -433,15 +433,13 @@ on('settings-body', 'click', e => {
     
     toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
     const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
-    const auth = 'Basic ' + btoa(`${user}:${token}`);
     
-    fetch(`/webdav-proxy/AIChat/${getBackupName()}`, { method: 'PUT', headers: { 'Authorization': auth, 'Content-Type': 'application/json' }, body: data })
+    fetch(`/webdav-proxy/AIChat/${getBackupName()}`, {
+      method: 'PUT', 
+      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
+      body: data
+    })
     .then(async res => { 
-      // 若坚果云提示父文件夹不存在，则尝试主动补齐创建
-      if (res.status === 409) {
-        await fetch(`/webdav-proxy/AIChat/`, { method: 'MKCOL', headers: { 'Authorization': auth } });
-        res = await fetch(`/webdav-proxy/AIChat/${getBackupName()}`, { method: 'PUT', headers: { 'Authorization': auth, 'Content-Type': 'application/json' }, body: data });
-      }
       if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); 
       else throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '坚果云拒绝'}]`);
     })
@@ -451,36 +449,48 @@ on('settings-body', 'click', e => {
     const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
     if (!user || !token) return toast('请填写坚果云账号和应用密码');
     state.webdavUser = user; state.webdavToken = token; saveState();
-    const auth = 'Basic ' + btoa(`${user}:${token}`);
     
-    toast('<i class="ph ph-hourglass"></i> 获取云端文件列表...');
-    fetch('/webdav-proxy/AIChat/', { method: 'PROPFIND', headers: { 'Authorization': auth, 'Depth': '1' } })
+    const pullBtn = e.target.closest('#data-pull');
+    toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
+    
+    // 使用 WebDAV PROPFIND 获取目录文件列表
+    fetch('/webdav-proxy/AIChat/', {
+      method: 'PROPFIND', 
+      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Depth': '1' }
+    })
     .then(async res => { 
-      if(!res.ok) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '云端尚未创建文件夹或无权限'}]`);
-      // 利用 DOMParser 标准解析 XML，兼容各种命名空间
-      const xml = new DOMParser().parseFromString(await res.text(), 'text/xml');
-      const files = Array.from(xml.querySelectorAll('*')).filter(n => n.localName === 'href').map(n => decodeURIComponent(n.textContent)).filter(f => f.endsWith('.json')).map(f => f.split('/').pop());
-      if (!files.length) throw new Error('云端文件夹中没有备份文件');
-      
-      files.sort().reverse(); // 按时间倒序
-      const items = [{ isHeader: true, label: '选择要拉取的云端备份' }, ...files.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))];
-      
-      showDropdown(e.target.closest('#data-pull'), items, selected => {
-        toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${selected}...`);
-        fetch(`/webdav-proxy/AIChat/${selected}`, { headers: { 'Authorization': auth } })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
-        .then(json => mergeData(json.data || json, '云端拉取'))
-        .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`));
+      if(!res.ok) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '读取云端目录失败，请确认文件夹是否创建'}]`);
+      return res.text(); 
+    })
+    .then(async xml => {
+      // 解析 WebDAV 的 XML 响应，筛选所有 json 文件
+      const doc = new DOMParser().parseFromString(xml, 'text/xml');
+      const files = Array.from(doc.getElementsByTagNameNS('*', 'href'))
+        .map(n => decodeURIComponent(n.textContent.split('/').pop()))
+        .filter(n => n.endsWith('.json'))
+        .sort().reverse(); // 反序，优先展示最新备份
+
+      if (!files.length) throw new Error('云端没有找到相关的 JSON 备份文件');
+
+      // 将文件渲染在下拉菜单中
+      showDropdown(pullBtn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...files.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
+        toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${val}...`);
+        try {
+          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) } });
+          if (!r.ok) throw new Error('文件下载失败');
+          const json = await r.json();
+          if (await mergeData(json.data || json, '云端拉取将深度合并原有话题，确认拉取该备份吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
+        } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
       });
     })
-    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 获取列表失败: ${err.message}`));
+    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`, 4000));
   }
   else if (e.target.closest('#s-save')) {
     const a = getActiveAst(), val = id => $1(id)?.value; if (!a) return;
     a.name = val('s-name')?.trim() || a.name; a.systemPrompt = val('s-prompt')?.trim() ?? a.systemPrompt; a.temperature = parseFloat(val('s-temp') || a.temperature); a.topP = parseFloat(val('s-topp') || a.topP);
     state.deepseekKey = val('s-dskey')?.trim() ?? state.deepseekKey; state.geminiKey = val('s-gmkey')?.trim() ?? state.geminiKey; state.geminiBaseUrl = val('s-gmurl')?.trim() ?? state.geminiBaseUrl; state.geminiModels = val('s-gmmodels')?.trim() || 'gemini-2.5-pro'; state.darkMode = $1('s-theme').classList.contains('active');
     state.webdavUser = val('s-webdavUser')?.trim() ?? state.webdavUser; state.webdavToken = val('s-webdavToken')?.trim() ?? state.webdavToken;
-    saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('<i class="ph-fill ph-check-circle"></i> 设置已保存');
+    saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('设置已保存');
   } else {
     const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
     const themeSw = e.target.closest('#s-theme'); if (themeSw) { themeSw.classList.toggle('active'); $1('theme-label').innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
@@ -488,11 +498,15 @@ on('settings-body', 'click', e => {
   }
 });
 
+// 本地导入通过复用 mergeData 避免冗余
 on('import-file', 'change', e => {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
-    try { mergeData(JSON.parse(ev.target.result).data || JSON.parse(ev.target.result), '本地导入'); } catch(err) { toast('文件格式错误'); }
+  reader.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result).data || JSON.parse(ev.target.result);
+      if (await mergeData(data, '导入将深度合并原有数据，新分支自动追加，确认导入吗？')) toast('导入成功');
+    } catch(err) { toast('文件格式错误'); }
   };
   reader.readAsText(file); e.target.value = '';
 });
@@ -509,7 +523,7 @@ on('fs-prompt-close', 'click', () => { $1('s-prompt').value = ta.value; $1('fs-p
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); 
   dd.innerHTML = items.map((item, i) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${i}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
-  const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight || 300;
+  const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
   dd.classList.add('show');
