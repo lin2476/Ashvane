@@ -3,17 +3,13 @@
 
 // ==================== UTILS & TOKENS ====================
 const $1 = s => document.getElementById(s);
-const on = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.addEventListener(evt, cb);
+const on = (el, evt, cb, opts) => (typeof el === 'string' ? $1(el) : el)?.addEventListener(evt, cb, opts);
 const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEventListener(evt, cb);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
 const padZero = n => n.toString().padStart(2, '0');
-const getBackupName = () => {
-  const d = new Date();
-  // 统一输出类似：AIChatBackup-2026-05131217.json
-  return `AIChatBackup-${d.getFullYear()}-${padZero(d.getMonth()+1)}${padZero(d.getDate())}${padZero(d.getHours())}${padZero(d.getMinutes())}.json`;
-};
+const getBackupName = () => { const d = new Date(); return `AIChatBackup-${d.getFullYear()}-${padZero(d.getMonth()+1)}${padZero(d.getDate())}${padZero(d.getHours())}${padZero(d.getMinutes())}.json`; };
 
 const estimateTokens = str => {
   if (!str) return 0;
@@ -24,12 +20,9 @@ const getMsgTokens = m => estimateTokens(m.content) + estimateTokens(m.reasoning
 const calcConvContextTokens = (c, p) => c.messages.reduce((t, m) => t + estimateTokens(m.content), estimateTokens(p));
 const formatK = t => t < 1000 ? t : (t / 1000).toFixed(1) + 'k';
 
-// 常量提取，降低内存占用，方便维护
-const DEFAULT_MODEL = 'deepseek-v4-pro';
-const DEFAULT_GRP = 'default';
-const DEFAULT_GM_URL = 'https://generativelanguage.googleapis.com';
+const DEFAULT_MODEL = 'deepseek-v4-pro', DEFAULT_GRP = 'default', DEFAULT_GM_URL = 'https://generativelanguage.googleapis.com';
 
-// ==================== DATABASE (IndexedDB) ====================
+// ==================== DATABASE ====================
 const STORAGE_KEY = 'ai_chat_v8';
 const IDB = {
   db: null,
@@ -39,31 +32,29 @@ const IDB = {
     req.onsuccess = e => { IDB.db = e.target.result; resolve(); };
     req.onerror = e => reject(e.target.error);
   }),
-  exec: (mode, action) => new Promise((resolve, reject) => {
-    if (!IDB.db) return resolve(null);
-    const req = IDB.db.transaction('store', mode).objectStore('store')[action.method](...action.args);
-    req.onsuccess = () => resolve(action.method === 'get' ? req.result : undefined);
-    req.onerror = e => reject(e.target.error);
+  exec: (m, f, a) => new Promise((r, j) => {
+    if (!IDB.db) return r(null);
+    const req = IDB.db.transaction('store', m).objectStore('store')[f](...a);
+    req.onsuccess = () => r(f === 'get' ? req.result : undefined);
+    req.onerror = e => j(e.target.error);
   }),
-  get: key => IDB.exec('readonly', { method: 'get', args: [key] }),
-  set: (key, val) => IDB.exec('readwrite', { method: 'put', args: [val, key] })
+  get: k => IDB.exec('readonly', 'get', [k]),
+  set: (k, v) => IDB.exec('readwrite', 'put', [v, k])
 };
 
 // ==================== STATE & MODELS ====================
 let state = {
   assistants:[{ id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。', temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', groupId: DEFAULT_GRP, conversations: [], activeConvId: null }], 
   groups: [{ id: DEFAULT_GRP, name: '默认分组', expanded: true }], 
-  activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false,
-  webdavUser: '', webdavToken: ''
+  activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false, webdavUser: '', webdavToken: ''
 };
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
-const ICON_DS_COLOR = `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek-color.svg" alt="DeepSeek" style="width:1.2em; height:1.2em; vertical-align:middle;">`;
-const ICON_DS_MONO = `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
+const svgIco = (n, c) => c ? `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}-color.svg" style="width:1.2em; height:1.2em; vertical-align:middle;">` : `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
 
-const ICON_GM_COLOR = `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini-color.svg" alt="Gemini" style="width:1.2em; height:1.2em; vertical-align:middle;">`;
-const ICON_GM_MONO = `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
+const ICON_DS_COLOR = svgIco('deepseek', 1), ICON_DS_MONO = svgIco('deepseek', 0);
+const ICON_GM_COLOR = svgIco('gemini', 1), ICON_GM_MONO = svgIco('gemini', 0);
 
 const DS_MODELS =[
   { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', iconColor: ICON_DS_COLOR, iconMono: ICON_DS_MONO }, 
@@ -71,8 +62,7 @@ const DS_MODELS =[
 ];
 
 const getModelInfo = id => {
-  const m = DS_MODELS.find(m => m.id === id);
-  if (m) return m;
+  const m = DS_MODELS.find(m => m.id === id); if (m) return m;
   const nid = (id || '').toLowerCase();
   if (nid.includes('gemini')) return { iconColor: ICON_GM_COLOR, iconMono: ICON_GM_MONO, name: id, custom: true };
   if (nid.includes('deepseek')) return { iconColor: ICON_DS_COLOR, iconMono: ICON_DS_MONO, name: id, custom: true };
@@ -86,8 +76,7 @@ async function loadState() {
     let p = await IDB.get(STORAGE_KEY) || JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (p) {
       if (!p.groups?.length) p.groups =[{ id: DEFAULT_GRP, name: '默认分组', expanded: true }];
-      state = { ...state, ...p };
-      await IDB.set(STORAGE_KEY, state);
+      state = { ...state, ...p }; await IDB.set(STORAGE_KEY, state);
     }
   } catch(e) {}
   state.assistants = state.assistants.map(fixAsst);
@@ -102,8 +91,7 @@ function fixAsst(a) {
     temperature: a.temperature ?? 1.0, topP: a.topP ?? 1.0, modelId: a.modelId || a.geminiModel || DEFAULT_MODEL, 
     reasoningEffort: a.reasoningEffort || 'off', groupId: a.groupId || DEFAULT_GRP,
     conversations: (a.conversations ||[]).map(c => ({ 
-      ...c, id: c.id || genId(), title: c.title || '新话题', 
-      messages: (c.messages ||[]).map(m => ({ ...m, genTime: m.genTime || m.reasoningTime })) 
+      ...c, id: c.id || genId(), title: c.title || '新话题', messages: (c.messages ||[]).map(m => ({ ...m, genTime: m.genTime || m.reasoningTime })) 
     }))
   };
 }
@@ -130,31 +118,22 @@ async function copyText(text) {
 
 function showDialog(msg, isInput = false, defaultVal = '') {
   return new Promise(resolve => {
-    $1('dialog-msg').textContent = msg;
-    const inp = $1('dialog-input');
-    $1('dialog-input-wrap').classList.toggle('hidden', !isInput);
-    inp.value = isInput ? defaultVal : '';
-    $1('dialog-overlay').classList.add('show');
-    if (isInput) inp.focus();
+    $1('dialog-msg').textContent = msg; const inp = $1('dialog-input');
+    $1('dialog-input-wrap').classList.toggle('hidden', !isInput); inp.value = isInput ? defaultVal : '';
+    $1('dialog-overlay').classList.add('show'); if (isInput) inp.focus();
 
     const cleanup = () => { $1('dialog-overlay').classList.remove('show'); off('dialog-ok', 'click', onOk); off('dialog-cancel', 'click', onCancel); off(inp, 'keydown', onKey); };
     const onOk = () => { cleanup(); resolve(isInput ? inp.value : true); }; 
     const onCancel = () => { cleanup(); resolve(isInput ? null : false); };
     const onKey = e => { if (e.key === 'Enter') onOk(); if (e.key === 'Escape') onCancel(); };
     
-    on('dialog-ok', 'click', onOk); on('dialog-cancel', 'click', onCancel);
-    if (isInput) on(inp, 'keydown', onKey);
+    on('dialog-ok', 'click', onOk); on('dialog-cancel', 'click', onCancel); if (isInput) on(inp, 'keydown', onKey);
   });
 }
 
 // ==================== THEME & PWA ====================
-function setupPWA() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});`], { type: 'application/javascript' }))).catch(()=>{});
-}
-function applyTheme() {
-  const d = state.darkMode; document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
-  $1('hljs-theme').href = `https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github${d ? '-dark' : ''}.min.css`;
-}
+function setupPWA() { if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});`], { type: 'application/javascript' }))).catch(()=>{}); }
+function applyTheme() { document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light'); $1('hljs-theme').href = `https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github${state.darkMode ? '-dark' : ''}.min.css`; }
 
 // ==================== NAVIGATION ====================
 function goToAsts(fromHistory = false) { 
@@ -169,10 +148,7 @@ function goToChat(id, fromHistory = false) {
 }
 
 // ==================== ASSISTANT LIST ====================
-function populateGroupSelect(defaultGid) {
-  const sel = $1('new-ast-group');
-  if (sel) sel.innerHTML = state.groups.map(g => `<option value="${g.id}" ${g.id === defaultGid ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
-}
+function populateGroupSelect(defaultGid) { const sel = $1('new-ast-group'); if (sel) sel.innerHTML = state.groups.map(g => `<option value="${g.id}" ${g.id === defaultGid ? 'selected' : ''}>${esc(g.name)}</option>`).join(''); }
 
 function renderAstList() {
   const l = $1('ast-list');
@@ -197,13 +173,9 @@ on('add-group-btn', 'click', async () => {
 function handleGroupMore(gid, btn) {
   showDropdown(btn,[{ label: '重命名分组', value: 'rename', icon: '<i class="ph ph-pencil-simple"></i>' }, { label: '删除分组', value: 'delete', icon: '<i class="ph ph-trash"></i>' }], async val => {
     const g = state.groups.find(x => x.id === gid); if (!g) return;
-    if (val === 'rename') {
-      const name = await showDialog('重命名分组', true, g.name);
-      if (name?.trim()) { g.name = name.trim(); saveState(); renderAstList(); }
-    } else if (val === 'delete' && await showDialog(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) {
-      state.assistants.forEach(a => { if (a.groupId === gid) a.groupId = DEFAULT_GRP; });
-      state.groups = state.groups.filter(x => x.id !== gid); state.groups.find(x => x.id === DEFAULT_GRP).expanded = true;
-      saveState(); renderAstList();
+    if (val === 'rename') { const name = await showDialog('重命名分组', true, g.name); if (name?.trim()) { g.name = name.trim(); saveState(); renderAstList(); } } 
+    else if (val === 'delete' && await showDialog(`确定要删除【${g.name}】吗？\n如果该分组下有助手，将全部移至默认分组。`)) {
+      state.assistants.forEach(a => { if (a.groupId === gid) a.groupId = DEFAULT_GRP; }); state.groups = state.groups.filter(x => x.id !== gid); state.groups.find(x => x.id === DEFAULT_GRP).expanded = true; saveState(); renderAstList();
     }
   });
 }
@@ -216,13 +188,9 @@ function handleAstMore(id, btn) {
   if (idx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
 
   showDropdown(btn, items, async val => {
-    if (val === 'delete' && await showDialog('确定要删除此助手吗？')) {
-      state.assistants = state.assistants.filter(a => a.id !== id); if (state.activeAstId === id) state.activeAstId = null;
-    } else if (val === 'order_up' || val === 'order_down') {
-      const tg = val === 'order_up' ? groupAsts[idx - 1] : groupAsts[idx + 1], i1 = state.assistants.indexOf(ast), i2 = state.assistants.indexOf(tg);[state.assistants[i1], state.assistants[i2]] = [state.assistants[i2], state.assistants[i1]];
-    } else if (val.startsWith('move_')) {
-      ast.groupId = val.replace('move_', ''); const tg = state.groups.find(g => g.id === ast.groupId); if (tg) tg.expanded = true;
-    }
+    if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { state.assistants = state.assistants.filter(a => a.id !== id); if (state.activeAstId === id) state.activeAstId = null; } 
+    else if (val === 'order_up' || val === 'order_down') { const tg = val === 'order_up' ? groupAsts[idx - 1] : groupAsts[idx + 1], i1 = state.assistants.indexOf(ast), i2 = state.assistants.indexOf(tg);[state.assistants[i1], state.assistants[i2]] = [state.assistants[i2], state.assistants[i1]]; } 
+    else if (val.startsWith('move_')) { ast.groupId = val.replace('move_', ''); const tg = state.groups.find(g => g.id === ast.groupId); if (tg) tg.expanded = true; }
     saveState(); renderAstList();
   });
 }
@@ -255,19 +223,13 @@ function renderChatPage() {
   const a = getActiveAst(); if (!a) return goToAsts();
   const c = getActiveConv(a), m = getModelInfo(a.modelId);
   $1('chat-asst-name').innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph ph-chat-centered-text" style="font-weight:normal; opacity:0.8; margin-left:4px;"></i> ${a.conversations.length}` : ''}`;
-  $1('chat-topic-name').textContent = c ? c.title : '新话题';
-  $1('chat-nav-tokens').textContent = `(${c ? c.messages.length : 0})`;
-  
+  $1('chat-topic-name').textContent = c ? c.title : '新话题'; $1('chat-nav-tokens').textContent = `(${c ? c.messages.length : 0})`;
   $1('model-chip-btn').innerHTML = m.iconColor;
-  const rText = { off: '关闭', low: 'Low', high: 'High', max: 'Max' }[a.reasoningEffort] || a.reasoningEffort;
-  $1('reasoning-btn').innerHTML = `<i class="ph ph-brain"></i><span>${rText}</span>`;
-  
+  $1('reasoning-btn').innerHTML = `<i class="ph ph-brain"></i><span>${{ off: '关闭', low: 'Low', high: 'High', max: 'Max' }[a.reasoningEffort] || a.reasoningEffort}</span>`;
   renderMessages();
 }
 
-if (window.markedKatex) marked.use(window.markedKatex({ throwOnError: false }));
-marked.setOptions({ breaks: true, gfm: true });
-
+if (window.markedKatex) marked.use(window.markedKatex({ throwOnError: false })); marked.setOptions({ breaks: true, gfm: true });
 const md = t => {
   if (!t) return '';
   const text = String(t).replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$').replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$');
@@ -292,7 +254,8 @@ function makeMsg(msg, idx) {
   const isAi = msg.role === 'assistant', d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
   const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${msg.isNote ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程'}</span><i class="ph ph-caret-right arr"></i></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
-  d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions"><div class="actions-left">${isAi ? `<span class="badge">${mInfo.iconMono} ${esc(mInfo.name)}</span><span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : ''}</div><div class="msg-tokens">${isAi ? '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg)) : ''}</div><div class="actions-right">${isAi ? `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrows-clockwise"></i></button>` : `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrow-u-up-left"></i></button>`}</div></div>`;
+  const acts = `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ${isAi ? 'ph-arrows-clockwise' : 'ph-arrow-u-up-left'}"></i></button>`;
+  d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions"><div class="actions-left">${isAi ? `<span class="badge">${mInfo.iconMono} ${esc(mInfo.name)}</span><span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : ''}</div><div class="msg-tokens">${isAi ? '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg)) : ''}</div><div class="actions-right">${acts}</div></div>`;
   enhanceCodeBlocks(d); return d;
 }
 
@@ -308,8 +271,7 @@ on('messages', 'click', async e => {
     else if (act === 'del' && await showDialog('确定要删除这条消息吗？')) { conv.messages.splice(idx, 1); saveState(); renderChatPage(); }
     else if (act === 're' && await showDialog(`确定要重新${msg.role === 'assistant' ? '生成此回复' : '发送这条消息'}吗？`)) {
       let tIdx = idx; if (msg.role === 'assistant') { while (tIdx >= 0 && conv.messages[tIdx].role !== 'user') tIdx--; if (tIdx < 0) return toast('无法重新生成：缺用户消息'); }
-      $1('user-input').value = conv.messages[tIdx].content; conv.messages = conv.messages.slice(0, tIdx);
-      saveState(); renderChatPage(); $1('user-input').dispatchEvent(new Event('input')); sendMessage();
+      $1('user-input').value = conv.messages[tIdx].content; conv.messages = conv.messages.slice(0, tIdx); saveState(); renderChatPage(); $1('user-input').dispatchEvent(new Event('input')); sendMessage();
     }
   }
 });
@@ -326,8 +288,7 @@ function openEditModal(msg) {
   const isNote = !msg.reasoning || msg.isNote;
   $1('edit-toggle-reasoning-btn').innerHTML = isNote ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程';
   $1('edit-reasoning-textarea').placeholder = isNote ? '输入消息备注…' : '输入思考过程…';
-  $1('edit-reasoning-textarea').classList.remove('show'); $1('edit-toggle-reasoning-btn').classList.remove('active');
-  $1('edit-overlay').classList.add('show'); 
+  $1('edit-reasoning-textarea').classList.remove('show'); $1('edit-toggle-reasoning-btn').classList.remove('active'); $1('edit-overlay').classList.add('show'); 
 }
 function saveEdit() {
   if (!editingMsg) return;
@@ -337,8 +298,7 @@ function saveEdit() {
   if (rval) { if ($1('edit-toggle-reasoning-btn').innerHTML.includes('备注')) editingMsg.isNote = true; else delete editingMsg.isNote; } else delete editingMsg.isNote;
   saveState(); renderChatPage(); $1('edit-overlay').classList.remove('show'); editingMsg = null; toast('<i class="ph-fill ph-check-circle"></i> 已保存');
 }
-on('edit-cancel-btn', 'click', () => { $1('edit-overlay').classList.remove('show'); editingMsg = null; });
-on('edit-save-btn', 'click', saveEdit);
+on('edit-cancel-btn', 'click', () => { $1('edit-overlay').classList.remove('show'); editingMsg = null; }); on('edit-save-btn', 'click', saveEdit);
 on('edit-toggle-reasoning-btn', 'click', () => { $1('edit-toggle-reasoning-btn').classList.toggle('active', $1('edit-reasoning-textarea').classList.toggle('show')); $1('edit-reasoning-textarea').focus(); });
 
 // ==================== TOPIC LIST ====================
@@ -378,19 +338,9 @@ function renderSettings() {
     <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div><div class="field"><label>系统提示词</label><div class="relative"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn abs-top-right"><i class="ph ph-corners-out"></i></button></div></div>
       <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button><div class="settings-fold-body"><div class="field"><label>Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span class="slider-label">2</span></div></div><div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span class="slider-label">1</span></div></div></div></div>
     </div>
-    
     <div class="section">
-      <div class="settings-fold">
-        <button class="settings-fold-head"><i class="ph ph-cloud"></i> 坚果云 WebDAV 同步 <i class="ph ph-caret-right arr"></i></button>
-        <div class="settings-fold-body">
-          <div class="field"><label>坚果云账号</label><input type="text" id="s-webdavUser" value="${esc(state.webdavUser || '')}" placeholder="坚果云登录邮箱"></div>
-          <div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="坚果云的第三方应用密码"></div>
-          <div class="data-actions"><button id="data-push"><i class="ph ph-cloud-arrow-up"></i> 推送至云端</button><button id="data-pull"><i class="ph ph-cloud-arrow-down"></i> 从云端拉取</button></div>
-          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制。</div>
-        </div>
-      </div>
+      <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-cloud"></i> 坚果云 WebDAV 同步 <i class="ph ph-caret-right arr"></i></button><div class="settings-fold-body"><div class="field"><label>坚果云账号</label><input type="text" id="s-webdavUser" value="${esc(state.webdavUser || '')}" placeholder="坚果云登录邮箱"></div><div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="坚果云的第三方应用密码"></div><div class="data-actions"><button id="data-push"><i class="ph ph-cloud-arrow-up"></i> 推送至云端</button><button id="data-pull"><i class="ph ph-cloud-arrow-down"></i> 从云端拉取</button></div><div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制。</div></div></div>
     </div>
-
     <div class="section"><div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-plugs"></i> API 密钥与模型 <i class="ph ph-caret-right arr"></i></button><div class="settings-fold-body"><div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}"></div><div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}"></div><div class="field"><label>第三方 API 地址</label><input type="text" id="s-gmurl" value="${esc(state.geminiBaseUrl || DEFAULT_GM_URL)}"></div><div class="field"><label>第三方模型列表</label><input type="text" id="s-gmmodels" value="${esc(state.geminiModels || 'gemini-2.5-pro')}"></div></div></div></div>
     <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
     <div class="section"><div class="data-actions"><button id="data-export"><i class="ph ph-upload-simple"></i> 导出备份</button><button id="data-import-btn"><i class="ph ph-download-simple"></i> 导入备份</button></div></div>
@@ -398,133 +348,61 @@ function renderSettings() {
   `;
 }
 
-// 提取数据深合并公共逻辑，大大降低了本地导入和云端拉取的代码冗余
 async function mergeData(data, promptMsg) {
   if (!await showDialog(promptMsg)) return false;
   (data.groups ||[]).forEach(g => { if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); });
   data.assistants?.forEach(ia => {
-    const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name));
-    fa.groupId = lg ? lg.id : DEFAULT_GRP;
+    const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name)); fa.groupId = lg ? lg.id : DEFAULT_GRP;
     const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
     if (ex) fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); else state.assistants.push(fa);
   });
-  Object.assign(state, { 
-    activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, 
-    geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode,
-    webdavUser: data.webdavUser ?? state.webdavUser, webdavToken: data.webdavToken ?? state.webdavToken
-  });
-  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
-  return true;
+  ['activeAstId', 'deepseekKey', 'geminiKey', 'geminiBaseUrl', 'geminiModels', 'darkMode', 'webdavUser', 'webdavToken'].forEach(k => { if (data[k] !== undefined) state[k] = data[k]; });
+  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); return true;
 }
+
+function getWebDAVAuth() {
+  const u = $1('s-webdavUser').value.trim(), t = $1('s-webdavToken').value.trim();
+  if (!u || !t) { toast('请填写坚果云账号和应用密码'); return null; }
+  state.webdavUser = u; state.webdavToken = t; saveState(); return 'Basic ' + btoa(`${u}:${t}`);
+}
+const fetchDAV = (p, auth, m='GET', b=null, h={}) => fetch(`/webdav-proxy/AIChat/${p}`, { method: m, headers: { Authorization: auth, ...(b ? {'Content-Type': 'application/json'} : {}), ...h }, body: b ? JSON.stringify(b) : null });
 
 on('settings-body', 'click', e => {
   if (e.target.closest('#data-export')) {
-    const a = document.createElement('a'); 
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2)], { type: 'application/json' })); 
-    a.download = getBackupName(); 
-    a.click(); 
-    toast('已导出备份');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2)], { type: 'application/json' })); a.download = getBackupName(); a.click(); toast('已导出备份');
   } 
   else if (e.target.closest('#data-import-btn')) $1('import-file').click();
   else if (e.target.closest('#data-push')) {
-    const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
-    if (!user || !token) return toast('请填写坚果云账号和应用密码');
-    state.webdavUser = user; state.webdavToken = token; saveState();
-    
-    toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
-    const backupName = getBackupName();
-    const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
-    const authHeader = 'Basic ' + btoa(`${user}:${token}`);
-    
-    fetch(`/webdav-proxy/AIChat/${backupName}`, {
-      method: 'PUT', 
-      headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, 
-      body: data
-    })
-    .then(async res => { 
-      if(!(res.ok || res.status === 201 || res.status === 204)) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理没生效' : '坚果云拒绝'}]`);
-      
-      // 核心修改：上传成功后，用标准的 GET/PUT 更新云端的 backup_index.json，绕过 PROPFIND 限制
-      let indexData =[];
-      try {
-        const idxRes = await fetch(`/webdav-proxy/AIChat/backup_index.json`, { method: 'GET', headers: { 'Authorization': authHeader } });
-        if (idxRes.ok) indexData = await idxRes.json();
-      } catch(e) {}
-      
-      if (!Array.isArray(indexData)) indexData =[];
-      if (!indexData.includes(backupName)) {
-        indexData.unshift(backupName); // 将最新的备份名加到最前面
-        await fetch(`/webdav-proxy/AIChat/backup_index.json`, { method: 'PUT', headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, body: JSON.stringify(indexData) });
-      }
+    const auth = getWebDAVAuth(); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
+    const name = getBackupName(), data = { _meta: { version: 10, date: new Date().toISOString() }, data: state };
+    fetchDAV(name, auth, 'PUT', data).then(async res => { 
+      if(!(res.ok || res.status === 201 || res.status === 204)) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理未生效' : '被拒绝'}]`);
+      let idx =[]; try { const r = await fetchDAV('backup_index.json', auth); if (r.ok) idx = await r.json(); } catch(e) {}
+      if (!Array.isArray(idx)) idx =[];
+      if (!idx.includes(name)) { idx.unshift(name); await fetchDAV('backup_index.json', auth, 'PUT', idx); }
       toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功');
-    })
-    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
+    }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
   }
   else if (e.target.closest('#data-pull')) {
-    const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
-    if (!user || !token) return toast('请填写坚果云账号和应用密码');
-    state.webdavUser = user; state.webdavToken = token; saveState();
-    
-    const pullBtn = e.target.closest('#data-pull');
-    const authHeader = 'Basic ' + btoa(`${user}:${token}`);
-    toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
-    
-    // 修改1：强制添加 Cache-Control 阻止浏览器缓存旧的索引文件
-    fetch('/webdav-proxy/AIChat/backup_index.json', {
-      method: 'GET', 
-      headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-    })
-    .then(async res => { 
-      if(!res.ok) throw new Error(`${res.status} [${res.status===404 ? '云端暂无索引文件，请先推送一次备份' : '获取索引失败'}]`);
-      return res.json(); 
-    })
-    .then(async files => {
-      if (!Array.isArray(files) || !files.length) throw new Error('云端备份列表为空');
-
-      toast('<i class="ph ph-hourglass"></i> 正在校验云端文件真实性...');
-
-      // 修改2：利用 HEAD 方法并发检查文件是否真实存在（只会请求文件头，不下载内容，速度极快）
-      const checkResults = await Promise.all(files.map(async f => {
-        try {
-          const r = await fetch(`/webdav-proxy/AIChat/${f}`, { 
-            method: 'HEAD', 
-            headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache' } 
-          });
-          return r.ok ? f : null;
-        } catch(e) { return null; }
-      }));
-      
-      const validFiles = checkResults.filter(Boolean); // 过滤掉返回 null（被删除）的文件
-      
-      if (!validFiles.length) throw new Error('云端备份实际已全部被删除，请重新推送');
-
-      // 修改3：如果发现有你在云端手动删掉的失效记录，静默把干净的列表重新写回云端进行覆盖，修正同步状态
-      if (validFiles.length < files.length) {
-        fetch(`/webdav-proxy/AIChat/backup_index.json`, { 
-          method: 'PUT', 
-          headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }, 
-          body: JSON.stringify(validFiles) 
-        }).catch(()=>{});
-      }
-
-      // 将过滤后真实存在的文件渲染在下拉菜单中
-      showDropdown(pullBtn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...validFiles.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
+    const auth = getWebDAVAuth(), btn = e.target.closest('#data-pull'); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
+    fetchDAV('backup_index.json', auth, 'GET', null, { 'Cache-Control': 'no-cache, no-store, must-revalidate' }).then(async res => { 
+      if(!res.ok) throw new Error(`${res.status} [${res.status===404 ? '暂无索引，请先推送' : '获取失败'}]`); return res.json(); 
+    }).then(async files => {
+      if (!Array.isArray(files) || !files.length) throw new Error('云端备份列表为空'); toast('<i class="ph ph-hourglass"></i> 校验真实性...');
+      const valids = (await Promise.all(files.map(async f => { try { return (await fetchDAV(f, auth, 'HEAD', null, { 'Cache-Control': 'no-cache' })).ok ? f : null; } catch(e) { return null; } }))).filter(Boolean);
+      if (!valids.length) throw new Error('云端备份实际已被删除，请重新推送');
+      if (valids.length < files.length) fetchDAV('backup_index.json', auth, 'PUT', valids).catch(()=>{});
+      showDropdown(btn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...valids.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
         toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${val}...`);
-        try {
-          const r = await fetch(`/webdav-proxy/AIChat/${val}`, { headers: { 'Authorization': authHeader, 'Cache-Control': 'no-cache' } });
-          if (!r.ok) throw new Error(`文件下载失败 (HTTP ${r.status})，可能已被手动删除`);
-          const json = await r.json();
-          if (await mergeData(json.data || json, '云端拉取将深度合并原有话题，确认拉取该备份吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
-        } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
+        try { const r = await fetchDAV(val, auth, 'GET', null, { 'Cache-Control': 'no-cache' }); if (!r.ok) throw new Error(`HTTP ${r.status}`); const json = await r.json(); if (await mergeData(json.data || json, '确认拉取并深度合并吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功'); } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
       });
-    })
-    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`, 4000));
+    }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`, 4000));
   }
   else if (e.target.closest('#s-save')) {
     const a = getActiveAst(), val = id => $1(id)?.value; if (!a) return;
     a.name = val('s-name')?.trim() || a.name; a.systemPrompt = val('s-prompt')?.trim() ?? a.systemPrompt; a.temperature = parseFloat(val('s-temp') || a.temperature); a.topP = parseFloat(val('s-topp') || a.topP);
-    state.deepseekKey = val('s-dskey')?.trim() ?? state.deepseekKey; state.geminiKey = val('s-gmkey')?.trim() ?? state.geminiKey; state.geminiBaseUrl = val('s-gmurl')?.trim() ?? state.geminiBaseUrl; state.geminiModels = val('s-gmmodels')?.trim() || 'gemini-2.5-pro'; state.darkMode = $1('s-theme').classList.contains('active');
-    state.webdavUser = val('s-webdavUser')?.trim() ?? state.webdavUser; state.webdavToken = val('s-webdavToken')?.trim() ?? state.webdavToken;
+    ['dskey:deepseekKey', 'gmkey:geminiKey', 'gmurl:geminiBaseUrl', 'webdavUser:webdavUser', 'webdavToken:webdavToken'].forEach(k => { const[id, sk]=k.split(':'); state[sk] = val('s-'+id)?.trim() ?? state[sk]; });
+    state.geminiModels = val('s-gmmodels')?.trim() || 'gemini-2.5-pro'; state.darkMode = $1('s-theme').classList.contains('active');
     saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('设置已保存');
   } else {
     const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
@@ -533,20 +411,13 @@ on('settings-body', 'click', e => {
   }
 });
 
-// 本地导入通过复用 mergeData 避免冗余
 on('import-file', 'change', e => {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = async ev => {
-    try {
-      const data = JSON.parse(ev.target.result).data || JSON.parse(ev.target.result);
-      if (await mergeData(data, '导入将深度合并原有数据，新分支自动追加，确认导入吗？')) toast('导入成功');
-    } catch(err) { toast('文件格式错误'); }
-  };
+  reader.onload = async ev => { try { const data = JSON.parse(ev.target.result).data || JSON.parse(ev.target.result); if (await mergeData(data, '导入将深度合并数据，确认吗？')) toast('导入成功'); } catch(err) { toast('文件格式错误'); } };
   reader.readAsText(file); e.target.value = '';
 });
 
-// FS Editor
 const ta = $1('fs-prompt-textarea');
 const ins = (p, s = '') => { ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input')); };
 const ptb = { undo: () => document.execCommand('undo'), redo: () => document.execCommand('redo'), bold: () => ins('**', '**'), code: () => ins('`', '`'), heading: () => ins('## '), list: () => ins('- '), quote: () => ins('> ') };
@@ -560,48 +431,34 @@ function showDropdown(anchor, items, onSelect) {
   dd.innerHTML = items.map((item, i) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${i}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
-  dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`;
-  dd.classList.add('show');
+  dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`; dd.classList.add('show');
   const clickHandler = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
   setTimeout(() => on(document, 'click', clickHandler), 10);
 }
 const hideDropdown = () => $1('dropdown-menu').classList.remove('show');
 
 on('model-chip-btn', 'click', e => {
-  if (streaming) return toast('生成中不可切换模型');
-  e.stopPropagation(); const a = getActiveAst(); if (!a) return;
-  showDropdown(e.currentTarget,[
-    { isHeader: true, label: 'DeepSeek 模型' },
-    ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.iconColor })),
-    { isHeader: true, label: '第三方 API 模型' },
-    ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: getModelInfo(n).iconColor }))
-  ], id => {
-    a.modelId = id;
-    const v = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
-    if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off';
-    saveState(); renderChatPage(); toast('已切换模型');
+  if (streaming) return toast('生成中不可切换模型'); e.stopPropagation(); const a = getActiveAst(); if (!a) return;
+  showDropdown(e.currentTarget,[{ isHeader: true, label: 'DeepSeek 模型' }, ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.iconColor })), { isHeader: true, label: '第三方 API 模型' }, ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: getModelInfo(n).iconColor }))], id => {
+    a.modelId = id; const v = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high']; if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off'; saveState(); renderChatPage(); toast('已切换模型');
   });
 });
 
 on('reasoning-btn', 'click', e => {
-  if (streaming) return toast('生成中不可切换推理设置');
-  e.stopPropagation(); const a = getActiveAst(); if (!a) return;
+  if (streaming) return toast('生成中不可切换推理设置'); e.stopPropagation(); const a = getActiveAst(); if (!a) return;
   const rOpts = isDeepSeek(a.modelId) ?[{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] :[{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
-  showDropdown(e.currentTarget, rOpts.map(o => ({ label: o.label, value: o.value, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' })), val => {
-    a.reasoningEffort = val; saveState(); renderChatPage();
-  });
+  showDropdown(e.currentTarget, rOpts.map(o => ({ label: o.label, value: o.value, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' })), val => { a.reasoningEffort = val; saveState(); renderChatPage(); });
 });
 
 // ==================== CHAT STREAM & EVENTS ====================
-let isTouching = false; const chatC = $1('chat-container');
-['touchstart','mousedown'].forEach(ev => chatC.addEventListener(ev, () => isTouching = true, { passive: true }));['touchend','touchcancel','mouseup'].forEach(ev => window.addEventListener(ev, () => isTouching = false, { passive: true }));
+let isTouching = false; const chatC = $1('chat-container'), setTouch = v => () => isTouching = v;
+['touchstart','mousedown'].forEach(ev => on(chatC, ev, setTouch(true), { passive: true }));['touchend','touchcancel','mouseup'].forEach(ev => window.addEventListener(ev, setTouch(false), { passive: true }));
 chatC.addEventListener('wheel', () => userScrolledUp = true, { passive: true });
 on('chat-container', 'scroll', function() { const dist = this.scrollHeight - this.scrollTop - this.clientHeight; if (dist <= 25) userScrolledUp = false; else if (isTouching) userScrolledUp = true; $1('scroll-down').classList.toggle('show', dist > 200 && $1('messages').children.length > 1); });
 const scrollBottom = (force, smooth = false) => { if (force || (!userScrolledUp && !isTouching)) requestAnimationFrame(() => chatC.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })); };
 
 function updateLive(msgEl, msg) {
-  if (!msgEl) return;
-  const bub = msgEl.querySelector('.bubble'); if (!bub) return;
+  if (!msgEl) return; const bub = msgEl.querySelector('.bubble'); if (!bub) return;
   if (msg.reasoning) { 
     let rb = bub.querySelector('.rblock'); if (!rb) { bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span><i class="ph ph-brain"></i> 思考过程</span><i class="ph ph-caret-right arr"></i></button><div class="rbody open"></div></div>'); rb = bub.querySelector('.rblock'); }
     if (msg.content.length > 0 && !rb.dataset.autoClosed) { rb.querySelector('.rhead').classList.remove('open'); rb.querySelector('.rbody').classList.remove('open'); rb.dataset.autoClosed = '1'; }
@@ -643,9 +500,7 @@ async function sendMessage() {
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId, startTime: Date.now() }; c.messages.push(am);
   saveState(); renderMessages(); streaming = true; $1('send-btn').classList.add('hidden'); inputEl.disabled = true; $1('stop-btn').classList.remove('hidden'); $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
-  const activeMsgEl = $1('messages').lastElementChild;
-
-  abortCtrl = new AbortController(); 
+  const activeMsgEl = $1('messages').lastElementChild; abortCtrl = new AbortController(); 
   let genTimer = setInterval(() => { const el = activeMsgEl.querySelector('.gen-time'); if (el) el.innerHTML = `<i class="ph ph-timer"></i> ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`; }, 1000);
   
   try {
@@ -664,12 +519,8 @@ async function sendMessage() {
               if (p.thoughtSignature || p.thought_signature) (am.thoughtSignatures ??=[]).push(p.thoughtSignature || p.thought_signature);
               if (String(p.thought) === "true") am.reasoning += (p.text || ''); else if (p.text) am.content += p.text;
             }
-          } else {
-            const d = chunk.choices?.[0]?.delta; if (d?.reasoning_content) am.reasoning += d.reasoning_content; if (d?.content) am.content += d.content;
-          }
-          $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
-          updateLive(activeMsgEl, am); 
-          scrollBottom(false, false);
+          } else { const d = chunk.choices?.[0]?.delta; if (d?.reasoning_content) am.reasoning += d.reasoning_content; if (d?.content) am.content += d.content; }
+          $1('chat-nav-tokens').textContent = `(${c.messages.length})`; updateLive(activeMsgEl, am); scrollBottom(false, false);
         } catch(e) {}
       }
     }
@@ -678,17 +529,17 @@ async function sendMessage() {
 }
 
 const openSheet = id => { closeDrawers(); $1('overlay').classList.add('show'); $1(id).classList.add('open'); };
-const closeDrawers = () =>['topics-drawer','settings-drawer','add-ast-sheet'].forEach(id => $1(id).classList.remove('open'));
+const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay').classList.remove('show'); closeDrawers(); };
 
-on('send-btn', 'click', sendMessage);
-on('stop-btn', 'click', () => abortCtrl?.abort());
+on('send-btn', 'click', sendMessage); on('stop-btn', 'click', () => abortCtrl?.abort());
 on('user-input', 'keydown', function(e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } });
 on('user-input', 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
 on('scroll-down', 'click', () => { userScrolledUp = false; scrollBottom(true, false); });
 on('chat-back', 'click', goToAsts);
 on('topic-toggle', 'click', e => { e.stopPropagation(); renderTopicList(); $1('overlay').classList.add('show'); $1('topics-drawer').classList.add('open'); });
-on('settings-btn', 'click', () => { renderSettings(); $1('overlay').classList.add('show'); $1('settings-drawer').classList.add('open'); });['close-topics', 'close-settings', 'overlay'].forEach(id => on(id, 'click', closeAll));
+on('settings-btn', 'click', () => { renderSettings(); $1('overlay').classList.add('show'); $1('settings-drawer').classList.add('open'); });
+['close-topics', 'close-settings', 'overlay'].forEach(id => on(id, 'click', closeAll));
 
 await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
 window.addEventListener('popstate', e => { closeAll(); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); });
