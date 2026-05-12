@@ -46,15 +46,25 @@ let state = {
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
-const iconDSPro = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10 13 10-13-5-7H7z"/><path d="M2 9h20"/><path d="M12 22L8 9m4 13l4-13"/><path d="M8 9L12 2l4 7"/></svg>`;
-const iconDSFlash = `<svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+const ICON_DS_COLOR = `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek-color.svg" alt="DeepSeek" style="width:1.2em; height:1.2em; vertical-align:middle;">`;
+const ICON_DS_MONO = `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/deepseek.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
+
+const ICON_GM_COLOR = `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini-color.svg" alt="Gemini" style="width:1.2em; height:1.2em; vertical-align:middle;">`;
+const ICON_GM_MONO = `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/gemini.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
 
 const DS_MODELS =[
-  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icon: iconDSPro }, 
-  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icon: iconDSFlash }
+  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', iconColor: ICON_DS_COLOR, iconMono: ICON_DS_MONO }, 
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', iconColor: ICON_DS_COLOR, iconMono: ICON_DS_MONO }
 ];
 
-const getModelInfo = id => DS_MODELS.find(m => m.id === id) || { icon: '<i class="ph-fill ph-sparkle"></i>', name: id, custom: true };
+const getModelInfo = id => {
+  const m = DS_MODELS.find(m => m.id === id);
+  if (m) return m;
+  const nid = (id || '').toLowerCase();
+  if (nid.includes('gemini')) return { iconColor: ICON_GM_COLOR, iconMono: ICON_GM_MONO, name: id, custom: true };
+  if (nid.includes('deepseek')) return { iconColor: ICON_DS_COLOR, iconMono: ICON_DS_MONO, name: id, custom: true };
+  return { iconColor: '<i class="ph-fill ph-sparkle" style="color:var(--accent); vertical-align:middle;"></i>', iconMono: '<i class="ph-fill ph-sparkle" style="vertical-align:middle;"></i>', name: id, custom: true };
+};
 const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
 const getCustomModels = () => (state.geminiModels || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -235,8 +245,8 @@ function renderChatPage() {
   $1('chat-topic-name').textContent = c ? c.title : '新话题';
   $1('chat-nav-tokens').textContent = `(${c ? c.messages.length : 0})`;
   
-  // 独立更新：模型只显示LOGO图标，推理按钮显示图标+参数文本
-  $1('model-chip-btn').innerHTML = m.icon;
+  // 独立更新：模型只显示LOGO图标（彩色），推理按钮显示图标+参数文本
+  $1('model-chip-btn').innerHTML = m.iconColor;
   const rText = { off: '关闭', low: 'Low', high: 'High', max: 'Max' }[a.reasoningEffort] || a.reasoningEffort;
   $1('reasoning-btn').innerHTML = `<i class="ph ph-brain"></i><span>${rText}</span>`;
   
@@ -270,7 +280,7 @@ function makeMsg(msg, idx) {
   const isAi = msg.role === 'assistant', d = document.createElement('div'); d.className = `msg ${isAi ? 'ai' : 'user'}`; d.dataset.index = idx;
   const rHTML = msg.reasoning ? `<div class="rblock"><button class="rhead"><span>${msg.isNote ? '<i class="ph ph-note-pencil"></i> 消息备注' : '<i class="ph ph-brain"></i> 思考过程'}</span><i class="ph ph-caret-right arr"></i></button><div class="rbody">${esc(msg.reasoning)}</div></div>` : '';
   const mInfo = getModelInfo(msg.modelId || getActiveAst()?.modelId);
-  d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions"><div class="actions-left">${isAi ? `<span class="badge">${mInfo.custom ? '<i class="ph-fill ph-sparkle"></i>' : mInfo.icon} ${esc(mInfo.name)}</span><span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : ''}</div><div class="msg-tokens">${isAi ? '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg)) : ''}</div><div class="actions-right">${isAi ? `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrows-clockwise"></i></button>` : `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrow-u-up-left"></i></button>`}</div></div>`;
+  d.innerHTML = `<div class="bubble">${rHTML}<div class="markdown-body">${md(msg.content)}</div></div><div class="msg-actions"><div class="actions-left">${isAi ? `<span class="badge">${mInfo.iconMono} ${esc(mInfo.name)}</span><span class="gen-time"><i class="ph ph-timer"></i> ${msg.genTime || (msg.startTime ? ((Date.now()-msg.startTime)/1000).toFixed(0) : '0')}s</span>` : ''}</div><div class="msg-tokens">${isAi ? '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg)) : ''}</div><div class="actions-right">${isAi ? `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrows-clockwise"></i></button>` : `<button data-a="cp"><i class="ph ph-copy"></i></button><button data-a="ed"><i class="ph ph-pencil-simple"></i></button><button data-a="del"><i class="ph ph-trash"></i></button><button data-a="re"><i class="ph ph-arrow-u-up-left"></i></button>`}</div></div>`;
   enhanceCodeBlocks(d); return d;
 }
 
@@ -428,9 +438,9 @@ on('model-chip-btn', 'click', e => {
   e.stopPropagation(); const a = getActiveAst(); if (!a) return;
   showDropdown(e.currentTarget,[
     { isHeader: true, label: 'DeepSeek 模型' },
-    ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.icon })),
+    ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.iconColor })),
     { isHeader: true, label: '第三方 API 模型' },
-    ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: '<i class="ph-fill ph-sparkle"></i>' }))
+    ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: getModelInfo(n).iconColor }))
   ], id => {
     a.modelId = id;
     const v = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high'];
