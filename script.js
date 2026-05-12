@@ -414,7 +414,7 @@ on('settings-body', 'click', e => {
     toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
     const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
     
-    fetch('/webdav-proxy/ai_chat_sync.json', {
+    fetch('/webdav-proxy/AIChat/ai_chat_sync.json', {
       method: 'PUT', 
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
       body: data
@@ -436,7 +436,7 @@ on('settings-body', 'click', e => {
     state.webdavUser = user; state.webdavToken = token; saveState();
     
     toast('<i class="ph ph-hourglass"></i> 正在拉取云端数据...');
-    fetch('/webdav-proxy/ai_chat_sync.json', {
+    fetch('/webdav-proxy/AIChat/ai_chat_sync.json', {
       method: 'GET', 
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) }
     })
