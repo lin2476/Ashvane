@@ -419,11 +419,16 @@ on('settings-body', 'click', e => {
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
       body: data
     })
-    .then(res => { 
-      if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); 
-      else throw new Error(`HTTP ${res.status}`); 
+    .then(async res => { 
+      if(res.ok || res.status === 201 || res.status === 204) {
+        toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); 
+      } else {
+        const text = await res.text();
+        const isVercel = text.toLowerCase().includes('vercel');
+        throw new Error(`${res.status} [${isVercel ? 'Vercel代理没生效' : '坚果云拒绝'}]`);
+      }
     })
-    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`));
+    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传: ${err.message}`, 4000));
   }
   else if (e.target.closest('#data-pull')) {
     const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
@@ -435,8 +440,12 @@ on('settings-body', 'click', e => {
       method: 'GET', 
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) }
     })
-    .then(res => { 
-      if(!res.ok) throw new Error(`HTTP ${res.status}`); 
+    .then(async res => { 
+      if(!res.ok) {
+        const text = await res.text();
+        const isVercel = text.toLowerCase().includes('vercel');
+        throw new Error(`${res.status} [${isVercel ? 'Vercel代理没生效' : '云端还没文件'}]`);
+      }
       return res.json(); 
     })
     .then(async json => {
