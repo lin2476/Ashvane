@@ -112,7 +112,7 @@ function ensureConv(a) {
   return c;
 }
 
-function toast(m, d = 2000) {
+function toast(m, d = 2500) {
   const t = $1('toast'); t.innerHTML = m; t.classList.add('show');
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), d);
 }
@@ -380,9 +380,9 @@ function renderSettings() {
         <button class="settings-fold-head"><i class="ph ph-cloud"></i> 坚果云 WebDAV 同步 <i class="ph ph-caret-right arr"></i></button>
         <div class="settings-fold-body">
           <div class="field"><label>坚果云账号</label><input type="text" id="s-webdavUser" value="${esc(state.webdavUser || '')}" placeholder="坚果云登录邮箱"></div>
-          <div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="WebDAV专属密码"></div>
+          <div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="注意：是安全页面的第三方应用密码"></div>
           <div class="data-actions"><button id="data-push"><i class="ph ph-cloud-arrow-up"></i> 推送至云端</button><button id="data-pull"><i class="ph ph-cloud-arrow-down"></i> 从云端拉取</button></div>
-          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制，无需额外插件即可全平台同步。</div>
+          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：已通过 Vercel 服务端代理解决跨域限制。第一次拉取前如果云端无文件会提示 404 错误。</div>
         </div>
       </div>
     </div>
@@ -414,14 +414,16 @@ on('settings-body', 'click', e => {
     toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
     const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
     
-    // 使用 Vercel 代理路径替换掉原本的坚果云直连路径
     fetch('/api/webdav/ai_chat_sync.json', {
       method: 'PUT', 
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
       body: data
     })
-    .then(res => { if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); else throw new Error(res.status); })
-    .catch(err => toast('<i class="ph-fill ph-warning-circle"></i> 上传失败(检查账号或代理)'));
+    .then(res => { 
+      if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); 
+      else throw new Error(`HTTP ${res.status}`); 
+    })
+    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`));
   }
   else if (e.target.closest('#data-pull')) {
     const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
@@ -429,12 +431,14 @@ on('settings-body', 'click', e => {
     state.webdavUser = user; state.webdavToken = token; saveState();
     
     toast('<i class="ph ph-hourglass"></i> 正在拉取云端数据...');
-    // 使用 Vercel 代理路径替换掉原本的坚果云直连路径
     fetch('/api/webdav/ai_chat_sync.json', {
       method: 'GET', 
       headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) }
     })
-    .then(res => { if(!res.ok) throw new Error(res.status); return res.json(); })
+    .then(res => { 
+      if(!res.ok) throw new Error(`HTTP ${res.status}`); 
+      return res.json(); 
+    })
     .then(async json => {
       const data = json.data || json;
       if (await showDialog('云端拉取将深度合并原有话题，确认拉取吗？')) {
@@ -454,7 +458,7 @@ on('settings-body', 'click', e => {
         toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
       }
     })
-    .catch(err => toast('<i class="ph-fill ph-warning-circle"></i> 拉取失败(检查文件或代理)'));
+    .catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`));
   }
   else if (e.target.closest('#s-save')) {
     const a = getActiveAst(), val = id => $1(id)?.value; if (!a) return;
