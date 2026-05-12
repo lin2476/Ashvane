@@ -8,6 +8,8 @@ const off = (el, evt, cb) => (typeof el === 'string' ? $1(el) : el)?.removeEvent
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const esc = t => t ? String(t).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])) : '';
 
+const padZero = n => n.toString().padStart(2, '0');
+
 const estimateTokens = str => {
   if (!str) return 0;
   const zhCnt = (str.match(/[\u4e00-\u9fa5]/g) ||[]).length;
@@ -43,10 +45,12 @@ const IDB = {
 };
 
 // ==================== STATE & MODELS ====================
+// 新增 WebDAV 相关状态属性 webdavUser, webdavToken
 let state = {
   assistants:[{ id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。', temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', groupId: DEFAULT_GRP, conversations: [], activeConvId: null }], 
   groups: [{ id: DEFAULT_GRP, name: '默认分组', expanded: true }], 
-  activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false
+  activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false,
+  webdavUser: '', webdavToken: ''
 };
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
@@ -363,13 +367,26 @@ on('topic-list', 'click', e => {
 });
 on('new-topic', 'click', () => { const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } });
 
-// ==================== SETTINGS ====================
+// ==================== SETTINGS & WEBDAV ====================
 function renderSettings() {
   const a = getActiveAst(); if (!a) return;
   $1('settings-body').innerHTML = `
     <div class="section"><div class="field"><label>助手名称</label><input type="text" id="s-name" value="${esc(a.name)}"></div><div class="field"><label>系统提示词</label><div class="relative"><textarea id="s-prompt" rows="4">${esc(a.systemPrompt)}</textarea><button id="s-prompt-fs-btn" class="icon-btn abs-top-right"><i class="ph ph-corners-out"></i></button></div></div>
       <div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-sliders"></i> 高级参数 <i class="ph ph-caret-right arr"></i></button><div class="settings-fold-body"><div class="field"><label>Temperature：<strong id="s-tval">${a.temperature.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-temp" min="0" max="2" step=".05" value="${a.temperature}"><span class="slider-label">2</span></div></div><div class="field"><label>Top P：<strong id="s-pval">${a.topP.toFixed(2)}</strong></label><div class="slider-row"><span class="slider-label">0</span><input type="range" id="s-topp" min="0" max="1" step=".05" value="${a.topP}"><span class="slider-label">1</span></div></div></div></div>
     </div>
+    
+    <div class="section">
+      <div class="settings-fold">
+        <button class="settings-fold-head"><i class="ph ph-cloud"></i> 坚果云 WebDAV 同步 <i class="ph ph-caret-right arr"></i></button>
+        <div class="settings-fold-body">
+          <div class="field"><label>坚果云账号</label><input type="text" id="s-webdavUser" value="${esc(state.webdavUser || '')}" placeholder="坚果云登录邮箱"></div>
+          <div class="field"><label>应用密码</label><input type="password" id="s-webdavToken" value="${esc(state.webdavToken || '')}" placeholder="WebDAV专属密码"></div>
+          <div class="data-actions"><button id="data-push"><i class="ph ph-cloud-arrow-up"></i> 推送至云端</button><button id="data-pull"><i class="ph ph-cloud-arrow-down"></i> 从云端拉取</button></div>
+          <div class="hint mt-8" style="font-size:11px; opacity:0.8; line-height:1.4;">注：由于前端跨域限制，直连坚果云可能需开启浏览器 CORS 跨域插件 (如 Allow CORS)。</div>
+        </div>
+      </div>
+    </div>
+
     <div class="section"><div class="settings-fold"><button class="settings-fold-head"><i class="ph ph-plugs"></i> API 密钥与模型 <i class="ph ph-caret-right arr"></i></button><div class="settings-fold-body"><div class="field"><label>DeepSeek API Key</label><input type="password" id="s-dskey" value="${esc(state.deepseekKey)}"></div><div class="field"><label>第三方 API Key (Gemini)</label><input type="password" id="s-gmkey" value="${esc(state.geminiKey || '')}"></div><div class="field"><label>第三方 API 地址</label><input type="text" id="s-gmurl" value="${esc(state.geminiBaseUrl || DEFAULT_GM_URL)}"></div><div class="field"><label>第三方模型列表</label><input type="text" id="s-gmmodels" value="${esc(state.geminiModels || 'gemini-2.5-pro')}"></div></div></div></div>
     <div class="section"><div class="t-row"><span id="theme-label">${state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'}</span><div class="tsw ${state.darkMode ? 'active' : ''}" id="s-theme"></div></div></div>
     <div class="section"><div class="data-actions"><button id="data-export"><i class="ph ph-upload-simple"></i> 导出备份</button><button id="data-import-btn"><i class="ph ph-download-simple"></i> 导入备份</button></div></div>
@@ -379,12 +396,69 @@ function renderSettings() {
 
 on('settings-body', 'click', e => {
   if (e.target.closest('#data-export')) {
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2)], { type: 'application/json' })); a.download = `ai-chat-backup-${new Date().toISOString().split('T')[0]}.json`; a.click(); toast('已导出备份');
-  } else if (e.target.closest('#data-import-btn')) $1('import-file').click();
+    const now = new Date();
+    // 生成包含时分秒的安全不重复的文件名
+    const filename = `ai-chat-backup-${now.getFullYear()}-${padZero(now.getMonth()+1)}-${padZero(now.getDate())}-${padZero(now.getHours())}-${padZero(now.getMinutes())}.json`;
+    const a = document.createElement('a'); 
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ _meta: { version: 10, date: now.toISOString() }, data: state }, null, 2)], { type: 'application/json' })); 
+    a.download = filename; 
+    a.click(); 
+    toast('已导出备份');
+  } 
+  else if (e.target.closest('#data-import-btn')) $1('import-file').click();
+  else if (e.target.closest('#data-push')) {
+    const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
+    if (!user || !token) return toast('请填写坚果云账号和应用密码');
+    state.webdavUser = user; state.webdavToken = token; saveState();
+    
+    toast('<i class="ph ph-hourglass"></i> 正在同步至云端...');
+    const data = JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2);
+    
+    fetch('https://dav.jianguoyun.com/dav/ai_chat_sync.json', {
+      method: 'PUT', 
+      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`), 'Content-Type': 'application/json' }, 
+      body: data
+    })
+    .then(res => { if(res.ok || res.status === 201 || res.status === 204) toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功'); else throw new Error(res.status); })
+    .catch(err => toast('<i class="ph-fill ph-warning-circle"></i> 上传失败(检查账号或跨域限制)'));
+  }
+  else if (e.target.closest('#data-pull')) {
+    const user = $1('s-webdavUser').value.trim(), token = $1('s-webdavToken').value.trim();
+    if (!user || !token) return toast('请填写坚果云账号和应用密码');
+    state.webdavUser = user; state.webdavToken = token; saveState();
+    
+    toast('<i class="ph ph-hourglass"></i> 正在拉取云端数据...');
+    fetch('https://dav.jianguoyun.com/dav/ai_chat_sync.json', {
+      method: 'GET', 
+      headers: { 'Authorization': 'Basic ' + btoa(`${user}:${token}`) }
+    })
+    .then(res => { if(!res.ok) throw new Error(res.status); return res.json(); })
+    .then(async json => {
+      const data = json.data || json;
+      if (await showDialog('云端拉取将深度合并原有话题，确认拉取吗？')) {
+        (data.groups ||[]).forEach(g => { if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); });
+        data.assistants?.forEach(ia => {
+          const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name));
+          fa.groupId = lg ? lg.id : DEFAULT_GRP;
+          const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
+          if (ex) fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); else state.assistants.push(fa);
+        });
+        Object.assign(state, { 
+          activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, 
+          geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode,
+          webdavUser: data.webdavUser ?? state.webdavUser, webdavToken: data.webdavToken ?? state.webdavToken
+        });
+        saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
+        toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功');
+      }
+    })
+    .catch(err => toast('<i class="ph-fill ph-warning-circle"></i> 拉取失败(检查文件是否存在或跨域限制)'));
+  }
   else if (e.target.closest('#s-save')) {
     const a = getActiveAst(), val = id => $1(id)?.value; if (!a) return;
     a.name = val('s-name')?.trim() || a.name; a.systemPrompt = val('s-prompt')?.trim() ?? a.systemPrompt; a.temperature = parseFloat(val('s-temp') || a.temperature); a.topP = parseFloat(val('s-topp') || a.topP);
     state.deepseekKey = val('s-dskey')?.trim() ?? state.deepseekKey; state.geminiKey = val('s-gmkey')?.trim() ?? state.geminiKey; state.geminiBaseUrl = val('s-gmurl')?.trim() ?? state.geminiBaseUrl; state.geminiModels = val('s-gmmodels')?.trim() || 'gemini-2.5-pro'; state.darkMode = $1('s-theme').classList.contains('active');
+    state.webdavUser = val('s-webdavUser')?.trim() ?? state.webdavUser; state.webdavToken = val('s-webdavToken')?.trim() ?? state.webdavToken;
     saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('设置已保存');
   } else {
     const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
@@ -407,7 +481,7 @@ on('import-file', 'change', e => {
           const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
           if (ex) fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); else state.assistants.push(fa);
         });
-        Object.assign(state, { activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode });
+        Object.assign(state, { activeAstId: data.activeAstId ?? state.activeAstId, deepseekKey: data.deepseekKey ?? state.deepseekKey, geminiKey: data.geminiKey ?? state.geminiKey, geminiBaseUrl: data.geminiBaseUrl ?? state.geminiBaseUrl, geminiModels: data.geminiModels ?? state.geminiModels, darkMode: data.darkMode ?? state.darkMode, webdavUser: data.webdavUser ?? state.webdavUser, webdavToken: data.webdavToken ?? state.webdavToken });
         saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); toast('导入成功');
       }
     } catch(err) { toast('文件格式错误'); }
@@ -468,7 +542,6 @@ chatC.addEventListener('wheel', () => userScrolledUp = true, { passive: true });
 on('chat-container', 'scroll', function() { const dist = this.scrollHeight - this.scrollTop - this.clientHeight; if (dist <= 25) userScrolledUp = false; else if (isTouching) userScrolledUp = true; $1('scroll-down').classList.toggle('show', dist > 200 && $1('messages').children.length > 1); });
 const scrollBottom = (force, smooth = false) => { if (force || (!userScrolledUp && !isTouching)) requestAnimationFrame(() => chatC.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })); };
 
-// 性能优化点：接收局部的 DOM 节点对象，拒绝全局重复搜索 DOM 树
 function updateLive(msgEl, msg) {
   if (!msgEl) return;
   const bub = msgEl.querySelector('.bubble'); if (!bub) return;
@@ -513,7 +586,6 @@ async function sendMessage() {
   const am = { role: 'assistant', content: '', reasoning: '', genTime: null, modelId: a.modelId, startTime: Date.now() }; c.messages.push(am);
   saveState(); renderMessages(); streaming = true; $1('send-btn').classList.add('hidden'); inputEl.disabled = true; $1('stop-btn').classList.remove('hidden'); $1('chat-nav-tokens').textContent = `(${c.messages.length})`;
 
-  // 性能优化：直接提取刚刚渲染好的最新一条 DOM 元素节点，不用再通过下标查全局DOM
   const activeMsgEl = $1('messages').lastElementChild;
 
   abortCtrl = new AbortController(); 
@@ -539,7 +611,6 @@ async function sendMessage() {
             const d = chunk.choices?.[0]?.delta; if (d?.reasoning_content) am.reasoning += d.reasoning_content; if (d?.content) am.content += d.content;
           }
           $1('chat-nav-tokens').textContent = `(${c.messages.length})`; 
-          // 将节点直接传入更新，杜绝重复渲染卡顿
           updateLive(activeMsgEl, am); 
           scrollBottom(false, false);
         } catch(e) {}
