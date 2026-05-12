@@ -12,7 +12,7 @@
   <meta name="theme-color" content="#f0f0f5" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0a0a10" media="(prefers-color-scheme: dark)">
   
-  <link rel="manifest" id="pwa-manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQUkgQ2hhdCIsInNob3J0X25hbWUiOiJBSSBDaGF0Iiwic3RhcnRfdXJsIjoiLi8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmMGY1IiwidGhlbWVfY29sb3IiOiIjNGY0NmU1IiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NyZWN0IGZpbGw9JyUyMzRmNDZlNScgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMicvJTNFJTNDdGV4dCB4PSc1MCcgeT0nNjgnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nNTInJTNFJUYwJTlGJUE0JTk2JTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiIxOTJ4MTkyIDUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQUkgQ2hhdCIsInNob3J0X25hbWUiOiJBSSBDaGF0Iiwic3RhcnRfdXJsIjoiLi8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmMGY1IiwidGhlbWVfY29sb3IiOiIjNGY0NmU1IiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NyZWN0IGZpbGw9JyUyMzRmNDZlNScgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMicvJTNFJTNDdGV4dCB4PSc1MCcgeT0nNjgnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nNTInJTNFJUYwJTlGJUE0JTk2JTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiIxOTJ4MTkyIDUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f46e5' width='100' height='100' rx='22'/><text x='50' y='68' text-anchor='middle' font-size='52'>🤖</text></svg>">
 
   <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
@@ -23,6 +23,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
   <link rel="stylesheet" href="./style.css">
+  <!-- 业务逻辑脚本统一在 Head 用 defer 加载 -->
+  <script src="./script.js" defer></script>
 </head>
 <body>
 <div id="app">
@@ -36,19 +38,19 @@
         <button class="nav-btn accent" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
       </div>
     </div>
-    <div class="scrollable-container"><div id="ast-list"></div></div>
+    <div class="scrollable-container" id="ast-list"></div>
   </div>
 
   <!-- CHAT PAGE -->
   <div class="chat-page" id="chat-page">
     <div class="navbar">
       <div class="nav-left"><button class="nav-btn" id="chat-back"><i class="ph ph-arrow-left"></i></button></div>
-      <div class="nav-center" id="chat-title-area">
+      <div class="nav-center">
         <span class="asst-name" id="chat-asst-name">助手</span>
         <div class="topic-row" id="topic-toggle">
           <span class="topic-name" id="chat-topic-name">新话题</span>
           <span class="nav-tokens" id="chat-nav-tokens">(0)</span>
-          <span class="topic-arr"><i class="ph ph-caret-down"></i></span>
+          <span class="topic-arr ph ph-caret-down"></span>
         </div>
       </div>
       <div class="nav-right"><button class="nav-btn" id="settings-btn"><i class="ph ph-gear"></i></button></div>
@@ -96,7 +98,7 @@
   <div class="overlay-full" id="dialog-overlay">
     <div class="modal-card">
       <div class="modal-msg" id="dialog-msg"></div>
-      <div class="field mb-16 hidden" id="dialog-input-wrap"><input type="text" id="dialog-input" class="text-center"></div>
+      <div class="field mb-16 hidden" id="dialog-input-wrap"><input id="dialog-input" class="text-center"></div>
       <div class="modal-actions">
         <button class="btn-cancel" id="dialog-cancel">取消</button>
         <button class="btn-ok" id="dialog-ok">确定</button>
@@ -109,7 +111,7 @@
   <!-- TOPICS DRAWER -->
   <div class="drawer drawer-left" id="topics-drawer">
     <div class="drawer-head">
-      <h3 class="flex-center"><i class="ph ph-list-dashes" style="margin-right:6px"></i> 历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
+      <h3 class="flex-center"><i class="ph ph-list-dashes"></i>&nbsp;历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
       <button class="nav-btn" id="close-topics"><i class="ph ph-x"></i></button>
     </div>
     <div class="drawer-body">
@@ -129,7 +131,7 @@
     <div class="sheet-handle"></div><div class="sheet-title">添加助手</div>
     <div class="sheet-body">
       <div class="field"><label>所属分组</label><select id="new-ast-group"></select></div>
-      <div class="field"><label>助手名称</label><input type="text" id="new-ast-name" placeholder="如 编程助手"></div>
+      <div class="field"><label>助手名称</label><input id="new-ast-name" placeholder="如 编程助手"></div>
       <div class="field"><label>系统提示词</label><textarea id="new-ast-prompt" rows="3">你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。</textarea></div>
       <button class="btn-primary mt-8" id="create-ast"><i class="ph-fill ph-sparkle"></i> 创建助手</button>
     </div>
@@ -161,7 +163,5 @@
   <div class="toast" id="toast"></div>
   <input type="file" id="import-file" accept=".json" class="hidden">
 </div>
-
-<script src="./script.js" defer></script>
 </body>
 </html>
