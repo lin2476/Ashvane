@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/webdav/(.*)",
-      "destination": "https://dav.jianguoyun.com/dav/$1"
+      "source": "/webdav-proxy/:path*",
+      "destination": "https://dav.jianguoyun.com/dav/:path*"
     }
   ]
 }
