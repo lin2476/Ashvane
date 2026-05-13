@@ -333,16 +333,44 @@ on('import-file', 'change', e => {
 });
 
 // ==================== DROPDOWNS ====================
+let _dropdownActiveHandler = null;
+let _dropdownAnchor = null;
+
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); if(!dd) return;
+  
+  // 如果点击的是已经展开菜单的同一个按钮，则直接关闭
+  if (dd.classList.contains('show') && _dropdownAnchor === anchor) {
+    return hideDropdown();
+  }
+  
+  _dropdownAnchor = anchor;
   dd.innerHTML = items.map((item, i) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${i}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight;
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`; dd.classList.add('show');
-  const clickHandler = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); off(document, 'click', clickHandler); };
-  setTimeout(() => on(document, 'click', clickHandler), 10);
+  
+  // 挂载新的监听器前，确保旧的已被彻底清理
+  if (_dropdownActiveHandler) off(document, 'click', _dropdownActiveHandler);
+  
+  _dropdownActiveHandler = e => { 
+    if (e.target.closest('.dropdown-header')) return; 
+    const item = e.target.closest('.dropdown-item'); 
+    if (item) onSelect(items[item.dataset.idx].value); 
+    hideDropdown(); 
+  };
+  setTimeout(() => on(document, 'click', _dropdownActiveHandler), 10);
 }
-const hideDropdown = () => $1('dropdown-menu')?.classList.remove('show');
+
+const hideDropdown = () => { 
+  const dd = $1('dropdown-menu');
+  if (dd) dd.classList.remove('show'); 
+  if (_dropdownActiveHandler) { 
+    off(document, 'click', _dropdownActiveHandler); 
+    _dropdownActiveHandler = null; 
+  } 
+  _dropdownAnchor = null; 
+};
 
 // ==================== CHAT STREAM & EVENTS ====================
 const chatC = $1('chat-container');
@@ -459,6 +487,15 @@ document.addEventListener('click', async e => {
   }
 
   // 3. Ast List interactions
+  if (e.target.closest('#add-group-btn')) {
+    const name = await showDialog('请输入新建分组名称', true);
+    if (name?.trim()) {
+      state.groups.push({ id: genId(), name: name.trim(), expanded: true });
+      saveState(); 
+      renderAstList(); 
+      toast('<i class="ph-fill ph-check-circle"></i> 已创建分组');
+    }
+  }
   if (e.target.closest('#add-ast-btn')) { populateGroupSelect(DEFAULT_GRP); openSheet('add-ast-sheet'); }
   if (e.target.closest('#create-ast')) {
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
