@@ -306,16 +306,59 @@ function renderSettings() {
   `;
 }
 
+// 优化的合并逻辑
 async function mergeData(data, promptMsg) {
   if (!await showDialog(promptMsg)) return false;
-  (data.groups ||[]).forEach(g => { if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); });
-  data.assistants?.forEach(ia => {
-    const fa = fixAsst(ia), lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name)); fa.groupId = lg ? lg.id : DEFAULT_GRP;
-    const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
-    if (ex) fa.conversations.forEach(ic => { if (!ex.conversations.some(c => c.id === ic.id && c.messages.length === ic.messages.length)) { ic.id = genId(); ex.conversations.push(ic); } }); else state.assistants.push(fa);
+  let newTopics = 0, updatedTopics = 0, newMessages = 0;
+
+  (data.groups ||[]).forEach(g => { 
+    if (!state.groups.find(x => x.id === g.id || x.name === g.name)) state.groups.push(g); 
   });
-  ['activeAstId', 'deepseekKey', 'geminiKey', 'geminiBaseUrl', 'geminiModels', 'darkMode', 'webdavUser', 'webdavToken'].forEach(k => { if (data[k] !== undefined) state[k] = data[k]; });
-  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); return true;
+  
+  (data.assistants ||[]).forEach(ia => {
+    const fa = fixAsst(ia);
+    const lg = state.groups.find(g => g.id === fa.groupId || g.name === (data.groups?.find(x=>x.id===fa.groupId)?.name)); 
+    fa.groupId = lg ? lg.id : DEFAULT_GRP;
+    
+    const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
+    if (ex) {
+      fa.conversations.forEach(ic => {
+        // 根据 ID 或 标题准确匹配对话历史，防止同名同组生成重复话题
+        const exConv = ex.conversations.find(c => c.id === ic.id || c.title === ic.title);
+        if (exConv) {
+          const icStr = JSON.stringify(ic.messages);
+          const exStr = JSON.stringify(exConv.messages);
+          // 如果对方记录的消息条数更多，或者在同等长度下内容被变更过，则视为需要同步更新
+          if (ic.messages.length > exConv.messages.length || (ic.messages.length === exConv.messages.length && icStr !== exStr)) {
+            newMessages += Math.max(0, ic.messages.length - exConv.messages.length);
+            updatedTopics++;
+            exConv.messages = ic.messages;
+            exConv.title = ic.title; // 确保标题也同步为最新
+            if (exConv.id !== ic.id) exConv.id = ic.id; 
+          }
+        } else {
+          // 纯粹新增话题
+          ex.conversations.push(ic);
+          newTopics++;
+          newMessages += ic.messages.length;
+        }
+      });
+      // 话题合并完利用内部 genId（基于时间戳）让最近新建/修改的话题排序自动靠前
+      ex.conversations.sort((a, b) => b.id.localeCompare(a.id));
+    } else {
+      state.assistants.push(fa);
+      newTopics += fa.conversations.length;
+      newMessages += fa.conversations.reduce((sum, c) => sum + c.messages.length, 0);
+    }
+  });
+  
+  // 仅在导入文件确实含有对应配置项（且不为空）时才覆盖本地配置，避免导入空串冲掉本设备原有API Key
+  ['activeAstId', 'deepseekKey', 'geminiKey', 'geminiBaseUrl', 'geminiModels', 'darkMode', 'webdavUser', 'webdavToken'].forEach(k => { 
+    if (data[k] !== undefined && data[k] !== '') state[k] = data[k]; 
+  });
+  
+  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); 
+  return { newTopics, updatedTopics, newMessages };
 }
 
 function getWebDAVAuth() {
@@ -325,10 +368,17 @@ function getWebDAVAuth() {
 }
 const fetchDAV = (p, auth, m='GET', b=null, h={}) => fetch(`/webdav-proxy/AIChat/${p}`, { method: m, headers: { Authorization: auth, ...(b ? {'Content-Type': 'application/json'} : {}), ...h }, body: b ? JSON.stringify(b) : null });
 
+// 本地文件导入
 on('import-file', 'change', e => {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = async ev => { try { const data = JSON.parse(ev.target.result).data || JSON.parse(ev.target.result); if (await mergeData(data, '导入将深度合并数据，确认吗？')) toast('导入成功'); } catch(err) { toast('文件格式错误'); } };
+  reader.onload = async ev => { 
+    try { 
+      const data = JSON.parse(ev.target.result).data || JSON.parse(ev.target.result); 
+      const stats = await mergeData(data, '导入将深度合并数据，确认吗？\n(完全相同的话题将自动覆盖并更新)'); 
+      if (stats) toast(`导入成功：新增 ${stats.newTopics} 话题，更新 ${stats.updatedTopics} 话题，增补 ${stats.newMessages} 消息`, 3500); 
+    } catch(err) { toast('文件格式错误'); } 
+  };
   reader.readAsText(file); e.target.value = '';
 });
 
@@ -460,7 +510,6 @@ const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(
 const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show'); closeDrawers(); };
 
 // ==================== GLOBAL EVENT DELEGATION ====================
-// 使用单一的全局 Click 监听，解决动态内容与浮层按钮事件绑定的失效问题
 document.addEventListener('click', async e => {
   // 1. Navbar & Drawer controls
   if (e.target.closest('#chat-back')) goToAsts();
@@ -564,6 +613,7 @@ document.addEventListener('click', async e => {
         toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功');
       }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
     }
+    // WebDAV 云端拉取优化，并衔接强化版的 mergeData 逻辑
     else if (e.target.closest('#data-pull')) {
       const auth = getWebDAVAuth(), btn = e.target.closest('#data-pull'); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
       fetchDAV('backup_index.json', auth, 'GET', null, { 'Cache-Control': 'no-cache, no-store, must-revalidate' }).then(async res => { 
@@ -573,9 +623,16 @@ document.addEventListener('click', async e => {
         const valids = (await Promise.all(files.map(async f => { try { return (await fetchDAV(f, auth, 'HEAD', null, { 'Cache-Control': 'no-cache' })).ok ? f : null; } catch(e) { return null; } }))).filter(Boolean);
         if (!valids.length) throw new Error('云端备份实际已被删除，请重新推送');
         if (valids.length < files.length) fetchDAV('backup_index.json', auth, 'PUT', valids).catch(()=>{});
+        
         showDropdown(btn, [{ isHeader: true, label: '选择要拉取的云端备份' }, ...valids.map(f => ({ label: f, value: f, icon: '<i class="ph ph-file-json"></i>' }))], async val => {
           toast(`<i class="ph ph-hourglass"></i> 正在拉取 ${val}...`);
-          try { const r = await fetchDAV(val, auth, 'GET', null, { 'Cache-Control': 'no-cache' }); if (!r.ok) throw new Error(`HTTP ${r.status}`); const json = await r.json(); if (await mergeData(json.data || json, '确认拉取并深度合并吗？')) toast('<i class="ph-fill ph-check-circle"></i> 云端拉取成功'); } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
+          try { 
+            const r = await fetchDAV(val, auth, 'GET', null, { 'Cache-Control': 'no-cache' }); 
+            if (!r.ok) throw new Error(`HTTP ${r.status}`); 
+            const json = await r.json(); 
+            const stats = await mergeData(json.data || json, '确认拉取并深度合并吗？\n(完全相同的话题将自动覆盖并更新)'); 
+            if (stats) toast(`云端拉取成功：新增 ${stats.newTopics} 话题，更新 ${stats.updatedTopics} 话题，增补 ${stats.newMessages} 消息`, 3500); 
+          } catch(err) { toast(`<i class="ph-fill ph-warning-circle"></i> 解析失败: ${err.message}`); }
         });
       }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`, 4000));
     }
@@ -605,7 +662,6 @@ document.addEventListener('click', async e => {
   if (e.target.closest('#fs-prompt-save')) { const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; $1('s-save')?.click(); $1('fs-prompt-overlay')?.classList.remove('show'); }
   if (e.target.closest('#fs-prompt-close')) { const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; $1('fs-prompt-overlay')?.classList.remove('show'); }
   
-  // EDIT MODAL ACTIONS (Fixed)
   if (e.target.closest('#edit-cancel-btn')) { $1('edit-overlay')?.classList.remove('show'); editingMsg = null; }
   if (e.target.closest('#edit-save-btn')) saveEdit();
   if (e.target.closest('#edit-toggle-reasoning-btn')) {
