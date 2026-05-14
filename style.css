@@ -294,3 +294,9 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .data-actions { gap:6px; }
 .data-actions button { flex:1; padding:10px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); font-size:13px; color: var(--text-secondary); font-weight: 600; }
 .data-actions button:active { border-color:var(--accent); color: var(--text-primary); }
+
+/* ==== 修改的部分：追加全屏编辑器预览模式的样式 ==== */
+.fs-prompt-body.preview-mode textarea { display: none; }
+.fs-prompt-body.preview-mode #fs-prompt-preview { display: block; overflow-y: auto; background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 12px; }
+.fs-prompt-body:not(.preview-mode) #fs-prompt-preview { display: none; }
+.fs-prompt-body.preview-mode #fs-prompt-tb button[data-md], .fs-prompt-body.preview-mode #fs-prompt-tb .toolbar-divider { display: none; }
