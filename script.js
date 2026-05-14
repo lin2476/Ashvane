@@ -505,19 +505,23 @@ const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show')
 // ==================== FS PROMPT EDITOR LOGIC (Vditor Integration) ====================
 let vditorInstance = null;
 let fsPromptOriginalValue = '';
+let fsPromptChanged = false; // Tracking if edits were made
 let ignoreNextPopState = false;
 
 async function handleFsPromptClose(fromPopState = false) {
-  const currentValue = vditorInstance ? vditorInstance.getValue() : '';
-  if (currentValue !== fsPromptOriginalValue) {
+  if (fsPromptChanged) {
     const save = await showDialog('有未保存的修改，是否保存？');
     if (save) {
       const sp = $1('s-prompt'); 
-      if (sp) sp.value = currentValue; 
-      $1('s-save')?.click(); 
+      if (sp && vditorInstance) {
+          sp.value = vditorInstance.getValue(); 
+          $1('s-save')?.click();
+      }
     }
   }
   $1('fs-prompt-overlay')?.classList.remove('show');
+  fsPromptChanged = false; // Reset on close
+  
   if (!fromPopState && history.state?.page === 'fs-prompt') {
     ignoreNextPopState = true;
     history.back();
@@ -660,9 +664,10 @@ document.addEventListener('click', async e => {
       const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
       const themeSw = e.target.closest('#s-theme'); if (themeSw) { themeSw.classList.toggle('active'); const tl = $1('theme-label'); if(tl) tl.innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
       
-      // Open Vditor
+      // Open Vditor Fullscreen Modal
       if (e.target.closest('#s-prompt-fs-btn')) { 
         fsPromptOriginalValue = $1('s-prompt')?.value || '';
+        fsPromptChanged = false;
         $1('fs-prompt-overlay')?.classList.add('show'); 
         history.pushState({ page: 'fs-prompt' }, '');
 
@@ -675,17 +680,12 @@ document.addEventListener('click', async e => {
             vditorInstance = new Vditor('fs-prompt-vditor', {
                 mode: 'ir',
                 height: '100%',
-                toolbarConfig: { pin: true },
                 cache: { enable: false },
                 value: fsPromptOriginalValue,
                 theme: state.darkMode ? 'dark' : 'classic',
                 icon: 'material',
-                toolbar: [
-                    'headings', 'bold', 'italic', 'strike', '|',
-                    'list', 'ordered-list', 'check', '|',
-                    'quote', 'line', 'code', 'inline-code', '|',
-                    'undo', 'redo'
-                ]
+                toolbar: ['undo', 'redo'], // Keep in DOM for programmatic clicks, but hidden via CSS
+                input: () => { fsPromptChanged = true; } // Lock the edit state to prompt upon close
             });
         } else {
             vditorInstance.setValue(fsPromptOriginalValue);
@@ -695,13 +695,29 @@ document.addEventListener('click', async e => {
     }
   }
 
-  // 7. Fullscreen Prompt Editor & Edit Modal
+  // 7. Fullscreen Prompt Custom Toolbar Actions
+  if (e.target.closest('#fs-prompt-tb')) {
+    const btn = e.target.closest('button[data-md]'); 
+    if (btn && vditorInstance) { 
+      const action = btn.dataset.md;
+      if (action === 'undo') {
+          const b = document.querySelector('.vditor-toolbar__item[data-type="undo"] button');
+          if (b) b.click(); else document.execCommand('undo');
+      } else if (action === 'redo') {
+          const b = document.querySelector('.vditor-toolbar__item[data-type="redo"] button');
+          if (b) b.click(); else document.execCommand('redo');
+      } else if (action === 'heading') {
+          vditorInstance.insertValue('\n# ');
+      }
+    } 
+  }
+
   if (e.target.closest('#fs-prompt-save')) { 
     const sp = $1('s-prompt'); 
-    if(sp && vditorInstance) {
+    if (sp && vditorInstance) {
         sp.value = vditorInstance.getValue(); 
-        fsPromptOriginalValue = sp.value; // 同步当前值，防止退出时再次询问
-        $1('s-save')?.click(); // 触发主保存逻辑，这里会自动弹 Toast
+        fsPromptChanged = false; // Successfully saved, reset change tracking
+        $1('s-save')?.click(); // Triggers global saveState and toast, without closing the overlay
     } 
   }
 
@@ -709,6 +725,7 @@ document.addEventListener('click', async e => {
     handleFsPromptClose();
   }
   
+  // 8. Edit Msg Modal
   if (e.target.closest('#edit-cancel-btn')) { $1('edit-overlay')?.classList.remove('show'); editingMsg = null; }
   if (e.target.closest('#edit-save-btn')) saveEdit();
   if (e.target.closest('#edit-toggle-reasoning-btn')) {
