@@ -249,8 +249,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .topic-item .tmeta { font-size:10px; color:var(--text-secondary); }
 
 .topic-rename-input { padding:5px 8px; flex:1; min-width:0; font-weight:600; }
-.new-topic-btn { width:100%; padding:10px; border:2px dashed rgba(128,128,128,.2); border-radius:var(--radius-md); background:transparent; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:10px; transition:all var(--tr); display:flex; align-items:center; justify-content:center; gap:6px; }
-.new-topic-btn:active { background:var(--accent-light); }
 
 .section { margin-bottom:22px; }
 .field { margin-bottom:14px; }
