@@ -151,9 +151,9 @@
         <span class="prompt-title">系统提示词</span>
       </div>
       <div class="prompt-toolbar" id="fs-prompt-tb">
+        <button id="fs-prompt-toggle-mode" title="纯文本模式"><i class="ph ph-file-text"></i></button>
         <button data-md="undo" title="撤销"><i class="ph ph-arrow-u-up-left"></i></button>
         <button data-md="redo" title="重做"><i class="ph ph-arrow-u-up-right"></i></button>
-        <button data-md="heading" title="标题">H</button>
       </div>
       <div class="fs-prompt-head-right">
         <button id="fs-prompt-save" title="保存" class="btn-save-prompt">保存</button>
@@ -161,6 +161,7 @@
     </div>
     <div class="fs-prompt-body">
       <div id="fs-prompt-vditor"></div>
+      <textarea id="fs-prompt-raw-textarea" class="hidden" placeholder="输入纯文本系统提示词…"></textarea>
     </div>
   </div>
 
