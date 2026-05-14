@@ -27,6 +27,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
   
+  <!-- 引入 Vditor (即时渲染 Markdown 编辑器) -->
+  <link rel="stylesheet" href="https://unpkg.com/vditor@3.10.6/dist/index.css" />
+  <script src="https://unpkg.com/vditor@3.10.6/dist/index.min.js" defer></script>
+
   <link rel="stylesheet" href="./style.css">
   <script src="./script.js" defer></script>
 </head>
@@ -143,30 +147,13 @@
   <div class="fs-prompt-overlay" id="fs-prompt-overlay">
     <div class="fs-prompt-head">
       <span class="prompt-title"><i class="ph ph-pencil-simple"></i> 编辑系统提示词</span>
-      <button class="nav-btn" id="fs-prompt-close"><i class="ph ph-x"></i></button>
+      <div class="flex-center" style="gap:8px;">
+        <button id="fs-prompt-save" title="保存" class="btn-save-prompt"><i class="ph ph-floppy-disk"></i> 保存</button>
+        <button class="nav-btn" id="fs-prompt-close"><i class="ph ph-x"></i></button>
+      </div>
     </div>
     <div class="fs-prompt-body">
-      <div class="prompt-toolbar" id="fs-prompt-tb">
-        <button id="fs-prompt-toggle-md" title="预览模式"><i class="ph ph-eye"></i></button>
-        <div class="toolbar-divider edit-only"></div>
-        <button data-md="undo" title="撤销" class="edit-only"><i class="ph ph-arrow-u-up-left"></i></button>
-        <button data-md="redo" title="重做" class="edit-only"><i class="ph ph-arrow-u-up-right"></i></button>
-        <div class="toolbar-divider edit-only"></div>
-        <button data-md="heading" title="标题" class="edit-only">H</button>
-        <button data-md="bold" title="粗体" class="edit-only">B</button>
-        <button data-md="list" title="列表" class="edit-only">•</button>
-        <button data-md="code" title="代码" class="edit-only">&lt;/&gt;</button>
-        <button data-md="quote" title="引用" class="edit-only">❝</button>
-        <button id="fs-prompt-save" title="保存并应用" class="btn-save-prompt"><i class="ph ph-floppy-disk"></i></button>
-      </div>
-      <div id="fs-prompt-preview" class="hidden">
-        <div class="msg ai">
-          <div class="bubble">
-            <div class="markdown-body"></div>
-          </div>
-        </div>
-      </div>
-      <textarea id="fs-prompt-textarea" placeholder="输入系统提示词…"></textarea>
+      <div id="fs-prompt-vditor"></div>
     </div>
   </div>
 
