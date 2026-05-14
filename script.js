@@ -568,7 +568,7 @@ document.addEventListener('click', async e => {
   if (e.target.closest('#chat-back')) goToAsts();
   if (e.target.closest('#topic-toggle')) { e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); }
   if (e.target.closest('#settings-btn')) { renderSettings(); openSheet('settings-drawer'); }
-  if (e.target.closest('#close-topics') || e.target.closest('#close-settings') || e.target.closest('#overlay')) closeAll();
+  if (e.target.closest('#close-settings') || e.target.closest('#overlay')) closeAll();
 
   // 2. Chat Input Controls
   if (e.target.closest('#send-btn')) sendMessage();
