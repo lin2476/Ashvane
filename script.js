@@ -323,27 +323,23 @@ async function mergeData(data, promptMsg) {
     const ex = state.assistants.find(a => a.id === fa.id || a.name === fa.name);
     if (ex) {
       fa.conversations.forEach(ic => {
-        // 根据 ID 或 标题准确匹配对话历史，防止同名同组生成重复话题
         const exConv = ex.conversations.find(c => c.id === ic.id || c.title === ic.title);
         if (exConv) {
           const icStr = JSON.stringify(ic.messages);
           const exStr = JSON.stringify(exConv.messages);
-          // 如果对方记录的消息条数更多，或者在同等长度下内容被变更过，则视为需要同步更新
           if (ic.messages.length > exConv.messages.length || (ic.messages.length === exConv.messages.length && icStr !== exStr)) {
             newMessages += Math.max(0, ic.messages.length - exConv.messages.length);
             updatedTopics++;
             exConv.messages = ic.messages;
-            exConv.title = ic.title; // 确保标题也同步为最新
+            exConv.title = ic.title; 
             if (exConv.id !== ic.id) exConv.id = ic.id; 
           }
         } else {
-          // 纯粹新增话题
           ex.conversations.push(ic);
           newTopics++;
           newMessages += ic.messages.length;
         }
       });
-      // 话题合并完利用内部 genId（基于时间戳）让最近新建/修改的话题排序自动靠前
       ex.conversations.sort((a, b) => b.id.localeCompare(a.id));
     } else {
       state.assistants.push(fa);
@@ -352,7 +348,6 @@ async function mergeData(data, promptMsg) {
     }
   });
   
-  // 仅在导入文件确实含有对应配置项（且不为空）时才覆盖本地配置，避免导入空串冲掉本设备原有API Key
   ['activeAstId', 'deepseekKey', 'geminiKey', 'geminiBaseUrl', 'geminiModels', 'darkMode', 'webdavUser', 'webdavToken'].forEach(k => { 
     if (data[k] !== undefined && data[k] !== '') state[k] = data[k]; 
   });
@@ -389,7 +384,6 @@ let _dropdownAnchor = null;
 function showDropdown(anchor, items, onSelect) {
   const dd = $1('dropdown-menu'); if(!dd) return;
   
-  // 如果点击的是已经展开菜单的同一个按钮，则直接关闭
   if (dd.classList.contains('show') && _dropdownAnchor === anchor) {
     return hideDropdown();
   }
@@ -400,7 +394,6 @@ function showDropdown(anchor, items, onSelect) {
   let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`; dd.classList.add('show');
   
-  // 挂载新的监听器前，确保旧的已被彻底清理
   if (_dropdownActiveHandler) off(document, 'click', _dropdownActiveHandler);
   
   _dropdownActiveHandler = e => { 
@@ -509,44 +502,13 @@ const openSheet = id => { closeDrawers(); $1('overlay')?.classList.add('show'); 
 const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show'); closeDrawers(); };
 
-// ==================== FS PROMPT EDITOR LOGIC ====================
+// ==================== FS PROMPT EDITOR LOGIC (Vditor Integration) ====================
+let vditorInstance = null;
 let fsPromptOriginalValue = '';
-let fsPromptMode = 'preview';
 let ignoreNextPopState = false;
 
-function setFsPromptMode(mode) {
-  fsPromptMode = mode;
-  const isPreview = mode === 'preview';
-  const fta = $1('fs-prompt-textarea');
-  const fp = $1('fs-prompt-preview');
-  const btn = $1('fs-prompt-toggle-md');
-  if (btn) {
-    btn.innerHTML = isPreview ? '<i class="ph ph-pencil-simple"></i>' : '<i class="ph ph-eye"></i>';
-    btn.title = isPreview ? '编辑模式' : '预览模式';
-  }
-  
-  if (isPreview) {
-    fta.classList.add('hidden');
-    fp.classList.remove('hidden');
-    const mdBody = fp.querySelector('.markdown-body');
-    if (mdBody) {
-      mdBody.innerHTML = md(fta.value);
-      enhanceCodeBlocks(fp);
-    }
-  } else {
-    fp.classList.add('hidden');
-    fta.classList.remove('hidden');
-  }
-  
-  document.querySelectorAll('#fs-prompt-tb .edit-only').forEach(el => {
-    el.classList.toggle('hidden', isPreview);
-  });
-}
-
 async function handleFsPromptClose(fromPopState = false) {
-  const fta = $1('fs-prompt-textarea');
-  if (!fta) return;
-  const currentValue = fta.value;
+  const currentValue = vditorInstance ? vditorInstance.getValue() : '';
   if (currentValue !== fsPromptOriginalValue) {
     const save = await showDialog('有未保存的修改，是否保存？');
     if (save) {
@@ -697,43 +659,52 @@ document.addEventListener('click', async e => {
     } else {
       const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
       const themeSw = e.target.closest('#s-theme'); if (themeSw) { themeSw.classList.toggle('active'); const tl = $1('theme-label'); if(tl) tl.innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
+      
+      // Open Vditor
       if (e.target.closest('#s-prompt-fs-btn')) { 
-        const fta=$1('fs-prompt-textarea'); 
-        if(fta){ 
-          fsPromptOriginalValue = $1('s-prompt')?.value || '';
-          fta.value = fsPromptOriginalValue; 
-          $1('fs-prompt-overlay')?.classList.add('show'); 
-          setFsPromptMode('preview');
-          history.pushState({ page: 'fs-prompt' }, '');
-        } 
+        fsPromptOriginalValue = $1('s-prompt')?.value || '';
+        $1('fs-prompt-overlay')?.classList.add('show'); 
+        history.pushState({ page: 'fs-prompt' }, '');
+
+        if (!window.Vditor) {
+            toast('<i class="ph ph-hourglass"></i> 编辑器加载中...');
+            return;
+        }
+
+        if (!vditorInstance) {
+            vditorInstance = new Vditor('fs-prompt-vditor', {
+                mode: 'ir',
+                height: '100%',
+                toolbarConfig: { pin: true },
+                cache: { enable: false },
+                value: fsPromptOriginalValue,
+                theme: state.darkMode ? 'dark' : 'classic',
+                icon: 'material',
+                toolbar: [
+                    'headings', 'bold', 'italic', 'strike', '|',
+                    'list', 'ordered-list', 'check', '|',
+                    'quote', 'line', 'code', 'inline-code', '|',
+                    'undo', 'redo'
+                ]
+            });
+        } else {
+            vditorInstance.setValue(fsPromptOriginalValue);
+            vditorInstance.setTheme(state.darkMode ? 'dark' : 'classic', state.darkMode ? 'dark' : 'light');
+        }
       }
     }
   }
 
   // 7. Fullscreen Prompt Editor & Edit Modal
-  if (e.target.closest('#fs-prompt-tb')) { 
-    if (e.target.closest('#fs-prompt-toggle-md')) {
-      setFsPromptMode(fsPromptMode === 'preview' ? 'edit' : 'preview');
-      return;
-    }
-    const btn = e.target.closest('button[data-md]'); 
-    if (btn) { 
-      const ta = $1('fs-prompt-textarea');
-      const ins = (p, s = '') => { ta.setRangeText(p + ta.value.substring(ta.selectionStart, ta.selectionEnd) + s, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input')); };
-      const ptb = { undo: () => document.execCommand('undo'), redo: () => document.execCommand('redo'), bold: () => ins('**', '**'), code: () => ins('`', '`'), heading: () => ins('## '), list: () => ins('- '), quote: () => ins('> ') };
-      if(ta) { ta.focus(); ptb[btn.dataset.md]?.(); }
-    } 
-  }
   if (e.target.closest('#fs-prompt-save')) { 
     const sp = $1('s-prompt'); 
-    if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; 
-    $1('s-save')?.click(); 
-    $1('fs-prompt-overlay')?.classList.remove('show'); 
-    if (history.state?.page === 'fs-prompt') {
-      ignoreNextPopState = true;
-      history.back();
-    }
+    if(sp && vditorInstance) {
+        sp.value = vditorInstance.getValue(); 
+        fsPromptOriginalValue = sp.value; // 同步当前值，防止退出时再次询问
+        $1('s-save')?.click(); // 触发主保存逻辑，这里会自动弹 Toast
+    } 
   }
+
   if (e.target.closest('#fs-prompt-close')) { 
     handleFsPromptClose();
   }
