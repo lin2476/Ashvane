@@ -146,10 +146,17 @@
   <!-- FULLSCREEN PROMPT EDITOR -->
   <div class="fs-prompt-overlay" id="fs-prompt-overlay">
     <div class="fs-prompt-head">
-      <span class="prompt-title"><i class="ph ph-pencil-simple"></i> 编辑系统提示词</span>
-      <div class="flex-center" style="gap:8px;">
-        <button id="fs-prompt-save" title="保存" class="btn-save-prompt"><i class="ph ph-floppy-disk"></i> 保存</button>
-        <button class="nav-btn" id="fs-prompt-close"><i class="ph ph-x"></i></button>
+      <div class="fs-prompt-head-left">
+        <button class="nav-btn" id="fs-prompt-close" title="返回"><i class="ph ph-arrow-left"></i></button>
+        <span class="prompt-title">系统提示词</span>
+      </div>
+      <div class="prompt-toolbar" id="fs-prompt-tb">
+        <button data-md="undo" title="撤销"><i class="ph ph-arrow-u-up-left"></i></button>
+        <button data-md="redo" title="重做"><i class="ph ph-arrow-u-up-right"></i></button>
+        <button data-md="heading" title="标题">H</button>
+      </div>
+      <div class="fs-prompt-head-right">
+        <button id="fs-prompt-save" title="保存" class="btn-save-prompt">保存</button>
       </div>
     </div>
     <div class="fs-prompt-body">
