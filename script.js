@@ -49,7 +49,7 @@ let state = {
   activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false, webdavUser: '', webdavToken: ''
 };
 
-let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false, fsPromptOriginalValue = '';
+let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
 const svgIco = (n, c) => c ? `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}-color.svg" style="width:1.2em; height:1.2em; vertical-align:middle;">` : `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
 
@@ -509,6 +509,59 @@ const openSheet = id => { closeDrawers(); $1('overlay')?.classList.add('show'); 
 const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
 const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show'); closeDrawers(); };
 
+// ==================== FS PROMPT EDITOR LOGIC ====================
+let fsPromptOriginalValue = '';
+let fsPromptMode = 'preview';
+let ignoreNextPopState = false;
+
+function setFsPromptMode(mode) {
+  fsPromptMode = mode;
+  const isPreview = mode === 'preview';
+  const fta = $1('fs-prompt-textarea');
+  const fp = $1('fs-prompt-preview');
+  const btn = $1('fs-prompt-toggle-md');
+  if (btn) {
+    btn.innerHTML = isPreview ? '<i class="ph ph-pencil-simple"></i>' : '<i class="ph ph-eye"></i>';
+    btn.title = isPreview ? '编辑模式' : '预览模式';
+  }
+  
+  if (isPreview) {
+    fta.classList.add('hidden');
+    fp.classList.remove('hidden');
+    const mdBody = fp.querySelector('.markdown-body');
+    if (mdBody) {
+      mdBody.innerHTML = md(fta.value);
+      enhanceCodeBlocks(fp);
+    }
+  } else {
+    fp.classList.add('hidden');
+    fta.classList.remove('hidden');
+  }
+  
+  document.querySelectorAll('#fs-prompt-tb .edit-only').forEach(el => {
+    el.classList.toggle('hidden', isPreview);
+  });
+}
+
+async function handleFsPromptClose(fromPopState = false) {
+  const fta = $1('fs-prompt-textarea');
+  if (!fta) return;
+  const currentValue = fta.value;
+  if (currentValue !== fsPromptOriginalValue) {
+    const save = await showDialog('有未保存的修改，是否保存？');
+    if (save) {
+      const sp = $1('s-prompt'); 
+      if (sp) sp.value = currentValue; 
+      $1('s-save')?.click(); 
+    }
+  }
+  $1('fs-prompt-overlay')?.classList.remove('show');
+  if (!fromPopState && history.state?.page === 'fs-prompt') {
+    ignoreNextPopState = true;
+    history.back();
+  }
+}
+
 // ==================== GLOBAL EVENT DELEGATION ====================
 document.addEventListener('click', async e => {
   // 1. Navbar & Drawer controls
@@ -650,10 +703,7 @@ document.addEventListener('click', async e => {
           fsPromptOriginalValue = $1('s-prompt')?.value || '';
           fta.value = fsPromptOriginalValue; 
           $1('fs-prompt-overlay')?.classList.add('show'); 
-          const fpb = $1('fs-prompt-overlay').querySelector('.fs-prompt-body');
-          if (fpb) fpb.classList.add('preview-mode');
-          const tbtn = $1('fs-prompt-toggle-btn'); if(tbtn) tbtn.innerHTML = '<i class="ph ph-pencil-simple"></i>';
-          const pv = $1('fs-prompt-preview'); if(pv){ pv.innerHTML = md(fta.value); enhanceCodeBlocks(pv); }
+          setFsPromptMode('preview');
           history.pushState({ page: 'fs-prompt' }, '');
         } 
       }
@@ -662,19 +712,8 @@ document.addEventListener('click', async e => {
 
   // 7. Fullscreen Prompt Editor & Edit Modal
   if (e.target.closest('#fs-prompt-tb')) { 
-    const tbtn = e.target.closest('#fs-prompt-toggle-btn');
-    if (tbtn) {
-      const fpb = $1('fs-prompt-overlay').querySelector('.fs-prompt-body');
-      const isPreview = fpb.classList.toggle('preview-mode');
-      const fta = $1('fs-prompt-textarea');
-      if (isPreview) {
-        tbtn.innerHTML = '<i class="ph ph-pencil-simple"></i>';
-        const pv = $1('fs-prompt-preview');
-        if (pv) { pv.innerHTML = md(fta.value); enhanceCodeBlocks(pv); }
-      } else {
-        tbtn.innerHTML = '<i class="ph ph-eye"></i>';
-        fta.focus();
-      }
+    if (e.target.closest('#fs-prompt-toggle-md')) {
+      setFsPromptMode(fsPromptMode === 'preview' ? 'edit' : 'preview');
       return;
     }
     const btn = e.target.closest('button[data-md]'); 
@@ -685,32 +724,18 @@ document.addEventListener('click', async e => {
       if(ta) { ta.focus(); ptb[btn.dataset.md]?.(); }
     } 
   }
-  
   if (e.target.closest('#fs-prompt-save')) { 
-    const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; 
-    fsPromptOriginalValue = sp?.value || ''; // 保存后刷新比对基准
+    const sp = $1('s-prompt'); 
+    if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; 
     $1('s-save')?.click(); 
     $1('fs-prompt-overlay')?.classList.remove('show'); 
-    history.back();
-  }
-  if (e.target.closest('#fs-prompt-close')) { 
-    const fta = $1('fs-prompt-textarea');
-    if (fta && fta.value !== fsPromptOriginalValue) {
-      showDialog('您有未保存的修改，是否保存？\n点击【确定】保存并退出，点击【取消】放弃修改。', false).then(act => {
-        if (act) {
-          const sp = $1('s-prompt'); if(sp) sp.value = fta.value; 
-          fsPromptOriginalValue = sp?.value || '';
-          $1('s-save')?.click();
-        } else {
-          fta.value = fsPromptOriginalValue;
-        }
-        $1('fs-prompt-overlay')?.classList.remove('show');
-        history.back();
-      });
-    } else {
-      $1('fs-prompt-overlay')?.classList.remove('show');
+    if (history.state?.page === 'fs-prompt') {
+      ignoreNextPopState = true;
       history.back();
     }
+  }
+  if (e.target.closest('#fs-prompt-close')) { 
+    handleFsPromptClose();
   }
   
   if (e.target.closest('#edit-cancel-btn')) { $1('edit-overlay')?.classList.remove('show'); editingMsg = null; }
@@ -735,27 +760,16 @@ if(userInput) {
 
 await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
 window.addEventListener('popstate', async e => { 
-  const fsOverlay = $1('fs-prompt-overlay');
-  if (fsOverlay && fsOverlay.classList.contains('show')) {
-    const fta = $1('fs-prompt-textarea');
-    if (fta && fta.value !== fsPromptOriginalValue) {
-      history.pushState({ page: 'fs-prompt' }, ''); 
-      const act = await showDialog('您有未保存的修改，是否保存？\n点击【确定】保存并退出，点击【取消】放弃修改。', false);
-      if (act) {
-        const sp = $1('s-prompt'); if(sp) sp.value = fta.value;
-        fsPromptOriginalValue = sp?.value || '';
-        $1('s-save')?.click();
-      } else {
-        fta.value = fsPromptOriginalValue;
-      }
-      fsOverlay.classList.remove('show');
-      history.back();
-    } else {
-      fsOverlay.classList.remove('show');
-    }
+  if (ignoreNextPopState) {
+    ignoreNextPopState = false;
+    return;
+  }
+  if ($1('fs-prompt-overlay')?.classList.contains('show')) {
+    await handleFsPromptClose(true);
     return;
   }
   closeAll(); 
-  if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
+  if (e.state?.page === 'chat') goToChat(e.state.id, true); 
+  else goToAsts(true); 
 });
 })();
