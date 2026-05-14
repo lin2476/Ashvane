@@ -506,6 +506,7 @@ const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show')
 let vditorInstance = null;
 let fsPromptOriginalValue = '';
 let fsPromptChanged = false; // Tracking if edits were made
+let isFsPromptRawMode = false;
 let ignoreNextPopState = false;
 
 async function handleFsPromptClose(fromPopState = false) {
@@ -513,8 +514,8 @@ async function handleFsPromptClose(fromPopState = false) {
     const save = await showDialog('有未保存的修改，是否保存？');
     if (save) {
       const sp = $1('s-prompt'); 
-      if (sp && vditorInstance) {
-          sp.value = vditorInstance.getValue(); 
+      if (sp) {
+          sp.value = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : ''); 
           $1('s-save')?.click();
       }
     }
@@ -527,6 +528,13 @@ async function handleFsPromptClose(fromPopState = false) {
     history.back();
   }
 }
+
+// 捕获原生文本框编辑，标记状态锁
+document.addEventListener('input', e => {
+  if (e.target.id === 'fs-prompt-raw-textarea') {
+      fsPromptChanged = true;
+  }
+});
 
 // ==================== GLOBAL EVENT DELEGATION ====================
 document.addEventListener('click', async e => {
@@ -668,6 +676,14 @@ document.addEventListener('click', async e => {
       if (e.target.closest('#s-prompt-fs-btn')) { 
         fsPromptOriginalValue = $1('s-prompt')?.value || '';
         fsPromptChanged = false;
+        isFsPromptRawMode = false;
+        
+        const toggleBtn = $1('fs-prompt-toggle-mode');
+        if (toggleBtn) { toggleBtn.innerHTML = '<i class="ph ph-file-text"></i>'; toggleBtn.title = '纯文本模式'; }
+        
+        $1('fs-prompt-raw-textarea')?.classList.add('hidden');
+        $1('fs-prompt-vditor')?.classList.remove('hidden');
+
         $1('fs-prompt-overlay')?.classList.add('show'); 
         history.pushState({ page: 'fs-prompt' }, '');
 
@@ -697,25 +713,52 @@ document.addEventListener('click', async e => {
 
   // 7. Fullscreen Prompt Custom Toolbar Actions
   if (e.target.closest('#fs-prompt-tb')) {
+    if (e.target.closest('#fs-prompt-toggle-mode')) {
+      const btn = e.target.closest('#fs-prompt-toggle-mode');
+      const rawTa = $1('fs-prompt-raw-textarea');
+      const vdContainer = $1('fs-prompt-vditor');
+      
+      isFsPromptRawMode = !isFsPromptRawMode;
+      if (isFsPromptRawMode) {
+        rawTa.value = vditorInstance ? vditorInstance.getValue() : '';
+        vdContainer.classList.add('hidden');
+        rawTa.classList.remove('hidden');
+        btn.innerHTML = '<i class="ph ph-markdown-logo"></i>';
+        btn.title = 'Markdown模式';
+      } else {
+        if (vditorInstance) vditorInstance.setValue(rawTa.value);
+        rawTa.classList.add('hidden');
+        vdContainer.classList.remove('hidden');
+        btn.innerHTML = '<i class="ph ph-file-text"></i>';
+        btn.title = '纯文本模式';
+      }
+      return;
+    }
+
     const btn = e.target.closest('button[data-md]'); 
-    if (btn && vditorInstance) { 
+    if (btn) { 
       const action = btn.dataset.md;
-      if (action === 'undo') {
-          const b = document.querySelector('.vditor-toolbar__item[data-type="undo"] button');
-          if (b) b.click(); else document.execCommand('undo');
-      } else if (action === 'redo') {
-          const b = document.querySelector('.vditor-toolbar__item[data-type="redo"] button');
-          if (b) b.click(); else document.execCommand('redo');
-      } else if (action === 'heading') {
-          vditorInstance.insertValue('\n# ');
+      if (isFsPromptRawMode) {
+          const ta = $1('fs-prompt-raw-textarea');
+          ta.focus();
+          if (action === 'undo') document.execCommand('undo');
+          if (action === 'redo') document.execCommand('redo');
+      } else if (vditorInstance) {
+          if (action === 'undo') {
+              const b = document.querySelector('.vditor-toolbar__item[data-type="undo"] button');
+              if (b) b.click(); else document.execCommand('undo');
+          } else if (action === 'redo') {
+              const b = document.querySelector('.vditor-toolbar__item[data-type="redo"] button');
+              if (b) b.click(); else document.execCommand('redo');
+          }
       }
     } 
   }
 
   if (e.target.closest('#fs-prompt-save')) { 
     const sp = $1('s-prompt'); 
-    if (sp && vditorInstance) {
-        sp.value = vditorInstance.getValue(); 
+    if (sp) {
+        sp.value = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : sp.value); 
         fsPromptChanged = false; // Successfully saved, reset change tracking
         $1('s-save')?.click(); // Triggers global saveState and toast, without closing the overlay
     } 
