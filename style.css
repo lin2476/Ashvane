@@ -268,9 +268,14 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .prompt-toolbar button { width:30px; height:28px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--bg-tertiary); color:var(--text-secondary); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; transition:all var(--tr); font-family:var(--mono); }
 .prompt-toolbar button:active { background:var(--accent-light); color:var(--accent); }
 
+/* FULLSCREEN PROMPT EDITOR */
 .fs-prompt-head { padding:calc(12px + var(--safe-t)) 14px 12px; border-bottom:0.5px solid rgba(128,128,128,.1); flex-shrink:0; }
 .fs-prompt-body { flex:1; display:flex; flex-direction:column; padding:8px; overflow:hidden; }
 .fs-prompt-body textarea { flex:1; width:100%; padding:10px; border:none; border-radius:var(--radius-md); background:var(--bg-tertiary); color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
+#fs-prompt-preview { flex:1; width:100%; overflow-y:auto; background:var(--bg-tertiary); border-radius:var(--radius-md); padding:10px; }
+#fs-prompt-preview .msg { max-width: 100%; width: 100%; }
+#fs-prompt-preview .bubble { padding: 0; background: transparent; }
+.edit-only.hidden, #fs-prompt-preview.hidden, .fs-prompt-body textarea.hidden { display: none !important; }
 
 .slider-row { gap:10px; }
 .slider-row input[type="range"] { flex:1; height:4px; border-radius:2px; background:var(--border-subtle); outline:none; padding:0; border:none; }
@@ -294,9 +299,3 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .data-actions { gap:6px; }
 .data-actions button { flex:1; padding:10px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); font-size:13px; color: var(--text-secondary); font-weight: 600; }
 .data-actions button:active { border-color:var(--accent); color: var(--text-primary); }
-
-/* ==== 修改的部分：追加全屏编辑器预览模式的样式 ==== */
-.fs-prompt-body.preview-mode textarea { display: none; }
-.fs-prompt-body.preview-mode #fs-prompt-preview { display: block; overflow-y: auto; background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 12px; }
-.fs-prompt-body:not(.preview-mode) #fs-prompt-preview { display: none; }
-.fs-prompt-body.preview-mode #fs-prompt-tb button[data-md], .fs-prompt-body.preview-mode #fs-prompt-tb .toolbar-divider { display: none; }
