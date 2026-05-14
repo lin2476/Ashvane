@@ -49,7 +49,7 @@ let state = {
   activeAstId: null, deepseekKey: '', geminiKey: '', geminiBaseUrl: DEFAULT_GM_URL, geminiModels: 'gemini-2.5-pro, gemini-3.0-flash', darkMode: false, webdavUser: '', webdavToken: ''
 };
 
-let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
+let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false, fsPromptOriginalValue = '';
 
 const svgIco = (n, c) => c ? `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}-color.svg" style="width:1.2em; height:1.2em; vertical-align:middle;">` : `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
 
@@ -613,7 +613,6 @@ document.addEventListener('click', async e => {
         toast('<i class="ph-fill ph-check-circle"></i> 同步至云端成功');
       }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
     }
-    // WebDAV 云端拉取优化，并衔接强化版的 mergeData 逻辑
     else if (e.target.closest('#data-pull')) {
       const auth = getWebDAVAuth(), btn = e.target.closest('#data-pull'); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在获取云端备份列表...');
       fetchDAV('backup_index.json', auth, 'GET', null, { 'Cache-Control': 'no-cache, no-store, must-revalidate' }).then(async res => { 
@@ -645,12 +644,39 @@ document.addEventListener('click', async e => {
     } else {
       const head = e.target.closest('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
       const themeSw = e.target.closest('#s-theme'); if (themeSw) { themeSw.classList.toggle('active'); const tl = $1('theme-label'); if(tl) tl.innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
-      if (e.target.closest('#s-prompt-fs-btn')) { const fta=$1('fs-prompt-textarea'); if(fta){ fta.value = $1('s-prompt')?.value || ''; $1('fs-prompt-overlay')?.classList.add('show'); fta.focus(); } }
+      if (e.target.closest('#s-prompt-fs-btn')) { 
+        const fta=$1('fs-prompt-textarea'); 
+        if(fta){ 
+          fsPromptOriginalValue = $1('s-prompt')?.value || '';
+          fta.value = fsPromptOriginalValue; 
+          $1('fs-prompt-overlay')?.classList.add('show'); 
+          const fpb = $1('fs-prompt-overlay').querySelector('.fs-prompt-body');
+          if (fpb) fpb.classList.add('preview-mode');
+          const tbtn = $1('fs-prompt-toggle-btn'); if(tbtn) tbtn.innerHTML = '<i class="ph ph-pencil-simple"></i>';
+          const pv = $1('fs-prompt-preview'); if(pv){ pv.innerHTML = md(fta.value); enhanceCodeBlocks(pv); }
+          history.pushState({ page: 'fs-prompt' }, '');
+        } 
+      }
     }
   }
 
   // 7. Fullscreen Prompt Editor & Edit Modal
   if (e.target.closest('#fs-prompt-tb')) { 
+    const tbtn = e.target.closest('#fs-prompt-toggle-btn');
+    if (tbtn) {
+      const fpb = $1('fs-prompt-overlay').querySelector('.fs-prompt-body');
+      const isPreview = fpb.classList.toggle('preview-mode');
+      const fta = $1('fs-prompt-textarea');
+      if (isPreview) {
+        tbtn.innerHTML = '<i class="ph ph-pencil-simple"></i>';
+        const pv = $1('fs-prompt-preview');
+        if (pv) { pv.innerHTML = md(fta.value); enhanceCodeBlocks(pv); }
+      } else {
+        tbtn.innerHTML = '<i class="ph ph-eye"></i>';
+        fta.focus();
+      }
+      return;
+    }
     const btn = e.target.closest('button[data-md]'); 
     if (btn) { 
       const ta = $1('fs-prompt-textarea');
@@ -659,8 +685,33 @@ document.addEventListener('click', async e => {
       if(ta) { ta.focus(); ptb[btn.dataset.md]?.(); }
     } 
   }
-  if (e.target.closest('#fs-prompt-save')) { const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; $1('s-save')?.click(); $1('fs-prompt-overlay')?.classList.remove('show'); }
-  if (e.target.closest('#fs-prompt-close')) { const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; $1('fs-prompt-overlay')?.classList.remove('show'); }
+  
+  if (e.target.closest('#fs-prompt-save')) { 
+    const sp = $1('s-prompt'); if(sp) sp.value = $1('fs-prompt-textarea')?.value || ''; 
+    fsPromptOriginalValue = sp?.value || ''; // 保存后刷新比对基准
+    $1('s-save')?.click(); 
+    $1('fs-prompt-overlay')?.classList.remove('show'); 
+    history.back();
+  }
+  if (e.target.closest('#fs-prompt-close')) { 
+    const fta = $1('fs-prompt-textarea');
+    if (fta && fta.value !== fsPromptOriginalValue) {
+      showDialog('您有未保存的修改，是否保存？\n点击【确定】保存并退出，点击【取消】放弃修改。', false).then(act => {
+        if (act) {
+          const sp = $1('s-prompt'); if(sp) sp.value = fta.value; 
+          fsPromptOriginalValue = sp?.value || '';
+          $1('s-save')?.click();
+        } else {
+          fta.value = fsPromptOriginalValue;
+        }
+        $1('fs-prompt-overlay')?.classList.remove('show');
+        history.back();
+      });
+    } else {
+      $1('fs-prompt-overlay')?.classList.remove('show');
+      history.back();
+    }
+  }
   
   if (e.target.closest('#edit-cancel-btn')) { $1('edit-overlay')?.classList.remove('show'); editingMsg = null; }
   if (e.target.closest('#edit-save-btn')) saveEdit();
@@ -683,5 +734,28 @@ if(userInput) {
 }
 
 await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
-window.addEventListener('popstate', e => { closeAll(); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); });
+window.addEventListener('popstate', async e => { 
+  const fsOverlay = $1('fs-prompt-overlay');
+  if (fsOverlay && fsOverlay.classList.contains('show')) {
+    const fta = $1('fs-prompt-textarea');
+    if (fta && fta.value !== fsPromptOriginalValue) {
+      history.pushState({ page: 'fs-prompt' }, ''); 
+      const act = await showDialog('您有未保存的修改，是否保存？\n点击【确定】保存并退出，点击【取消】放弃修改。', false);
+      if (act) {
+        const sp = $1('s-prompt'); if(sp) sp.value = fta.value;
+        fsPromptOriginalValue = sp?.value || '';
+        $1('s-save')?.click();
+      } else {
+        fta.value = fsPromptOriginalValue;
+      }
+      fsOverlay.classList.remove('show');
+      history.back();
+    } else {
+      fsOverlay.classList.remove('show');
+    }
+    return;
+  }
+  closeAll(); 
+  if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
+});
 })();
