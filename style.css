@@ -103,7 +103,8 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 
 /* AI消息分布点位：与主题更融合的次级色 */
 .density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:all 0.2s; pointer-events:auto; min-height:4px; }
-.density-dot:hover { opacity:0.8; transform:scaleX(1.15); background:var(--text-primary); }
+/* 删除了变深色(text-primary)逻辑，降低透明度增幅，点击后不再喧宾夺主 */
+.density-dot:hover { opacity:0.45; transform:scaleX(1.1); }
 
 /* 当前滚动视口的指示滑块：悬浮在地图之上 */
 #density-thumb { position:absolute; right:0; width:100%; background:var(--text-primary); opacity:0.25; border-radius:3px; z-index:12; pointer-events:none; transition:opacity 0.2s; }
