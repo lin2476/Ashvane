@@ -79,6 +79,10 @@ async function loadState() {
       state = { ...state, ...p }; await IDB.set(STORAGE_KEY, state);
     }
   } catch(e) {}
+  
+  if (!state.assistants || !state.assistants.length) {
+    state.assistants = [{ id: 'default-ast', name: '全能助手', systemPrompt: '你是一个高通用性、严谨且富有协作精神的AI助手。你的核心目标不是扮演特定角色，而是动态适配用户的真实需求。', temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', groupId: DEFAULT_GRP, conversations: [], activeConvId: null }];
+  }
   state.assistants = state.assistants.map(fixAsst);
 }
 
@@ -96,7 +100,7 @@ function fixAsst(a) {
   };
 }
 
-const getActiveAst = () => state.assistants.find(a => a.id === state.activeAstId) || null;
+const getActiveAst = () => state.assistants.find(a => a.id === state.activeAstId) || state.assistants[0];
 const getActiveConv = (a = getActiveAst()) => a?.conversations.find(c => c.id === a.activeConvId) || null;
 function ensureConv(a) {
   let c = getActiveConv(a);
@@ -139,36 +143,9 @@ function applyTheme() {
 function setupPWA() { if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());`], { type: 'application/javascript' }))).catch(()=>{}); }
 
 // ==================== NAVIGATION ====================
-function setAppState(s) {
-  const app = $1('app');
-  if (app) {
-    app.classList.remove('state-home', 'state-chat');
-    app.classList.add(`state-${s}`);
-  }
-}
-
-function goToAsts(fromHistory = false) { 
-  if (!fromHistory && window.history.state?.page === 'chat') return window.history.back();
-  $1('ast-page')?.classList.add('active'); $1('chat-page')?.classList.remove('active'); 
-  setAppState('home');
-  if (window.innerWidth >= 900) {
-    const defaultAst = state.assistants.find(a => a.id === 'default-ast') || state.assistants[0];
-    if (defaultAst) {
-      state.activeAstId = defaultAst.id;
-      saveState();
-      renderChatPage();
-    }
-  }
-  renderAstList(); 
-}
-
-function goToChat(id, fromHistory = false) { 
+function switchAssistant(id) { 
   state.activeAstId = id; saveState(); 
-  if (!fromHistory) history.pushState({ page: 'chat', id }, '');
-  $1('ast-page')?.classList.remove('active'); $1('chat-page')?.classList.add('active'); 
-  setAppState('chat');
   renderChatPage(); closeAll(); userScrolledUp = false; scrollBottom(true, false); 
-  renderTopicList();
 }
 
 // ==================== UI RENDERING ====================
@@ -203,7 +180,7 @@ function handleAstMore(id, btn) {
   showDropdown(btn, items, async val => {
     if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { 
       state.assistants = state.assistants.filter(a => a.id !== id); 
-      if (state.activeAstId === id) { state.activeAstId = null; goToAsts(); } 
+      if (state.activeAstId === id) { state.activeAstId = state.assistants[0]?.id; switchAssistant(state.activeAstId); }
     } 
     else if (val === 'order_up' || val === 'order_down') { const tg = val === 'order_up' ? groupAsts[idx - 1] : groupAsts[idx + 1], i1 = state.assistants.indexOf(ast), i2 = state.assistants.indexOf(tg); [state.assistants[i1], state.assistants[i2]] = [state.assistants[i2], state.assistants[i1]]; } 
     else if (val.startsWith('move_')) { ast.groupId = val.replace('move_', ''); const tg = state.groups.find(g => g.id === ast.groupId); if (tg) tg.expanded = true; }
@@ -212,9 +189,9 @@ function handleAstMore(id, btn) {
 }
 
 function renderChatPage() {
-  const a = getActiveAst(); if (!a) return goToAsts();
+  const a = getActiveAst(); if (!a) return;
   const c = getActiveConv(a), m = getModelInfo(a.modelId);
-  const asstNameEl = $1('chat-asst-name'); if(asstNameEl) asstNameEl.innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph ph-chat-centered-text" style="font-weight:normal; opacity:0.8; margin-left:4px;"></i> ${a.conversations.length}` : ''}`;
+  const asstNameEl = $1('chat-asst-name'); if(asstNameEl) asstNameEl.innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph-fill ph-check-circle" style="opacity:0.6; margin-left:2px;"></i>` : ''}`;
   const topicNameEl = $1('chat-topic-name'); if(topicNameEl) topicNameEl.textContent = c ? c.title : '新话题'; 
   const navTokensEl = $1('chat-nav-tokens'); if(navTokensEl) navTokensEl.textContent = `(${c ? c.messages.length : 0})`;
   const modelChipBtn = $1('model-chip-btn'); if(modelChipBtn) modelChipBtn.innerHTML = m.iconColor;
@@ -331,7 +308,7 @@ async function mergeData(data, promptMsg) {
   }
   
   ['activeAstId', 'deepseekKey', 'geminiKey', 'geminiBaseUrl', 'geminiModels', 'darkMode', 'webdavUser', 'webdavToken'].forEach(k => { if (data[k] !== undefined && data[k] !== '') state[k] = data[k]; });
-  saveState(); applyTheme(); renderAstList(); goToAsts(); closeAll(); return { newTopics, updatedTopics, newMessages };
+  saveState(); applyTheme(); renderAstList(); renderChatPage(); closeAll(); return { newTopics, updatedTopics, newMessages };
 }
 
 const getWebDAVAuth = () => { const u = $1('s-webdavUser')?.value.trim(), t = $1('s-webdavToken')?.value.trim(); if (!u || !t) { toast('请填写坚果云账号和应用密码'); return null; } state.webdavUser = u; state.webdavToken = t; saveState(); return 'Basic ' + btoa(`${u}:${t}`); };
@@ -419,14 +396,6 @@ async function sendMessage() {
   const inputEl = $1('user-input'); if(!inputEl) return;
   const txt = inputEl.value.trim(), a = getActiveAst(); if (!txt || !a) return;
   if (isDeepSeek(a.modelId) ? !state.deepseekKey : !state.geminiKey) return toast('请先设置 API Key') || $1('settings-btn')?.click();
-
-  // 桌面端：在 Home 页发送消息时自动无缝过渡到 Chat 布局
-  if (window.innerWidth >= 900 && $1('app').classList.contains('state-home')) {
-    setAppState('chat');
-    renderTopicList();
-    history.pushState({ page: 'chat', id: a.id }, '');
-  }
-
   inputEl.value = ''; inputEl.style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt }); if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   userScrolledUp = false; renderMessages(); scrollBottom(true, true);
@@ -464,26 +433,16 @@ async function sendMessage() {
 
 const openSheet = id => { 
   closeDrawers(); 
+  $1('overlay')?.classList.add('show'); 
   $1(id)?.classList.add('open'); 
-  const ov = $1('overlay');
-  if (ov) {
-    ov.className = 'overlay'; // reset special classes
-    if (id === 'settings-drawer') ov.classList.add('for-settings');
-    if (id === 'topics-drawer') ov.classList.add('for-topics');
-    ov.classList.add('show');
-  }
-  // 注入弹窗状态到历史记录，防止物理按键直接退回主页
   if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, '');
 };
-
 const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
 const closeAll = (fromPopState = false) => { 
   hideDropdown(); 
-  const ov = $1('overlay');
-  const wasOpen = ov?.classList.contains('show') || $1('settings-drawer')?.classList.contains('open');
-  if (ov) { ov.classList.remove('show'); ov.className = 'overlay'; }
+  const wasOpen = $1('overlay')?.classList.contains('show');
+  $1('overlay')?.classList.remove('show'); 
   closeDrawers(); 
-  // 如果是 UI 主动触发关闭，且当前处于弹窗历史记录中，主动抵消掉那一层历史记录
   if (wasOpen && !fromPopState && history.state?.drawer) {
     ignoreNextPopState = true;
     history.back();
@@ -512,15 +471,9 @@ document.addEventListener('click', async e => {
   let el;
 
   // 1. Navigation & Modals
-  if ((el = get('#chat-back'))) goToAsts();
-  else if ((el = get('#topic-toggle'))) { 
-    if (window.innerWidth >= 900) return; // 桌面端禁用抽屉呼出
-    e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); 
-  }
-  else if ((el = get('#settings-btn'))) { 
-    if ($1('settings-drawer')?.classList.contains('open')) closeAll(); 
-    else { renderSettings(); openSheet('settings-drawer'); }
-  }
+  if ((el = get('#ast-drawer-btn'))) openSheet('ast-drawer');
+  else if ((el = get('#topic-toggle'))) { e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); }
+  else if ((el = get('#settings-btn'))) { renderSettings(); openSheet('settings-drawer'); }
   else if ((el = get('#close-settings')) || get('#overlay')) closeAll();
 
   // 2. Chat Input Controls
@@ -559,7 +512,7 @@ document.addEventListener('click', async e => {
     }
     const card = get('.ast-card'); if (!card) return;
     if (get('.ast-more')) { e.stopPropagation(); return handleAstMore(card.dataset.id, get('.ast-more')); }
-    goToChat(card.dataset.id);
+    switchAssistant(card.dataset.id);
   }
 
   // 4. Topics Drawer
@@ -569,7 +522,6 @@ document.addEventListener('click', async e => {
     a.activeConvId = item.dataset.cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); userScrolledUp = false; scrollBottom(true, false);
   }
   else if ((el = get('#new-topic'))) { const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } }
-  else if ((el = get('#back-to-home'))) { closeAll(); goToAsts(); }
 
   // 5. Messages
   else if ((el = get('.density-dot'))) {
@@ -669,8 +621,9 @@ document.addEventListener('click', async e => {
     const sp = $1('s-prompt'); 
     if (sp) { 
       const newVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : sp.value);
-      sp.value = newVal; fsPromptOriginalValue = newVal;
-      setTimeout(() => fsPromptChanged = false, 50);
+      sp.value = newVal; 
+      fsPromptOriginalValue = newVal; // 同步最新的基准值
+      setTimeout(() => fsPromptChanged = false, 50); // 稍微延迟重置，覆盖掉编辑器失焦产生的多余 input 事件
       $1('s-save')?.click(); 
     } 
   }
@@ -689,28 +642,26 @@ if(userInput) {
   on(userInput, 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
 }
 
-// ==================== RESPONSIVE LISTENER ====================
-window.addEventListener('resize', () => {
-  if (window.innerWidth >= 900) {
-    if ($1('app')?.classList.contains('state-home')) {
-      const currentAst = getActiveAst();
-      if (!currentAst || currentAst.id !== 'default-ast') {
-        const defaultAst = state.assistants.find(a => a.id === 'default-ast') || state.assistants[0];
-        if (defaultAst) { state.activeAstId = defaultAst.id; saveState(); renderChatPage(); }
-      }
-    }
-  }
-});
+await IDB.init().catch(()=>{}); 
+await loadState(); 
+setupPWA(); 
+applyTheme(); 
 
-await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); 
-state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
-goToAsts(true); // 使用内置导航顺便完成 Desktop 检测和页面分屏初始化
+// 默认直接选中正确的助手，直接渲染对话，不在通过页面跳转逻辑管理首页
+if (!state.activeAstId || !state.assistants.find(a => a.id === state.activeAstId)) {
+  state.activeAstId = state.assistants[0].id;
+}
+
+renderAstList(); 
+saveState(); 
+renderChatPage(); 
+scrollBottom(true, false);
 
 window.addEventListener('popstate', async e => { 
   if (ignoreNextPopState) return ignoreNextPopState = false;
   if ($1('fs-prompt-overlay')?.classList.contains('show')) return handleFsPromptClose(true);
-  if ($1('overlay')?.classList.contains('show')) { closeAll(true); return; }
   
-  closeAll(true); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
+  // 拦截设备的物理返回按键：如果存在抽屉弹窗则仅仅关闭弹窗
+  if ($1('overlay')?.classList.contains('show')) { closeAll(true); return; }
 });
 })();
