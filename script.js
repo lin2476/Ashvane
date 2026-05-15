@@ -438,14 +438,18 @@ const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show')
 let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, isFsPromptRawMode = false, ignoreNextPopState = false;
 
 async function handleFsPromptClose(fromPopState = false) {
-  if (fsPromptChanged) {
-    // 增加真实内容比对，防止编辑器内部事件引发的误判
-    const currentVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : '');
-    if (currentVal.trim() !== fsPromptOriginalValue.trim() && await showDialog('有未保存的修改，是否保存？')) {
+  // 取消带有防抖延迟的 fsPromptChanged 标志位判断，直接获取底层真实数据
+  const currentVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : '');
+  
+  // 强行比对当前值与基准值，百分百拦截未保存的修改
+  if (currentVal.trim() !== fsPromptOriginalValue.trim()) {
+    if (await showDialog('有未保存的修改，是否保存？')) {
       const sp = $1('s-prompt'); if (sp) { sp.value = currentVal; $1('s-save')?.click(); }
     }
   }
-  $1('fs-prompt-overlay')?.classList.remove('show'); fsPromptChanged = false;
+  
+  $1('fs-prompt-overlay')?.classList.remove('show'); 
+  fsPromptChanged = false;
   if (!fromPopState && history.state?.page === 'fs-prompt') { ignoreNextPopState = true; history.back(); }
 }
 document.addEventListener('input', e => { if (e.target.id === 'fs-prompt-raw-textarea') fsPromptChanged = true; });
