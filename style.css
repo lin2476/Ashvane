@@ -93,10 +93,21 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .nav-tokens { font-size:9px; background:rgba(128,128,128,0.12); padding:2px 5px; border-radius:8px; color:var(--text-secondary); font-family:var(--mono); margin-left:4px; font-weight:600; line-height:1; }
 
 #chat-wrapper { flex:1; display:flex; position:relative; min-height:0; }
-#chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 12px 14px 16px; scroll-behavior:smooth; }
-#density-map { position:absolute; top:14px; bottom:14px; left:4px; width:6px; z-index:10; border-radius:3px; background:rgba(128,128,128,0.06); }
-.density-dot { position:absolute; left:0; width:100%; background:var(--accent); opacity:0.35; border-radius:3px; cursor:pointer; transition:opacity 0.2s, background 0.2s, top 0.2s, height 0.2s; pointer-events:auto; min-height:4px; }
-.density-dot:hover { opacity:0.85; }
+/* 恢复左侧 12px 原有边距，并在右侧留出 20px 空间给地图，同时隐藏默认滚动条 */
+#chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 20px 14px 12px; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
+#chat-container::-webkit-scrollbar { display:none; }
+
+/* 地图在右侧，悬停时会微微变宽 */
+#density-map { position:absolute; top:14px; bottom:14px; right:4px; width:6px; z-index:10; border-radius:3px; background:rgba(128,128,128,0.04); transition:width 0.2s, background 0.2s; }
+#density-map:hover { width:8px; background:rgba(128,128,128,0.08); }
+
+/* AI消息分布点位：与主题更融合的次级色 */
+.density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:all 0.2s; pointer-events:auto; min-height:4px; }
+.density-dot:hover { opacity:0.8; transform:scaleX(1.15); background:var(--text-primary); }
+
+/* 当前滚动视口的指示滑块：悬浮在地图之上 */
+#density-thumb { position:absolute; right:0; width:100%; background:var(--text-primary); opacity:0.25; border-radius:3px; z-index:12; pointer-events:none; transition:opacity 0.2s; }
+#density-map:hover #density-thumb { opacity:0.5; }
 
 #messages { display:flex; flex-direction:column; gap:8px; max-width:100%; }
 .welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 20px; text-align:center; opacity:0; animation:fadeIn .4s .1s forwards; }
