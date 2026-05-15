@@ -512,6 +512,7 @@ document.addEventListener('click', async e => {
     a.activeConvId = item.dataset.cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); userScrolledUp = false; scrollBottom(true, false);
   }
   else if ((el = get('#new-topic'))) { const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } }
+  else if ((el = get('#back-to-home'))) { closeAll(); goToAsts(); }
 
   // 5. Messages
   else if ((el = get('.density-dot'))) {
