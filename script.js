@@ -417,19 +417,37 @@ const hideDropdown = () => {
 };
 
 // ==================== CHAT STREAM & EVENTS ====================
+// 更新自定义滚动滑块的位置与高度
+function updateScrollThumb() {
+  const chatC = $1('chat-container'), thumbC = $1('density-thumb');
+  if (!chatC || !thumbC) return;
+  const sHeight = chatC.scrollHeight, cHeight = chatC.clientHeight, sTop = chatC.scrollTop;
+  if (sHeight <= 0) return;
+  thumbC.style.top = (sTop / sHeight) * 100 + '%';
+  thumbC.style.height = Math.max((cHeight / sHeight) * 100, 2) + '%';
+}
+
 function updateDensityMap() {
   const map = $1('density-map'), chatC = $1('chat-container'), msgs = $1('messages');
   if (!map || !chatC || !msgs) return;
   const sHeight = chatC.scrollHeight;
   if (sHeight <= 0) return;
-  const aiMsgs = msgs.querySelectorAll('.msg.ai');
+
+  // 内部拆分为点位容器和滑块容器
+  let dotsC = $1('density-dots');
+  if (!dotsC) {
+    map.innerHTML = '<div id="density-dots"></div><div id="density-thumb"></div>';
+    dotsC = $1('density-dots');
+  }
+
   let html = '';
-  aiMsgs.forEach(msgEl => {
+  msgs.querySelectorAll('.msg.ai').forEach(msgEl => {
     const topPct = (msgEl.offsetTop / sHeight) * 100;
     const hPct = (msgEl.offsetHeight / sHeight) * 100;
     html += `<div class="density-dot" data-idx="${msgEl.dataset.index}" style="top:${topPct}%; height:${hPct}%;" title="跳至此消息"></div>`;
   });
-  map.innerHTML = html;
+  dotsC.innerHTML = html;
+  updateScrollThumb();
 }
 const chatObserver = new ResizeObserver(() => requestAnimationFrame(updateDensityMap));
 
@@ -442,7 +460,12 @@ if(chatC) {
   ['touchstart','mousedown'].forEach(ev => on(chatC, ev, setTouch(true), { passive: true }));
   ['touchend','touchcancel','mouseup'].forEach(ev => window.addEventListener(ev, setTouch(false), { passive: true }));
   chatC.addEventListener('wheel', () => userScrolledUp = true, { passive: true });
-  on(chatC, 'scroll', function() { const dist = this.scrollHeight - this.scrollTop - this.clientHeight; if (dist <= 25) userScrolledUp = false; else if (isTouching) userScrolledUp = true; $1('scroll-down')?.classList.toggle('show', dist > 200 && $1('messages').children.length > 1); });
+  on(chatC, 'scroll', function() { 
+    updateScrollThumb(); // 实时更新滑动指示器
+    const dist = this.scrollHeight - this.scrollTop - this.clientHeight; 
+    if (dist <= 25) userScrolledUp = false; else if (isTouching) userScrolledUp = true; 
+    $1('scroll-down')?.classList.toggle('show', dist > 200 && $1('messages').children.length > 1); 
+  });
 }
 const scrollBottom = (force, smooth = false) => { if (force || (!userScrolledUp && !isTouching)) requestAnimationFrame(() => chatC?.scrollTo({ top: chatC.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })); };
 
