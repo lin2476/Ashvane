@@ -240,6 +240,7 @@ function renderMessages() {
   const c = getActiveConv(); msgs.innerHTML = '';
   if (!c || !c.messages.length) return msgs.innerHTML = `<div class="welcome"><div class="emoji"><i class="ph-fill ph-sparkle"></i></div><h3>开始对话</h3><p>输入消息，点击发送按钮开始</p><div class="welcome-hints"><div class="welcome-hint" data-prompt="用简单的语言解释量子计算"><i class="ph ph-microscope"></i> 解释量子计算</div><div class="welcome-hint" data-prompt="写一首关于夏天的中国古诗"><i class="ph ph-pen-nib"></i> 写一首古诗</div><div class="welcome-hint" data-prompt="用Python写一个贪吃蛇游戏"><i class="ph ph-code"></i> 写贪吃蛇游戏</div><div class="welcome-hint" data-prompt="给我一个一周健身计划"><i class="ph ph-barbell"></i> 健身计划</div></div></div>`;
   c.messages.forEach((m, i) => msgs.appendChild(makeMsg(m, i)));
+  setTimeout(updateDensityMap, 50);
 }
 
 // ==================== EDIT MODAL ====================
@@ -416,7 +417,26 @@ const hideDropdown = () => {
 };
 
 // ==================== CHAT STREAM & EVENTS ====================
+function updateDensityMap() {
+  const map = $1('density-map'), chatC = $1('chat-container'), msgs = $1('messages');
+  if (!map || !chatC || !msgs) return;
+  const sHeight = chatC.scrollHeight;
+  if (sHeight <= 0) return;
+  const aiMsgs = msgs.querySelectorAll('.msg.ai');
+  let html = '';
+  aiMsgs.forEach(msgEl => {
+    const topPct = (msgEl.offsetTop / sHeight) * 100;
+    const hPct = (msgEl.offsetHeight / sHeight) * 100;
+    html += `<div class="density-dot" data-idx="${msgEl.dataset.index}" style="top:${topPct}%; height:${hPct}%;" title="跳至此消息"></div>`;
+  });
+  map.innerHTML = html;
+}
+const chatObserver = new ResizeObserver(() => requestAnimationFrame(updateDensityMap));
+
 const chatC = $1('chat-container');
+if (chatC) chatObserver.observe(chatC);
+if ($1('messages')) chatObserver.observe($1('messages'));
+
 let isTouching = false; const setTouch = v => () => isTouching = v;
 if(chatC) {
   ['touchstart','mousedown'].forEach(ev => on(chatC, ev, setTouch(true), { passive: true }));
@@ -605,6 +625,12 @@ document.addEventListener('click', async e => {
   if (e.target.closest('#new-topic')) { const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } }
 
   // 5. Messages interactions
+  if (e.target.closest('.density-dot')) {
+    const idx = e.target.closest('.density-dot').dataset.idx;
+    const tg = $1('messages')?.querySelector(`.msg[data-index="${idx}"]`);
+    if (tg) { $1('chat-container').scrollTo({ top: tg.offsetTop - 14, behavior: 'smooth' }); userScrolledUp = true; }
+    return;
+  }
   if (e.target.closest('#messages')) {
     const btn = e.target.closest('button[data-a]'), hint = e.target.closest('.welcome-hint'), rhead = e.target.closest('.rhead');
     if (hint) { const uinp = $1('user-input'); if(uinp) uinp.value = hint.dataset.prompt; return sendMessage(); }
