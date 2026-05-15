@@ -97,14 +97,15 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 20px 14px 12px; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
 #chat-container::-webkit-scrollbar { display:none; }
 
-/* 地图在右侧，悬停时会微微变宽 */
-#density-map { position:absolute; top:14px; bottom:14px; right:4px; width:6px; z-index:10; border-radius:3px; background:rgba(128,128,128,0.04); transition:width 0.2s, background 0.2s; }
-#density-map:hover { width:8px; background:rgba(128,128,128,0.08); }
+/* 地图外壳在右侧，悬停时仅加深背景，整体轨道不再变宽 */
+#density-map { position:absolute; top:14px; bottom:14px; right:4px; width:6px; z-index:10; border-radius:3px; background:rgba(128,128,128,0.04); transition:background 0.2s; }
+#density-map:hover { background:rgba(128,128,128,0.08); }
 
 /* AI消息分布点位：与主题更融合的次级色 */
-.density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:all 0.2s; pointer-events:auto; min-height:4px; }
-/* 删除了变深色(text-primary)逻辑，降低透明度增幅，点击后不再喧宾夺主 */
-.density-dot:hover { opacity:0.45; transform:scaleX(1.1); }
+/* 增加 transform-origin 让变宽时向左延伸，不超出屏幕右侧 */
+.density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:all 0.2s; pointer-events:auto; min-height:4px; transform-origin:right center; }
+/* 仅当前鼠标悬浮的这个锚点变宽（宽度放大为1.6倍）及轻微变亮 */
+.density-dot:hover { opacity:0.5; transform:scaleX(1.6); }
 
 /* 当前滚动视口的指示滑块：悬浮在地图之上 */
 #density-thumb { position:absolute; right:0; width:100%; background:var(--text-primary); opacity:0.25; border-radius:3px; z-index:12; pointer-events:none; transition:opacity 0.2s; }
