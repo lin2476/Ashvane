@@ -36,60 +36,42 @@
 <body>
 <div id="app">
   
-  <!-- MAIN NAVBAR -->
-  <div class="navbar">
-    <div class="nav-left nav-spacer">
-      <button class="nav-btn btn-transparent" id="ast-drawer-btn" title="助手列表"><i class="ph ph-list"></i></button>
-    </div>
-    <div class="nav-center">
-      <div class="topic-row" id="topic-toggle" title="历史话题">
+  <!-- CHAT PAGE (主视图) -->
+  <div class="chat-page" id="chat-page">
+    <div class="navbar">
+      <!-- 原返回按钮修改为助手列表抽屉触发按钮 -->
+      <div class="nav-left"><button class="nav-btn" id="ast-drawer-btn" title="助手列表"><i class="ph ph-list"></i></button></div>
+      <div class="nav-center">
         <span class="asst-name" id="chat-asst-name">助手</span>
-        <div class="topic-title-row">
+        <div class="topic-row" id="topic-toggle" title="历史话题">
           <span class="topic-name" id="chat-topic-name">新话题</span>
           <span class="nav-tokens" id="chat-nav-tokens">(0)</span>
           <span class="topic-arr ph ph-caret-down"></span>
         </div>
       </div>
+      <div class="nav-right"><button class="nav-btn" id="settings-btn" title="设置"><i class="ph ph-gear"></i></button></div>
     </div>
-    <div class="nav-right nav-spacer-right">
-      <button class="nav-btn btn-transparent" id="settings-btn" title="设置"><i class="ph ph-gear"></i></button>
+    <div id="chat-wrapper">
+      <div id="density-map"></div>
+      <div id="chat-container"><div id="messages"></div></div>
+      <button class="scroll-down" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
     </div>
-  </div>
-
-  <!-- CHAT WRAPPER -->
-  <div id="chat-wrapper">
-    <div id="density-map"></div>
-    <div id="chat-container"><div id="messages"></div></div>
-    <button class="scroll-down" id="scroll-down"><i class="ph ph-arrow-down"></i></button>
-  </div>
-  
-  <!-- INPUT CONTAINER -->
-  <div id="input-container">
-    <div id="input-box">
-      <textarea id="user-input" rows="1" placeholder="给助手发送消息，Enter 换行..." autofocus></textarea>
-      <div id="bottom-bar">
-        <div class="toolbar-left">
-          <button id="model-chip-btn" title="切换模型"></button>
-          <button id="reasoning-btn" title="推理深度"></button>
-        </div>
-        <div class="toolbar-right">
-          <button id="send-btn"><i class="ph-fill ph-paper-plane-right"></i></button>
-          <button id="stop-btn" class="hidden" title="停止生成"><div class="stop-square"></div></button>
+    
+    <div id="input-container">
+      <div id="input-box">
+        <textarea id="user-input" rows="1" placeholder="给助手发送消息，Enter 换行..." autofocus></textarea>
+        <div id="bottom-bar">
+          <div class="toolbar-left">
+            <button id="model-chip-btn" title="切换模型"></button>
+            <button id="reasoning-btn" title="推理深度"></button>
+          </div>
+          <div class="toolbar-right">
+            <button id="send-btn"><i class="ph-fill ph-paper-plane-right"></i></button>
+            <button id="stop-btn" class="hidden" title="停止生成"><div class="stop-square"></div></button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ASSISTANTS DRAWER -->
-  <div class="drawer drawer-left" id="ast-drawer">
-    <div class="drawer-head">
-      <h3 class="flex-center"><i class="ph ph-robot"></i>&nbsp;AI 助手</h3>
-      <div style="display: flex; gap: 8px;">
-        <button class="nav-btn" id="add-group-btn" title="新建分组"><i class="ph ph-folder-plus"></i></button>
-        <button class="nav-btn accent" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
-      </div>
-    </div>
-    <div class="drawer-body" id="ast-list"></div>
   </div>
 
   <!-- EDIT MODAL -->
@@ -110,7 +92,6 @@
     </div>
   </div>
 
-  <!-- MULTIPURPOSE DIALOG (Confirm & Prompt) -->
   <div class="overlay-full" id="dialog-overlay">
     <div class="modal-card">
       <div class="modal-msg" id="dialog-msg"></div>
@@ -124,15 +105,30 @@
 
   <div class="overlay" id="overlay"></div>
 
-  <!-- TOPICS DRAWER -->
-  <div class="drawer drawer-left" id="topics-drawer">
+  <!-- ASSISTANT DRAWER (重组的原首页) -->
+  <div class="drawer drawer-left" id="ast-drawer">
     <div class="drawer-head">
-      <h3 class="flex-center"><i class="ph ph-list-dashes"></i>&nbsp;历史话题 <span class="nav-tokens" id="drawer-total-tokens">0k</span></h3>
+      <h3 class="flex-center" style="margin:0; font-size:16px; gap:8px;"><i class="ph-fill ph-robot"></i> 助手列表</h3>
       <div style="display: flex; gap: 8px;">
-        <button class="nav-btn" id="new-topic" title="新建话题"><i class="ph ph-plus"></i></button>
+        <button class="nav-btn btn-transparent" id="add-group-btn" title="新建分组"><i class="ph ph-folder-plus"></i></button>
+        <button class="nav-btn accent" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
       </div>
     </div>
-    <div class="drawer-body">
+    <div class="drawer-body" style="padding: 10px 12px;">
+      <div id="ast-list"></div>
+    </div>
+  </div>
+
+  <!-- TOPICS MODAL (重构为居中弹出交互) -->
+  <div class="topics-modal" id="topics-drawer">
+    <div class="topics-modal-head">
+      <h3 class="flex-center" style="margin:0; font-size:16px; gap:8px;">
+        <i class="ph ph-list-dashes"></i> 历史话题 
+        <span class="nav-tokens" id="drawer-total-tokens">0k</span>
+      </h3>
+      <button class="nav-btn" id="new-topic" title="新建话题"><i class="ph ph-plus"></i></button>
+    </div>
+    <div class="topics-modal-body">
       <div id="topic-list"></div>
     </div>
   </div>
@@ -143,7 +139,6 @@
     <div class="drawer-body" id="settings-body"></div>
   </div>
 
-  <!-- ADD ASSISTANT SHEET -->
   <div class="sheet" id="add-ast-sheet">
     <div class="sheet-handle"></div><div class="sheet-title">添加助手</div>
     <div class="sheet-body">
@@ -154,11 +149,10 @@
     </div>
   </div>
 
-  <!-- FULLSCREEN PROMPT EDITOR -->
   <div class="fs-prompt-overlay" id="fs-prompt-overlay">
     <div class="fs-prompt-head">
       <div class="fs-prompt-head-left">
-        <button class="nav-btn btn-transparent" id="fs-prompt-close" title="返回"><i class="ph ph-arrow-left"></i></button>
+        <button class="nav-btn" id="fs-prompt-close" title="返回"><i class="ph ph-arrow-left"></i></button>
         <span class="prompt-title">系统提示词</span>
       </div>
       <div class="prompt-toolbar" id="fs-prompt-tb">
