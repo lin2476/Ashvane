@@ -139,15 +139,36 @@ function applyTheme() {
 function setupPWA() { if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());`], { type: 'application/javascript' }))).catch(()=>{}); }
 
 // ==================== NAVIGATION ====================
+function setAppState(s) {
+  const app = $1('app');
+  if (app) {
+    app.classList.remove('state-home', 'state-chat');
+    app.classList.add(`state-${s}`);
+  }
+}
+
 function goToAsts(fromHistory = false) { 
   if (!fromHistory && window.history.state?.page === 'chat') return window.history.back();
-  $1('ast-page')?.classList.add('active'); $1('chat-page')?.classList.remove('active'); renderAstList(); 
+  $1('ast-page')?.classList.add('active'); $1('chat-page')?.classList.remove('active'); 
+  setAppState('home');
+  if (window.innerWidth >= 900) {
+    const defaultAst = state.assistants.find(a => a.id === 'default-ast') || state.assistants[0];
+    if (defaultAst) {
+      state.activeAstId = defaultAst.id;
+      saveState();
+      renderChatPage();
+    }
+  }
+  renderAstList(); 
 }
+
 function goToChat(id, fromHistory = false) { 
   state.activeAstId = id; saveState(); 
   if (!fromHistory) history.pushState({ page: 'chat', id }, '');
   $1('ast-page')?.classList.remove('active'); $1('chat-page')?.classList.add('active'); 
+  setAppState('chat');
   renderChatPage(); closeAll(); userScrolledUp = false; scrollBottom(true, false); 
+  renderTopicList();
 }
 
 // ==================== UI RENDERING ====================
@@ -180,7 +201,10 @@ function handleAstMore(id, btn) {
   if (idx < groupAsts.length - 1) items.push({ label: '下移', value: 'order_down', icon: '<i class="ph ph-arrow-down"></i>' });
 
   showDropdown(btn, items, async val => {
-    if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { state.assistants = state.assistants.filter(a => a.id !== id); if (state.activeAstId === id) state.activeAstId = null; } 
+    if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { 
+      state.assistants = state.assistants.filter(a => a.id !== id); 
+      if (state.activeAstId === id) { state.activeAstId = null; goToAsts(); } 
+    } 
     else if (val === 'order_up' || val === 'order_down') { const tg = val === 'order_up' ? groupAsts[idx - 1] : groupAsts[idx + 1], i1 = state.assistants.indexOf(ast), i2 = state.assistants.indexOf(tg); [state.assistants[i1], state.assistants[i2]] = [state.assistants[i2], state.assistants[i1]]; } 
     else if (val.startsWith('move_')) { ast.groupId = val.replace('move_', ''); const tg = state.groups.find(g => g.id === ast.groupId); if (tg) tg.expanded = true; }
     saveState(); renderAstList();
@@ -395,6 +419,14 @@ async function sendMessage() {
   const inputEl = $1('user-input'); if(!inputEl) return;
   const txt = inputEl.value.trim(), a = getActiveAst(); if (!txt || !a) return;
   if (isDeepSeek(a.modelId) ? !state.deepseekKey : !state.geminiKey) return toast('请先设置 API Key') || $1('settings-btn')?.click();
+
+  // 桌面端：在 Home 页发送消息时自动无缝过渡到 Chat 布局
+  if (window.innerWidth >= 900 && $1('app').classList.contains('state-home')) {
+    setAppState('chat');
+    renderTopicList();
+    history.pushState({ page: 'chat', id: a.id }, '');
+  }
+
   inputEl.value = ''; inputEl.style.height = 'auto';
   const c = ensureConv(a); c.messages.push({ role: 'user', content: txt }); if (c.title === '新话题') c.title = txt.substring(0, 28) + (txt.length > 28 ? '…' : '');
   userScrolledUp = false; renderMessages(); scrollBottom(true, true);
@@ -432,16 +464,24 @@ async function sendMessage() {
 
 const openSheet = id => { 
   closeDrawers(); 
-  $1('overlay')?.classList.add('show'); 
   $1(id)?.classList.add('open'); 
+  const ov = $1('overlay');
+  if (ov) {
+    ov.className = 'overlay'; // reset special classes
+    if (id === 'settings-drawer') ov.classList.add('for-settings');
+    if (id === 'topics-drawer') ov.classList.add('for-topics');
+    ov.classList.add('show');
+  }
   // 注入弹窗状态到历史记录，防止物理按键直接退回主页
   if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, '');
 };
+
 const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
 const closeAll = (fromPopState = false) => { 
   hideDropdown(); 
-  const wasOpen = $1('overlay')?.classList.contains('show');
-  $1('overlay')?.classList.remove('show'); 
+  const ov = $1('overlay');
+  const wasOpen = ov?.classList.contains('show') || $1('settings-drawer')?.classList.contains('open');
+  if (ov) { ov.classList.remove('show'); ov.className = 'overlay'; }
   closeDrawers(); 
   // 如果是 UI 主动触发关闭，且当前处于弹窗历史记录中，主动抵消掉那一层历史记录
   if (wasOpen && !fromPopState && history.state?.drawer) {
@@ -454,16 +494,12 @@ const closeAll = (fromPopState = false) => {
 let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, isFsPromptRawMode = false, ignoreNextPopState = false;
 
 async function handleFsPromptClose(fromPopState = false) {
-  // 取消带有防抖延迟的 fsPromptChanged 标志位判断，直接获取底层真实数据
   const currentVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : '');
-  
-  // 强行比对当前值与基准值，百分百拦截未保存的修改
   if (currentVal.trim() !== fsPromptOriginalValue.trim()) {
     if (await showDialog('有未保存的修改，是否保存？')) {
       const sp = $1('s-prompt'); if (sp) { sp.value = currentVal; $1('s-save')?.click(); }
     }
   }
-  
   $1('fs-prompt-overlay')?.classList.remove('show'); 
   fsPromptChanged = false;
   if (!fromPopState && history.state?.page === 'fs-prompt') { ignoreNextPopState = true; history.back(); }
@@ -472,14 +508,19 @@ document.addEventListener('input', e => { if (e.target.id === 'fs-prompt-raw-tex
 
 // ==================== GLOBAL EVENT DELEGATION (Optimized) ====================
 document.addEventListener('click', async e => {
-  // 基于容器级判断的高性能查找，大幅减少冗余的 DOM 操作查询
   const get = sel => e.target.closest(sel);
   let el;
 
   // 1. Navigation & Modals
   if ((el = get('#chat-back'))) goToAsts();
-  else if ((el = get('#topic-toggle'))) { e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); }
-  else if ((el = get('#settings-btn'))) { renderSettings(); openSheet('settings-drawer'); }
+  else if ((el = get('#topic-toggle'))) { 
+    if (window.innerWidth >= 900) return; // 桌面端禁用抽屉呼出
+    e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); 
+  }
+  else if ((el = get('#settings-btn'))) { 
+    if ($1('settings-drawer')?.classList.contains('open')) closeAll(); 
+    else { renderSettings(); openSheet('settings-drawer'); }
+  }
   else if ((el = get('#close-settings')) || get('#overlay')) closeAll();
 
   // 2. Chat Input Controls
@@ -628,9 +669,8 @@ document.addEventListener('click', async e => {
     const sp = $1('s-prompt'); 
     if (sp) { 
       const newVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : sp.value);
-      sp.value = newVal; 
-      fsPromptOriginalValue = newVal; // 同步最新的基准值
-      setTimeout(() => fsPromptChanged = false, 50); // 稍微延迟重置，覆盖掉编辑器失焦产生的多余 input 事件
+      sp.value = newVal; fsPromptOriginalValue = newVal;
+      setTimeout(() => fsPromptChanged = false, 50);
       $1('s-save')?.click(); 
     } 
   }
@@ -649,12 +689,26 @@ if(userInput) {
   on(userInput, 'input', function() { this.style.height = 'auto'; this.style.height = `${Math.min(this.scrollHeight, 220)}px`; });
 }
 
-await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); renderAstList(); state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
+// ==================== RESPONSIVE LISTENER ====================
+window.addEventListener('resize', () => {
+  if (window.innerWidth >= 900) {
+    if ($1('app')?.classList.contains('state-home')) {
+      const currentAst = getActiveAst();
+      if (!currentAst || currentAst.id !== 'default-ast') {
+        const defaultAst = state.assistants.find(a => a.id === 'default-ast') || state.assistants[0];
+        if (defaultAst) { state.activeAstId = defaultAst.id; saveState(); renderChatPage(); }
+      }
+    }
+  }
+});
+
+await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); 
+state.activeAstId = null; saveState(); history.replaceState({ page: 'home' }, '');
+goToAsts(true); // 使用内置导航顺便完成 Desktop 检测和页面分屏初始化
+
 window.addEventListener('popstate', async e => { 
   if (ignoreNextPopState) return ignoreNextPopState = false;
   if ($1('fs-prompt-overlay')?.classList.contains('show')) return handleFsPromptClose(true);
-  
-  // 拦截设备的物理返回按键：如果存在抽屉弹窗则仅仅关闭弹窗，终止继续回退页面
   if ($1('overlay')?.classList.contains('show')) { closeAll(true); return; }
   
   closeAll(true); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
