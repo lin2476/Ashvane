@@ -47,7 +47,7 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .navbar, .drawer-head, .t-row, .code-block-header, .edit-card-header, .ast-group-header { justify-content:space-between; }
 .flex-center { justify-content: center; }
 
-.nav-btn, #send-btn, #stop-btn, .icon-btn, .scroll-down { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
+.nav-btn, #send-btn, #stop-btn, .icon-btn { display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; transition:all var(--tr); flex-shrink:0; }
 .nav-btn:active, .icon-btn:active, #stop-btn:active, #send-btn:not(:disabled):active { transform:scale(.9); }
 .welcome-hint:active, .btn-primary:active, .btn-ok:active { transform:scale(.97); }
 .btn-primary:active, .btn-ok:active { opacity:.85; }
@@ -93,20 +93,15 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .nav-tokens { font-size:9px; background:rgba(128,128,128,0.12); padding:2px 5px; border-radius:8px; color:var(--text-secondary); font-family:var(--mono); margin-left:4px; font-weight:600; line-height:1; }
 
 #chat-wrapper { flex:1; display:flex; position:relative; min-height:0; }
-/* 恢复左侧 12px 原有边距，并在右侧留出 20px 空间给地图，同时隐藏默认滚动条 */
 #chat-container { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 20px 14px 12px; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
 #chat-container::-webkit-scrollbar { display:none; }
 
-/* 地图外壳在右侧，悬停时仅加深背景，整体轨道不再变宽 */
 #density-map { position:absolute; top:14px; bottom:14px; right:4px; width:6px; z-index:10; border-radius:3px; background:rgba(128,128,128,0.04); transition:background 0.2s; }
 #density-map:hover { background:rgba(128,128,128,0.08); }
 
-/* AI消息分布点位：与主题更融合的次级色 */
 .density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:opacity 0.2s; pointer-events:auto; min-height:4px; }
-/* 取消变宽效果，仅保留极其轻微的亮度反馈 */
 .density-dot:hover { opacity:0.5; }
 
-/* 当前滚动视口的指示滑块：悬浮在地图之上 */
 #density-thumb { position:absolute; right:0; width:100%; background:var(--text-primary); opacity:0.25; border-radius:3px; z-index:12; pointer-events:none; transition:opacity 0.2s; }
 #density-map:hover #density-thumb { opacity:0.5; }
 
@@ -225,11 +220,6 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .drawer-head { padding:calc(14px + var(--safe-t)) 16px 14px; border-bottom:0.5px solid rgba(128,128,128,.1); }
 .drawer-head h3 { font-size:15px; font-weight:700; }
 .drawer-body { flex:1; overflow-y:auto; padding:14px; }
-.sheet { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:700px; max-height:70vh; background:var(--bg-secondary); z-index:350; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 -4px 20px rgba(0,0,0,.2); will-change: transform; }
-.sheet.open { transform:translateX(-50%) translateY(0); }
-.sheet-handle { width:32px; height:4px; border-radius:2px; background:rgba(128,128,128,.2); margin:10px auto 6px; flex-shrink:0; }
-.sheet-title { font-size:14px; font-weight:700; text-align:center; padding:4px 0 10px; flex-shrink:0; }
-.sheet-body { flex:1; overflow-y:auto; padding:0 16px 30px; }
 
 .ast-group { margin-bottom: 6px; }
 .ast-group-header { padding: 10px 12px; cursor: pointer; border-radius: var(--radius-sm); background: var(--bg-tertiary); transition: background var(--tr); }
@@ -282,7 +272,7 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .fs-prompt-head { padding:calc(6px + var(--safe-t)) 10px 6px; border-bottom:0.5px solid var(--border-soft); flex-shrink:0; display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); }
 .fs-prompt-head-left, .fs-prompt-head-right { display: flex; align-items: center; gap: 6px; }
 .prompt-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-left: 2px; }
-@media(max-width: 380px) { .prompt-title { display: none; } } /* 在极窄屏幕下隐藏标题，优先保障按钮排版 */
+@media(max-width: 380px) { .prompt-title { display: none; } }
 
 .prompt-toolbar { display: flex; align-items: center; gap: 4px; }
 .prompt-toolbar button { width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid var(--border-subtle); background: var(--bg-tertiary); color: var(--text-secondary); font-size: 14px; font-weight: 700; cursor: pointer; transition: all var(--tr); display: flex; align-items: center; justify-content: center; }
@@ -295,7 +285,7 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .fs-prompt-body textarea { flex:1; width:100%; padding:14px; border:none; background:var(--bg-primary); color:inherit; font-size:15px; font-family:inherit; line-height:1.7; resize:none; outline:none; }
 
 .vditor { border: none !important; border-radius: 0 !important; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
-.vditor-toolbar { display: none !important; } /* 彻底隐藏 Vditor 自带的工具栏，但保留 DOM 以供调用 */
+.vditor-toolbar { display: none !important; } 
 .vditor-reset { background: var(--bg-primary) !important; color: var(--text-primary) !important; font-size: 14.5px !important; line-height: 1.65 !important; }
 .vditor-panel, .vditor-hint { z-index: 500 !important; }
 
@@ -312,8 +302,10 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 
 .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:9px 18px; border-radius:18px; font-size:13px; z-index:500; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.3); display: flex; align-items: center; gap: 6px; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.scroll-down { position:fixed; bottom:140px; right:16px; width:36px; height:36px; border:1px solid var(--border-subtle); background:var(--bg-secondary); font-size:20px; color: var(--text-secondary); z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; }
-.scroll-down.show { display:flex; }
+
+.scroll-down { position:absolute; bottom:20px; right:20px; width:36px; height:36px; border:1px solid var(--border-subtle); background:var(--bg-secondary); font-size:20px; color: var(--text-secondary); z-index:50; box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; border-radius: 50%; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.scroll-down.show { opacity: 1; pointer-events: auto; }
+
 .btn-primary { padding:10px 20px; border-radius:18px; background:var(--accent); color:#fff; font-size:14px; width:100%; }
 .empty { text-align:center; padding:36px 20px; color:var(--text-secondary); font-size:13px; }
 .page, .chat-page { display:none; flex-direction:column; height:100%; }
@@ -321,3 +313,66 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .data-actions { gap:6px; }
 .data-actions button { flex:1; padding:10px 8px; border-radius:12px; border:1.5px solid var(--border-subtle); background:var(--bg-tertiary); font-size:13px; color: var(--text-secondary); font-weight: 600; }
 .data-actions button:active { border-color:var(--accent); color: var(--text-primary); }
+
+.sheet { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:700px; max-height:70vh; background:var(--bg-secondary); z-index:350; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; flex-direction:column; transition:transform .3s cubic-bezier(.4,0,.2,1); box-shadow:0 -4px 20px rgba(0,0,0,.2); will-change: transform; }
+.sheet.open { transform:translateX(-50%) translateY(0); }
+.sheet-handle { width:32px; height:4px; border-radius:2px; background:rgba(128,128,128,.2); margin:10px auto 6px; flex-shrink:0; }
+.sheet-title { font-size:14px; font-weight:700; text-align:center; padding:4px 0 10px; flex-shrink:0; }
+.sheet-body { flex:1; overflow-y:auto; padding:0 16px 30px; }
+
+
+/* ========================================================= */
+/* DESKTOP LAYOUT (>= 900px)                                 */
+/* ========================================================= */
+@media (min-width: 900px) {
+  #app { flex-direction: row; max-width: 100%; }
+  
+  /* Left Panel: Assistants List (Visible only in Home state) */
+  #ast-page { display: none !important; width: 280px; border-right: 1px solid var(--border-subtle); flex-shrink: 0; }
+  #app.state-home #ast-page { display: flex !important; }
+
+  /* Left Panel: Topics Drawer (Visible only in Chat state) */
+  #topics-drawer { display: none !important; position: static; transform: none !important; width: 280px; border-right: 1px solid var(--border-subtle); box-shadow: none; border-radius: 0; flex-shrink: 0; z-index: 10; }
+  #app.state-chat #topics-drawer { display: flex !important; }
+
+  /* Center Panel: Main Chat Window */
+  #chat-page { display: flex !important; flex: 1; min-width: 0; border-right: 1px solid var(--border-subtle); }
+
+  /* Right Panel: Settings Drawer (Pushes chat to the left dynamically when opened) */
+  #settings-drawer { display: none !important; position: static; transform: none !important; width: 320px; border-left: 1px solid var(--border-subtle); box-shadow: none; border-radius: 0; flex-shrink: 0; z-index: 10; }
+  #settings-drawer.open { display: flex !important; }
+
+  /* Desktop adjustments for Top Navbar elements */
+  #chat-back { display: none; }
+  #topic-toggle { pointer-events: none; cursor: default; }
+  #topic-toggle:active { background: transparent; }
+  #topic-toggle .topic-arr { display: none; }
+  
+  /* Disable full screen overlays for drawers gracefully mapped into panes */
+  #overlay.for-settings, #overlay.for-topics { display: none !important; }
+
+  /* Desktop Sheet transformation (converts Add Assistant Sheet to a center-aligned Modal) */
+  .sheet { top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); bottom: auto; border-radius: var(--radius-lg); opacity: 0; pointer-events: none; width: 400px; max-height: 85vh; transition: transform 0.2s, opacity 0.2s; }
+  .sheet.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+  .sheet-handle { display: none; }
+  
+  /* Modals Layout Scaling */
+  .edit-card { width: 600px; left: 50%; transform: translateX(-50%); height: 60vh; border-radius: var(--radius-lg); }
+  .modal-card { width: 400px; max-width: 90%; }
+  
+  /* FS Prompt Modal Desktop View */
+  .fs-prompt-overlay { flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+  .fs-prompt-head, .fs-prompt-body { width: 800px; max-width: 100%; flex: none; }
+  .fs-prompt-body { flex: 1; max-height: 80vh; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .fs-prompt-head { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  
+  /* Desktop UI Enhancements */
+  .ast-card:hover { background: var(--bg-tertiary); }
+  
+  /* ChatGPT-style constraints for a more professional desktop reading experience */
+  #messages, #input-box { max-width: 850px; margin: 0 auto; width: 100%; }
+  #chat-container { padding: 24px 20px; }
+  #input-container { padding: 12px 20px 24px; }
+  .msg { max-width: 85%; }
+  #density-map { right: 8px; }
+}
