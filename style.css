@@ -102,10 +102,9 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #density-map:hover { background:rgba(128,128,128,0.08); }
 
 /* AI消息分布点位：与主题更融合的次级色 */
-/* 增加 transform-origin 让变宽时向左延伸，不超出屏幕右侧 */
-.density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:all 0.2s; pointer-events:auto; min-height:4px; transform-origin:right center; }
-/* 仅当前鼠标悬浮的这个锚点变宽（宽度放大为1.6倍）及轻微变亮 */
-.density-dot:hover { opacity:0.5; transform:scaleX(1.6); }
+.density-dot { position:absolute; left:0; width:100%; background:var(--text-secondary); opacity:0.3; border-radius:3px; cursor:pointer; transition:opacity 0.2s; pointer-events:auto; min-height:4px; }
+/* 取消变宽效果，仅保留极其轻微的亮度反馈 */
+.density-dot:hover { opacity:0.5; }
 
 /* 当前滚动视口的指示滑块：悬浮在地图之上 */
 #density-thumb { position:absolute; right:0; width:100%; background:var(--text-primary); opacity:0.25; border-radius:3px; z-index:12; pointer-events:none; transition:opacity 0.2s; }
