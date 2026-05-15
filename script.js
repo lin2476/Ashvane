@@ -793,11 +793,12 @@ document.addEventListener('click', async e => {
           if (action === 'undo') document.execCommand('undo');
           if (action === 'redo') document.execCommand('redo');
       } else if (vditorInstance) {
+          // 修正选择器，Vditor 的数据属性是直接在 button 标签上的
           if (action === 'undo') {
-              const b = document.querySelector('.vditor-toolbar__item[data-type="undo"] button');
+              const b = document.querySelector('#fs-prompt-vditor button[data-type="undo"]');
               if (b) b.click(); else document.execCommand('undo');
           } else if (action === 'redo') {
-              const b = document.querySelector('.vditor-toolbar__item[data-type="redo"] button');
+              const b = document.querySelector('#fs-prompt-vditor button[data-type="redo"]');
               if (b) b.click(); else document.execCommand('redo');
           }
       }
