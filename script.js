@@ -430,9 +430,25 @@ async function sendMessage() {
   finally { streaming = false; abortCtrl = null; clearInterval(genTimer); am.genTime = ((Date.now() - am.startTime) / 1000).toFixed(0); delete am.startTime; saveState(); renderChatPage(); $1('send-btn')?.classList.remove('hidden'); inputEl.disabled = false; $1('stop-btn')?.classList.add('hidden'); }
 }
 
-const openSheet = id => { closeDrawers(); $1('overlay')?.classList.add('show'); $1(id)?.classList.add('open'); };
+const openSheet = id => { 
+  closeDrawers(); 
+  $1('overlay')?.classList.add('show'); 
+  $1(id)?.classList.add('open'); 
+  // 注入弹窗状态到历史记录，防止物理按键直接退回主页
+  if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, '');
+};
 const closeDrawers = () => document.querySelectorAll('.drawer, .sheet').forEach(el => el.classList.remove('open'));
-const closeAll = () => { hideDropdown(); $1('overlay')?.classList.remove('show'); closeDrawers(); };
+const closeAll = (fromPopState = false) => { 
+  hideDropdown(); 
+  const wasOpen = $1('overlay')?.classList.contains('show');
+  $1('overlay')?.classList.remove('show'); 
+  closeDrawers(); 
+  // 如果是 UI 主动触发关闭，且当前处于弹窗历史记录中，主动抵消掉那一层历史记录
+  if (wasOpen && !fromPopState && history.state?.drawer) {
+    ignoreNextPopState = true;
+    history.back();
+  }
+};
 
 // ==================== FS PROMPT EDITOR LOGIC ====================
 let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, isFsPromptRawMode = false, ignoreNextPopState = false;
@@ -637,6 +653,10 @@ await IDB.init().catch(()=>{}); await loadState(); setupPWA(); applyTheme(); ren
 window.addEventListener('popstate', async e => { 
   if (ignoreNextPopState) return ignoreNextPopState = false;
   if ($1('fs-prompt-overlay')?.classList.contains('show')) return handleFsPromptClose(true);
-  closeAll(); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
+  
+  // 拦截设备的物理返回按键：如果存在抽屉弹窗则仅仅关闭弹窗，终止继续回退页面
+  if ($1('overlay')?.classList.contains('show')) { closeAll(true); return; }
+  
+  closeAll(true); if (e.state?.page === 'chat') goToChat(e.state.id, true); else goToAsts(true); 
 });
 })();
