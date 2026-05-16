@@ -445,7 +445,13 @@ let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, 
 
 const syncUndoRedo = () => {
   const ub = $1('fs-undo-btn'), rb = $1('fs-redo-btn'); if (!ub || !rb) return;
-  if (isFsPromptRawMode) { ub.disabled = false; rb.disabled = false; } else { const vu = document.querySelector('#fs-prompt-vditor button[data-type="undo"]'), vr = document.querySelector('#fs-prompt-vditor button[data-type="redo"]'); ub.disabled = vu ? vu.classList.contains('vditor-menu--disabled') : true; rb.disabled = vr ? vr.classList.contains('vditor-menu--disabled') : true; }
+  if (isFsPromptRawMode) { ub.disabled = false; rb.disabled = false; } else { 
+    requestAnimationFrame(() => {
+      const vu = document.querySelector('#fs-prompt-vditor button[data-type="undo"]'), vr = document.querySelector('#fs-prompt-vditor button[data-type="redo"]'); 
+      ub.disabled = vu ? vu.classList.contains('vditor-menu--disabled') : true;
+      rb.disabled = vr ? vr.classList.contains('vditor-menu--disabled') : true;
+    });
+  }
 };
 
 async function handleFsPromptClose(fromPopState = false) {
@@ -556,8 +562,8 @@ document.addEventListener('click', async e => {
         $1('fs-prompt-raw-textarea')?.classList.add('hidden'); $1('fs-prompt-vditor')?.classList.remove('hidden'); $1('fs-prompt-overlay')?.classList.add('show'); history.pushState({ page: 'fs-prompt' }, '');
         if (!window.Vditor) return toast('<i class="ph ph-hourglass"></i> 编辑器加载中...');
         if (!vditorInstance) {
-            vditorInstance = new Vditor('fs-prompt-vditor', { mode: 'ir', height: '100%', cache: { enable: false }, value: fsPromptOriginalValue, theme: state.darkMode ? 'dark' : 'classic', icon: 'material', toolbar: ['undo', 'redo'], input: () => { fsPromptChanged = true; setTimeout(syncUndoRedo, 100); }, after: () => { setTimeout(syncUndoRedo, 100); } });
-        } else { vditorInstance.setValue(fsPromptOriginalValue); vditorInstance.setTheme(state.darkMode ? 'dark' : 'classic', state.darkMode ? 'dark' : 'light'); setTimeout(syncUndoRedo, 100); }
+            vditorInstance = new Vditor('fs-prompt-vditor', { mode: 'ir', height: '100%', cache: { enable: false }, value: fsPromptOriginalValue, theme: state.darkMode ? 'dark' : 'classic', icon: 'material', toolbar: ['undo', 'redo'], input: () => { fsPromptChanged = true; syncUndoRedo(); }, after: () => { vditorInstance.setValue(fsPromptOriginalValue, true); syncUndoRedo(); } });
+        } else { vditorInstance.setValue(fsPromptOriginalValue, true); vditorInstance.setTheme(state.darkMode ? 'dark' : 'classic', state.darkMode ? 'dark' : 'light'); syncUndoRedo(); }
       }
     }
   }
