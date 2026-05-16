@@ -444,8 +444,9 @@ function saveEdit() {
 let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, isFsPromptRawMode = false, ignoreNextPopState = false;
 
 const syncUndoRedo = () => {
-  const ub = $1('fs-undo-btn'), rb = $1('fs-redo-btn'); if (!ub || !rb) return;
-  if (isFsPromptRawMode) { ub.disabled = false; rb.disabled = false; } else { const vu = document.querySelector('#fs-prompt-vditor button[data-type="undo"]'), vr = document.querySelector('#fs-prompt-vditor button[data-type="redo"]'); ub.disabled = vu ? vu.classList.contains('vditor-menu--disabled') : true; rb.disabled = vr ? vr.classList.contains('vditor-menu--disabled') : true; }
+  const ub = $1('fs-undo-btn'), rb = $1('fs-redo-btn');
+  if (ub) ub.disabled = false;
+  if (rb) rb.disabled = false;
 };
 
 async function handleFsPromptClose(fromPopState = false) {
