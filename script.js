@@ -1213,71 +1213,87 @@ document.addEventListener('click', async e => {
 
 // ==================== 10. GESTURE & INITIALIZATION ====================
 
-let touchStartX = 0, touchStartY = 0, touchCurrentX = 0, isDraggingDrawer = false, draggingDrawer = null, isTouchLocked = false;
+// 原生级边缘手势驱动侧边栏逻辑
+let touchStartX = 0, touchCurrentX = 0, touchStartY = 0, isDraggingDrawer = false, draggingDrawer = null, isScrolling = false;
 
 document.addEventListener('touchstart', (e) => {
   if (window.innerWidth > 768) return; 
-  const t = e.touches[0];
-  touchStartX = t.clientX; touchStartY = t.clientY; touchCurrentX = t.clientX;
-  isDraggingDrawer = false; isTouchLocked = false; draggingDrawer = null;
-  
-  if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
-    if (touchStartX > 40 && touchStartX < window.innerWidth - 40) return;
-  }
+  const x = e.touches[0].clientX;
+  const y = e.touches[0].clientY;
+  touchStartX = x; touchCurrentX = x; touchStartY = y;
+  isScrolling = false; // 重置垂直滚动判定
   
   const app = $1('app');
   const leftOpen = app.classList.contains('left-open'), rightOpen = app.classList.contains('right-open');
   
-  if (!leftOpen && !rightOpen) {
-    if (touchStartX < 40) draggingDrawer = 'left';
-    else if (touchStartX > window.innerWidth - 40) draggingDrawer = 'right';
-  } else if (leftOpen) {
-    draggingDrawer = 'left';
-  } else if (rightOpen) {
-    draggingDrawer = 'right';
+  // 防误触：避开可能带有横向滚动的组件（如代码块、公式），触发区扩大到 80px
+  if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
+    if (x > 80 && x < window.innerWidth - 80) return;
   }
+  
+  if (!leftOpen && !rightOpen) {
+    // 未展开状态：触发区扩大到 80px
+    if (x < 80) { isDraggingDrawer = true; draggingDrawer = 'left'; }
+    else if (x > window.innerWidth - 80) { isDraggingDrawer = true; draggingDrawer = 'right'; }
+  } else if (leftOpen) { 
+    // 助手侧边栏已展开：触摸任何位置（含侧边栏本身）都可以进行滑动闭合
+    isDraggingDrawer = true; draggingDrawer = 'left'; 
+  } else if (rightOpen) { 
+    // 设置侧边栏已展开：触摸任何位置（含侧边栏本身）都可以进行滑动闭合
+    isDraggingDrawer = true; draggingDrawer = 'right'; 
+  }
+  
+  if (isDraggingDrawer) app.classList.add('dragging');
 }, { passive: true });
 
 document.addEventListener('touchmove', (e) => {
-  if (!draggingDrawer) return;
-  const t = e.touches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-  
-  if (!isTouchLocked) {
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
-      isDraggingDrawer = true; isTouchLocked = true;
-      $1('app').classList.add('dragging');
-    } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
-      draggingDrawer = null; isTouchLocked = true; return;
-    } else {
-      return;
-    }
-  }
-  
   if (!isDraggingDrawer) return;
-  if (e.cancelable) e.preventDefault();
   
-  touchCurrentX = t.clientX;
-  const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
+  const x = e.touches[0].clientX;
+  const y = e.touches[0].clientY;
+  const dx = x - touchStartX;
+  const dy = y - touchStartY;
   
-  if (draggingDrawer === 'left') {
-    const leftOpen = app.classList.contains('left-open');
-    let offset = leftOpen ? 280 + dx : dx;
-    offset = Math.max(0, Math.min(offset, 280));
-    astDrawer.style.transform = `translateX(${offset - 280}px)`;
-    chatPage.style.transform = `translateX(${offset}px)`;
-  } else if (draggingDrawer === 'right') {
-    const rightOpen = app.classList.contains('right-open');
-    let offset = rightOpen ? -280 + dx : dx;
-    offset = Math.min(0, Math.max(offset, -280));
-    settingsDrawer.style.transform = `translateX(${offset + 280}px)`;
-    chatPage.style.transform = `translateX(${offset}px)`;
+  // 智能避让：如果用户是上下滑动（垂直位移大于横向位移），则放弃侧滑劫持，让页面正常上下滚动
+  if (!isScrolling && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+    isScrolling = true;
+    isDraggingDrawer = false;
+    $1('app').classList.remove('dragging');
+    $1('ast-drawer').style.transform = ''; 
+    $1('settings-drawer').style.transform = ''; 
+    $1('chat-page').style.transform = '';
+    return;
   }
-}, { passive: false });
+  
+  if (isScrolling) return;
+
+  // 关键：阻止系统默认侧滑返回上一页事件，解决物理手势跟 JS 冲突造成的画面卡顿
+  if (e.cancelable) e.preventDefault(); 
+  
+  touchCurrentX = x;
+  const astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page'), app = $1('app');
+  
+  // 使用 GPU 硬件加速的 translate3d 和 requestAnimationFrame 确保丝滑跟手感
+  requestAnimationFrame(() => {
+    if (!isDraggingDrawer) return; 
+    if (draggingDrawer === 'left') {
+      const leftOpen = app.classList.contains('left-open');
+      let offset = leftOpen ? 280 + dx : dx;
+      offset = Math.max(0, Math.min(offset, 280));
+      astDrawer.style.transform = `translate3d(${offset - 280}px, 0, 0)`;
+      chatPage.style.transform = `translate3d(${offset}px, 0, 0)`;
+    } else if (draggingDrawer === 'right') {
+      const rightOpen = app.classList.contains('right-open');
+      let offset = rightOpen ? -280 + dx : dx;
+      offset = Math.min(0, Math.max(offset, -280));
+      settingsDrawer.style.transform = `translate3d(${offset + 280}px, 0, 0)`;
+      chatPage.style.transform = `translate3d(${offset}px, 0, 0)`;
+    }
+  });
+}, { passive: false }); // 必须设为 false 才能生效 e.preventDefault()
 
 document.addEventListener('touchend', (e) => {
-  if (!isDraggingDrawer) { draggingDrawer = null; return; }
+  if (!isDraggingDrawer) return;
   isDraggingDrawer = false;
   
   const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
@@ -1285,12 +1301,14 @@ document.addEventListener('touchend', (e) => {
   astDrawer.style.transform = ''; settingsDrawer.style.transform = ''; chatPage.style.transform = '';
   
   const dx = touchCurrentX - touchStartX;
-  if (Math.abs(dx) > 40) {
-    if (draggingDrawer === 'left') toggleDrawer('left', dx > 0);
-    else if (draggingDrawer === 'right') toggleDrawer('right', dx < 0);
+  // 松手后的惯性阈值及状态判定
+  if (Math.abs(dx) > 30) {
+    if (draggingDrawer === 'left') toggleDrawer('left', dx > 30);
+    else if (draggingDrawer === 'right') toggleDrawer('right', dx < -30);
   } else {
-    if (draggingDrawer === 'left') toggleDrawer('left', app.classList.contains('left-open'));
-    if (draggingDrawer === 'right') toggleDrawer('right', app.classList.contains('right-open'));
+    // 依然保留点击空白遮罩处闭合侧边栏的功能
+    if (draggingDrawer === 'left' && touchStartX > 280 && app.classList.contains('left-open')) toggleDrawer('left', false);
+    else if (draggingDrawer === 'right' && touchStartX < window.innerWidth - 280 && app.classList.contains('right-open')) toggleDrawer('right', false);
   }
   draggingDrawer = null;
 });
