@@ -154,14 +154,17 @@
       <div class="fs-prompt-head-left">
         <button class="nav-btn" id="fs-prompt-close" title="返回"><i class="ph ph-arrow-left"></i></button>
         <span class="prompt-title">系统提示词</span>
-      </div>
-      <div class="prompt-toolbar" id="fs-prompt-tb">
-        <button id="fs-prompt-toggle-mode" title="纯文本模式"><i class="ph ph-file-text"></i></button>
-        <button data-md="undo" title="撤销"><i class="ph ph-arrow-u-up-left"></i></button>
-        <button data-md="redo" title="重做"><i class="ph ph-arrow-u-up-right"></i></button>
+        <div class="prompt-toolbar ml-16">
+          <button data-md="undo" title="撤销"><i class="ph ph-arrow-u-up-left"></i></button>
+          <div class="tb-divider"></div>
+          <button data-md="redo" title="重做"><i class="ph ph-arrow-u-up-right"></i></button>
+        </div>
       </div>
       <div class="fs-prompt-head-right">
-        <button id="fs-prompt-save" title="保存" class="btn-save-prompt">保存</button>
+        <div class="prompt-toolbar">
+          <button id="fs-prompt-toggle-mode" title="纯文本模式"><i class="ph ph-file-text"></i></button>
+        </div>
+        <button id="fs-prompt-save" title="保存" class="btn-save-prompt"><i class="ph ph-floppy-disk"></i></button>
       </div>
     </div>
     <div class="fs-prompt-body">
