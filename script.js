@@ -145,7 +145,7 @@ const closeAll = (fromPopState = false) => {
 };
 
 const openSheet = id => { closeDrawers(); $1('sheet-overlay')?.classList.add('show'); $1(id)?.classList.add('open'); if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, ''); };
-function goToChat(id, fromHistory = false) { state.activeAstId = id; saveState(); if (!fromHistory) history.pushState({ page: 'chat', id }, ''); renderChatPage(); closeAll(); userScrolledUp = false; scrollBottom(true, false); }
+function goToChat(id, fromHistory = false) { state.activeAstId = id; saveState(); if (!fromHistory) history.pushState({ page: 'chat', id }, ''); renderChatPage(); renderAstList(); closeAll(); userScrolledUp = false; scrollBottom(true, false); }
 
 // 4. Renderers
 function renderAstList() {
