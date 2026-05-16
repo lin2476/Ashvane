@@ -104,7 +104,7 @@ async function loadState() {
   try {
     let p = await IDB.get(STORAGE_KEY) || JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (p) {
-      delete p.groups; // 清理遗留的分组数据
+      delete p.groups; 
       state = { ...state, ...p }; 
       await IDB.set(STORAGE_KEY, state);
     }
@@ -140,7 +140,7 @@ function fixAsst(a) {
       messages: (c.messages || []).map(m => ({ ...m, genTime: m.genTime || m.reasoningTime })) 
     }))
   };
-  delete cleaned.groupId; // 删除遗留的分组ID
+  delete cleaned.groupId;
   return cleaned;
 }
 
@@ -227,6 +227,51 @@ function setupPWA() {
     ))).catch(()=>{}); 
   }
 }
+
+// 抽屉导航统一切换逻辑（结合移动/桌面状态）
+function toggleDrawer(side, forceState) {
+  const app = $1('app');
+  if (!app) return;
+  const leftOpen = app.classList.contains('left-open');
+  const rightOpen = app.classList.contains('right-open');
+  
+  if (side === 'left') {
+    const willOpen = forceState !== undefined ? forceState : !leftOpen;
+    app.classList.toggle('left-open', willOpen);
+    if (willOpen) app.classList.remove('right-open');
+  } else if (side === 'right') {
+    const willOpen = forceState !== undefined ? forceState : !rightOpen;
+    app.classList.toggle('right-open', willOpen);
+    if (willOpen) app.classList.remove('left-open');
+  }
+}
+
+const closeDrawers = () => document.querySelectorAll('.sheet, .topics-modal').forEach(el => el.classList.remove('open'));
+
+const closeAll = (fromPopState = false) => { 
+  hideDropdown(); 
+  const wasSheetOpen = $1('sheet-overlay')?.classList.contains('show');
+  $1('sheet-overlay')?.classList.remove('show');
+  
+  // 手机端统一切换收起；桌面端不收侧栏(状态持久)
+  if (window.innerWidth <= 768) {
+      toggleDrawer('left', false);
+      toggleDrawer('right', false);
+  }
+  closeDrawers(); 
+  
+  if (wasSheetOpen && !fromPopState && history.state?.drawer) {
+    ignoreNextPopState = true;
+    history.back();
+  }
+};
+
+const openSheet = id => { 
+  closeDrawers(); 
+  $1('sheet-overlay')?.classList.add('show'); 
+  $1(id)?.classList.add('open'); 
+  if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, '');
+};
 
 function goToChat(id, fromHistory = false) { 
   state.activeAstId = id; 
@@ -760,26 +805,6 @@ const hideDropdown = () => {
   _ddActive = _ddAnchor = null; 
 };
 
-const openSheet = id => { 
-  closeDrawers(); 
-  $1('overlay')?.classList.add('show'); 
-  $1(id)?.classList.add('open'); 
-  if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, '');
-};
-
-const closeDrawers = () => document.querySelectorAll('.drawer, .sheet, .topics-modal').forEach(el => el.classList.remove('open'));
-const closeAll = (fromPopState = false) => { 
-  hideDropdown(); 
-  const wasOpen = $1('overlay')?.classList.contains('show');
-  $1('overlay')?.classList.remove('show'); 
-  $1('sheet-overlay')?.classList.remove('show');
-  closeDrawers(); 
-  if (wasOpen && !fromPopState && history.state?.drawer) {
-    ignoreNextPopState = true;
-    history.back();
-  }
-};
-
 function handleTopicMore(cid, btn) {
   const a = getActiveAst();
   const idx = a?.conversations.findIndex(c => c.id === cid); 
@@ -888,11 +913,12 @@ document.addEventListener('click', async e => {
   let el;
 
   // Modals & Drawers Navigation
-  if ((el = get('#ast-drawer-btn'))) openSheet('ast-drawer');
+  if ((el = get('#ast-drawer-btn'))) toggleDrawer('left');
   else if ((el = get('#topic-toggle'))) { e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); }
-  else if ((el = get('#settings-btn'))) { renderSettings(); openSheet('settings-drawer'); }
-  else if ((el = get('#close-settings')) || get('#overlay')) closeAll();
-  else if ((el = get('#sheet-overlay'))) { el.classList.remove('show'); $1('add-ast-sheet')?.classList.remove('open'); }
+  else if ((el = get('#settings-btn'))) { renderSettings(); toggleDrawer('right'); }
+  else if ((el = get('#close-settings'))) toggleDrawer('right', false);
+  else if ((el = get('#sheet-overlay'))) closeAll();
+  else if ((el = get('#chat-page-mask'))) { toggleDrawer('left', false); toggleDrawer('right', false); }
 
   // Chat Input Controls
   else if ((el = get('#send-btn'))) sendMessage();
@@ -930,8 +956,7 @@ document.addEventListener('click', async e => {
 
   // Ast List Interactions
   else if ((el = get('#add-ast-btn'))) { 
-    $1('sheet-overlay')?.classList.add('show'); 
-    $1('add-ast-sheet')?.classList.add('open'); 
+    openSheet('add-ast-sheet'); 
   }
   else if ((el = get('#create-ast'))) {
     const n = $1('new-ast-name')?.value.trim(); 
@@ -1186,7 +1211,75 @@ document.addEventListener('click', async e => {
 
 }); // END Document Click
 
-// ==================== 10. INITIALIZATION ====================
+// ==================== 10. GESTURE & INITIALIZATION ====================
+
+// 原生级边缘手势驱动侧边栏逻辑
+let touchStartX = 0, touchCurrentX = 0, isDraggingDrawer = false, draggingDrawer = null;
+
+document.addEventListener('touchstart', (e) => {
+  if (window.innerWidth > 768) return; 
+  const x = e.touches[0].clientX;
+  touchStartX = x; touchCurrentX = x;
+  
+  const app = $1('app');
+  const leftOpen = app.classList.contains('left-open'), rightOpen = app.classList.contains('right-open');
+  
+  // 防误触：避开可能带有横向滚动的组件（如代码块、公式）
+  if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
+    if (x > 25 && x < window.innerWidth - 25) return;
+  }
+  
+  if (!leftOpen && !rightOpen) {
+    if (x < 25) { isDraggingDrawer = true; draggingDrawer = 'left'; }
+    else if (x > window.innerWidth - 25) { isDraggingDrawer = true; draggingDrawer = 'right'; }
+  } else if (leftOpen && x > 280) { isDraggingDrawer = true; draggingDrawer = 'left'; }
+  else if (rightOpen && x < window.innerWidth - 280) { isDraggingDrawer = true; draggingDrawer = 'right'; }
+  
+  if (isDraggingDrawer) app.classList.add('dragging');
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isDraggingDrawer) return;
+  touchCurrentX = e.touches[0].clientX;
+  const dx = touchCurrentX - touchStartX;
+  
+  const astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page'), app = $1('app');
+  
+  if (draggingDrawer === 'left') {
+    const leftOpen = app.classList.contains('left-open');
+    let offset = leftOpen ? 280 + dx : dx;
+    offset = Math.max(0, Math.min(offset, 280));
+    astDrawer.style.transform = `translateX(${offset - 280}px)`;
+    chatPage.style.transform = `translateX(${offset}px)`;
+  } else if (draggingDrawer === 'right') {
+    const rightOpen = app.classList.contains('right-open');
+    let offset = rightOpen ? -280 + dx : dx;
+    offset = Math.min(0, Math.max(offset, -280));
+    settingsDrawer.style.transform = `translateX(${offset + 280}px)`;
+    chatPage.style.transform = `translateX(${offset}px)`;
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (!isDraggingDrawer) return;
+  isDraggingDrawer = false;
+  
+  const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
+  app.classList.remove('dragging');
+  astDrawer.style.transform = ''; settingsDrawer.style.transform = ''; chatPage.style.transform = '';
+  
+  const dx = touchCurrentX - touchStartX;
+  if (Math.abs(dx) > 30) {
+    if (draggingDrawer === 'left') toggleDrawer('left', dx > 30);
+    else if (draggingDrawer === 'right') toggleDrawer('right', dx < -30);
+  } else {
+    // 处理原地 Tap 点击关闭的情形
+    if (draggingDrawer === 'left' && touchStartX > 280 && app.classList.contains('left-open')) toggleDrawer('left', false);
+    else if (draggingDrawer === 'right' && touchStartX < window.innerWidth - 280 && app.classList.contains('right-open')) toggleDrawer('right', false);
+  }
+  draggingDrawer = null;
+});
+
 const userInput = $1('user-input');
 if(userInput) {
   on(userInput, 'keydown', function(e) { 
@@ -1207,6 +1300,11 @@ if (!state.activeAstId || !state.assistants.some(a => a.id === state.activeAstId
     state.activeAstId = state.assistants[0]?.id || 'default-ast';
 }
 
+// 桌面大屏下，预设开启常驻左抽屉栏
+if (window.innerWidth > 768) {
+  $1('app')?.classList.add('left-open');
+}
+
 renderAstList(); 
 saveState(); 
 history.replaceState({ page: 'chat', id: state.activeAstId }, '');
@@ -1215,8 +1313,7 @@ renderChatPage();
 window.addEventListener('popstate', async e => { 
   if (ignoreNextPopState) return ignoreNextPopState = false;
   if ($1('fs-prompt-overlay')?.classList.contains('show')) return handleFsPromptClose(true);
-  
-  if ($1('overlay')?.classList.contains('show')) { closeAll(true); return; }
+  if ($1('sheet-overlay')?.classList.contains('show')) { closeAll(true); return; }
   
   closeAll(true); 
   if (e.state?.page === 'chat' && e.state.id) { 
