@@ -1213,37 +1213,53 @@ document.addEventListener('click', async e => {
 
 // ==================== 10. GESTURE & INITIALIZATION ====================
 
-// 原生级边缘手势驱动侧边栏逻辑
-let touchStartX = 0, touchCurrentX = 0, isDraggingDrawer = false, draggingDrawer = null;
+let touchStartX = 0, touchStartY = 0, touchCurrentX = 0, isDraggingDrawer = false, draggingDrawer = null, isTouchLocked = false;
 
 document.addEventListener('touchstart', (e) => {
   if (window.innerWidth > 768) return; 
-  const x = e.touches[0].clientX;
-  touchStartX = x; touchCurrentX = x;
+  const t = e.touches[0];
+  touchStartX = t.clientX; touchStartY = t.clientY; touchCurrentX = t.clientX;
+  isDraggingDrawer = false; isTouchLocked = false; draggingDrawer = null;
+  
+  if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
+    if (touchStartX > 40 && touchStartX < window.innerWidth - 40) return;
+  }
   
   const app = $1('app');
   const leftOpen = app.classList.contains('left-open'), rightOpen = app.classList.contains('right-open');
   
-  // 防误触：避开可能带有横向滚动的组件（如代码块、公式）
-  if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
-    if (x > 25 && x < window.innerWidth - 25) return;
-  }
-  
   if (!leftOpen && !rightOpen) {
-    if (x < 25) { isDraggingDrawer = true; draggingDrawer = 'left'; }
-    else if (x > window.innerWidth - 25) { isDraggingDrawer = true; draggingDrawer = 'right'; }
-  } else if (leftOpen && x > 280) { isDraggingDrawer = true; draggingDrawer = 'left'; }
-  else if (rightOpen && x < window.innerWidth - 280) { isDraggingDrawer = true; draggingDrawer = 'right'; }
-  
-  if (isDraggingDrawer) app.classList.add('dragging');
+    if (touchStartX < 40) draggingDrawer = 'left';
+    else if (touchStartX > window.innerWidth - 40) draggingDrawer = 'right';
+  } else if (leftOpen) {
+    draggingDrawer = 'left';
+  } else if (rightOpen) {
+    draggingDrawer = 'right';
+  }
 }, { passive: true });
 
 document.addEventListener('touchmove', (e) => {
-  if (!isDraggingDrawer) return;
-  touchCurrentX = e.touches[0].clientX;
-  const dx = touchCurrentX - touchStartX;
+  if (!draggingDrawer) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
   
-  const astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page'), app = $1('app');
+  if (!isTouchLocked) {
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      isDraggingDrawer = true; isTouchLocked = true;
+      $1('app').classList.add('dragging');
+    } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+      draggingDrawer = null; isTouchLocked = true; return;
+    } else {
+      return;
+    }
+  }
+  
+  if (!isDraggingDrawer) return;
+  if (e.cancelable) e.preventDefault();
+  
+  touchCurrentX = t.clientX;
+  const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
   
   if (draggingDrawer === 'left') {
     const leftOpen = app.classList.contains('left-open');
@@ -1258,10 +1274,10 @@ document.addEventListener('touchmove', (e) => {
     settingsDrawer.style.transform = `translateX(${offset + 280}px)`;
     chatPage.style.transform = `translateX(${offset}px)`;
   }
-}, { passive: true });
+}, { passive: false });
 
 document.addEventListener('touchend', (e) => {
-  if (!isDraggingDrawer) return;
+  if (!isDraggingDrawer) { draggingDrawer = null; return; }
   isDraggingDrawer = false;
   
   const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
@@ -1269,13 +1285,12 @@ document.addEventListener('touchend', (e) => {
   astDrawer.style.transform = ''; settingsDrawer.style.transform = ''; chatPage.style.transform = '';
   
   const dx = touchCurrentX - touchStartX;
-  if (Math.abs(dx) > 30) {
-    if (draggingDrawer === 'left') toggleDrawer('left', dx > 30);
-    else if (draggingDrawer === 'right') toggleDrawer('right', dx < -30);
+  if (Math.abs(dx) > 40) {
+    if (draggingDrawer === 'left') toggleDrawer('left', dx > 0);
+    else if (draggingDrawer === 'right') toggleDrawer('right', dx < 0);
   } else {
-    // 处理原地 Tap 点击关闭的情形
-    if (draggingDrawer === 'left' && touchStartX > 280 && app.classList.contains('left-open')) toggleDrawer('left', false);
-    else if (draggingDrawer === 'right' && touchStartX < window.innerWidth - 280 && app.classList.contains('right-open')) toggleDrawer('right', false);
+    if (draggingDrawer === 'left') toggleDrawer('left', app.classList.contains('left-open'));
+    if (draggingDrawer === 'right') toggleDrawer('right', app.classList.contains('right-open'));
   }
   draggingDrawer = null;
 });
