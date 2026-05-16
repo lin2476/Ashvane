@@ -250,7 +250,7 @@ function renderAstList() {
   l.innerHTML = state.assistants.map(a => `
     <div class="ast-card" data-id="${a.id}">
       <div class="ast-info">
-        <div class="ast-name">${esc(a.name)}</div>
+        <div class="ast-name">${esc(a.name)}${a.conversations.length ? `<span class="ast-topic-cnt"><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span>` : ''}</div>
         <div class="ast-prompt">${esc(a.systemPrompt?.substring(0, 60))}${a.systemPrompt?.length > 60 ? '...' : ''}</div>
       </div>
       <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
@@ -298,7 +298,7 @@ function renderChatPage() {
   const m = getModelInfo(a.modelId);
   
   const asstNameEl = $1('chat-asst-name'); 
-  if (asstNameEl) asstNameEl.innerHTML = `${esc(a.name)}${a.conversations.length ? ` <i class="ph ph-chat-centered-text" style="font-weight:normal; opacity:0.8; margin-left:4px;"></i> ${a.conversations.length}` : ''}`;
+  if (asstNameEl) asstNameEl.textContent = a.name;
   
   const topicNameEl = $1('chat-topic-name'); 
   if (topicNameEl) topicNameEl.textContent = c ? c.title : '新话题'; 
@@ -961,7 +961,7 @@ document.addEventListener('click', async e => {
     saveState(); closeAll(); renderChatPage(); renderTopicList(); 
     userScrolledUp = false; scrollBottom(true, false);
   }
-  else if ((el = get('#new-topic'))) { 
+  else if ((el = get('#new-topic')) || (el = get('#chat-new-topic-btn'))) { 
     const a = getActiveAst(); 
     if (a) { 
       a.activeConvId = null; saveState(); closeAll(); renderChatPage(); 
