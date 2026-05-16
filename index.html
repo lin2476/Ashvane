@@ -36,7 +36,24 @@
 <body>
 <div id="app">
   
+  <!-- 左侧抽屉：助手列表 -->
+  <div class="drawer drawer-left" id="ast-drawer">
+    <div class="drawer-head">
+      <h3 class="flex-center" style="margin:0; font-size:16px; gap:8px;">
+        <img src="https://api.iconify.design/lucide:bot.svg?color=%237F5AF0" style="width:1.2em; height:1.2em;"> 助手列表
+      </h3>
+      <div style="display: flex; gap: 8px;">
+        <button class="nav-btn" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
+      </div>
+    </div>
+    <div class="drawer-body" style="padding: 10px 12px;">
+      <div id="ast-list"></div>
+    </div>
+  </div>
+
+  <!-- 中间主体：聊天页面 -->
   <div class="chat-page" id="chat-page">
+    <div id="chat-page-mask"></div> <!-- 用于移动端开启侧栏后，捕获点击返回原位 -->
     <div class="navbar">
       <div class="nav-left">
         <button class="nav-btn" id="ast-drawer-btn" title="助手列表"><i class="ph ph-list"></i></button>
@@ -76,6 +93,16 @@
     </div>
   </div>
 
+  <!-- 右侧抽屉：设置页面 -->
+  <div class="drawer drawer-right" id="settings-drawer">
+    <div class="drawer-head">
+      <h3><i class="ph ph-gear"></i> 设置</h3>
+      <button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="drawer-body" id="settings-body"></div>
+  </div>
+
+  <!-- 叠加弹窗容器 -->
   <div class="edit-overlay" id="edit-overlay">
     <div class="edit-card">
       <div class="edit-card-header">
@@ -104,22 +131,7 @@
     </div>
   </div>
 
-  <div class="overlay" id="overlay"></div>
   <div class="overlay" id="sheet-overlay" style="z-index: 340;"></div>
-
-  <div class="drawer drawer-left" id="ast-drawer">
-    <div class="drawer-head">
-      <h3 class="flex-center" style="margin:0; font-size:16px; gap:8px;">
-        <img src="https://api.iconify.design/lucide:bot.svg?color=%237F5AF0" style="width:1.2em; height:1.2em;"> 助手列表
-      </h3>
-      <div style="display: flex; gap: 8px;">
-        <button class="nav-btn" id="add-ast-btn" title="新建助手"><i class="ph ph-plus"></i></button>
-      </div>
-    </div>
-    <div class="drawer-body" style="padding: 10px 12px;">
-      <div id="ast-list"></div>
-    </div>
-  </div>
 
   <div class="topics-modal" id="topics-drawer">
     <div class="topics-modal-head">
@@ -132,14 +144,6 @@
     <div class="topics-modal-body">
       <div id="topic-list"></div>
     </div>
-  </div>
-
-  <div class="drawer drawer-right" id="settings-drawer">
-    <div class="drawer-head">
-      <h3><i class="ph ph-gear"></i> 设置</h3>
-      <button class="nav-btn" id="close-settings"><i class="ph ph-x"></i></button>
-    </div>
-    <div class="drawer-body" id="settings-body"></div>
   </div>
 
   <div class="sheet" id="add-ast-sheet">
