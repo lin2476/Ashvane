@@ -454,6 +454,7 @@ const closeAll = (fromPopState = false) => {
   hideDropdown(); 
   const wasOpen = $1('overlay')?.classList.contains('show');
   $1('overlay')?.classList.remove('show'); 
+  $1('sheet-overlay')?.classList.remove('show');
   closeDrawers(); 
   if (wasOpen && !fromPopState && history.state?.drawer) {
     ignoreNextPopState = true;
@@ -489,6 +490,7 @@ document.addEventListener('click', async e => {
   else if ((el = get('#topic-toggle'))) { e.stopPropagation(); renderTopicList(); openSheet('topics-drawer'); }
   else if ((el = get('#settings-btn'))) { renderSettings(); openSheet('settings-drawer'); }
   else if ((el = get('#close-settings')) || get('#overlay')) closeAll();
+  else if ((el = get('#sheet-overlay'))) { el.classList.remove('show'); $1('add-ast-sheet')?.classList.remove('open'); }
 
   // 2. Chat Input Controls
   else if ((el = get('#send-btn'))) sendMessage();
@@ -508,7 +510,7 @@ document.addEventListener('click', async e => {
 
   // 3. Ast List Interactions
   else if ((el = get('#add-group-btn'))) { const name = await showDialog('请输入新建分组名称', true); if (name?.trim()) { state.groups.push({ id: genId(), name: name.trim(), expanded: true }); saveState(); renderAstList(); toast('<i class="ph-fill ph-check-circle"></i> 已创建分组'); } }
-  else if ((el = get('#add-ast-btn'))) { populateGroupSelect(DEFAULT_GRP); $1('add-ast-sheet')?.classList.add('open'); }
+  else if ((el = get('#add-ast-btn'))) { populateGroupSelect(DEFAULT_GRP); $1('sheet-overlay')?.classList.add('show'); $1('add-ast-sheet')?.classList.add('open'); }
   else if ((el = get('#create-ast'))) {
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
     const gid = $1('new-ast-group')?.value || DEFAULT_GRP;
@@ -519,7 +521,7 @@ document.addEventListener('click', async e => {
     const gh = get('.ast-group-header');
     if (gh) {
       const gid = gh.parentElement.dataset.gid;
-      if (get('.add-to-group')) { e.stopPropagation(); populateGroupSelect(gid); return $1('add-ast-sheet')?.classList.add('open'); }
+      if (get('.add-to-group')) { e.stopPropagation(); populateGroupSelect(gid); $1('sheet-overlay')?.classList.add('show'); return $1('add-ast-sheet')?.classList.add('open'); }
       if (get('.group-more')) { e.stopPropagation(); return handleGroupMore(gid, get('.group-more')); }
       const g = state.groups.find(x => x.id === gid); if (g) { g.expanded = !g.expanded; saveState(); renderAstList(); }
       return;
