@@ -332,10 +332,15 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 
 .ast-card { display:flex; align-items:center; padding:14px 16px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:12px; border:1.5px solid transparent; margin-bottom: 10px; }
 .ast-card:last-child { margin-bottom: 0; }
-.ast-card:hover, .ast-card.active { background:var(--bg-tertiary); }
-.ast-card.active { border-color:var(--accent-light); }
+/* 点击时和选中时加深背景，且不显示紫色边框 */
+.ast-card:active, .ast-card.active { background: var(--bg-tertiary); border-color: transparent; }
 .ast-card .ast-info { flex:1; min-width:0; }
-.ast-card .ast-name { font-size:15px; font-weight:700; margin-bottom:0; }
+.ast-card .ast-name { font-size:15px; font-weight:700; margin-bottom:4px; }
+.ast-card .ast-prompt { font-size:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.ast-more, .topic-more { padding: 4px 10px; font-size: 22px; font-weight: bold; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; margin-left: auto; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all var(--tr); width: 32px; height: 32px; flex-shrink: 0; }
+.ast-more:active, .topic-more:active { background: var(--bg-tertiary); }
+.ast-card:hover .ast-more, .topic-item:hover .topic-more { color: var(--text-primary); }
 
 .topic-item { gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
 .topic-item:hover, .topic-item.active { background:var(--bg-tertiary); }
