@@ -508,7 +508,7 @@ document.addEventListener('click', async e => {
 
   // 3. Ast List Interactions
   else if ((el = get('#add-group-btn'))) { const name = await showDialog('请输入新建分组名称', true); if (name?.trim()) { state.groups.push({ id: genId(), name: name.trim(), expanded: true }); saveState(); renderAstList(); toast('<i class="ph-fill ph-check-circle"></i> 已创建分组'); } }
-  else if ((el = get('#add-ast-btn'))) { populateGroupSelect(DEFAULT_GRP); openSheet('add-ast-sheet'); }
+  else if ((el = get('#add-ast-btn'))) { populateGroupSelect(DEFAULT_GRP); $1('add-ast-sheet')?.classList.add('open'); }
   else if ((el = get('#create-ast'))) {
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
     const gid = $1('new-ast-group')?.value || DEFAULT_GRP;
@@ -519,7 +519,7 @@ document.addEventListener('click', async e => {
     const gh = get('.ast-group-header');
     if (gh) {
       const gid = gh.parentElement.dataset.gid;
-      if (get('.add-to-group')) { e.stopPropagation(); populateGroupSelect(gid); return openSheet('add-ast-sheet'); }
+      if (get('.add-to-group')) { e.stopPropagation(); populateGroupSelect(gid); return $1('add-ast-sheet')?.classList.add('open'); }
       if (get('.group-more')) { e.stopPropagation(); return handleGroupMore(gid, get('.group-more')); }
       const g = state.groups.find(x => x.id === gid); if (g) { g.expanded = !g.expanded; saveState(); renderAstList(); }
       return;
@@ -617,7 +617,7 @@ document.addEventListener('click', async e => {
   }
 
   // 7. Fullscreen Prompt Custom Toolbar
-  else if ((el = get('#fs-prompt-tb'))) {
+  else if ((el = get('.prompt-toolbar'))) {
     if ((el = get('#fs-prompt-toggle-mode'))) {
       const rawTa = $1('fs-prompt-raw-textarea'), vdContainer = $1('fs-prompt-vditor'); isFsPromptRawMode = !isFsPromptRawMode;
       if (isFsPromptRawMode) { rawTa.value = vditorInstance ? vditorInstance.getValue() : ''; vdContainer.classList.add('hidden'); rawTa.classList.remove('hidden'); el.innerHTML = '<i class="ph ph-markdown-logo"></i>'; el.title = 'Markdown模式'; } 
