@@ -26,17 +26,14 @@
   <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension/lib/index.umd.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css" id="hljs-theme">
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js" defer></script>
-  
   <link rel="stylesheet" href="https://unpkg.com/vditor@3.10.6/dist/index.css" />
   <script src="https://unpkg.com/vditor@3.10.6/dist/index.min.js" defer></script>
-
   <link rel="stylesheet" href="./style.css">
   <script src="./script.js" defer></script>
 </head>
 <body>
 <div id="app">
   
-  <!-- 左侧抽屉：助手列表 -->
   <div class="drawer drawer-left" id="ast-drawer">
     <div class="drawer-head">
       <h3 class="flex-center" style="margin:0; font-size:16px; gap:8px;">
@@ -51,9 +48,8 @@
     </div>
   </div>
 
-  <!-- 中间主体：聊天页面 -->
   <div class="chat-page" id="chat-page">
-    <div id="chat-page-mask"></div> <!-- 用于移动端开启侧栏后，捕获点击返回原位 -->
+    <div id="chat-page-mask"></div>
     <div class="navbar">
       <div class="nav-left">
         <button class="nav-btn" id="ast-drawer-btn" title="助手列表"><i class="ph ph-list"></i></button>
@@ -70,6 +66,7 @@
         <button class="nav-btn" id="settings-btn" title="设置"><i class="ph ph-gear"></i></button>
       </div>
     </div>
+    
     <div id="chat-wrapper">
       <div id="density-map"></div>
       <div id="chat-container"><div id="messages"></div></div>
@@ -93,7 +90,6 @@
     </div>
   </div>
 
-  <!-- 右侧抽屉：设置页面 -->
   <div class="drawer drawer-right" id="settings-drawer">
     <div class="drawer-head">
       <h3><i class="ph ph-gear"></i> 设置</h3>
@@ -102,7 +98,6 @@
     <div class="drawer-body" id="settings-body"></div>
   </div>
 
-  <!-- 叠加弹窗容器 -->
   <div class="edit-overlay" id="edit-overlay">
     <div class="edit-card">
       <div class="edit-card-header">
