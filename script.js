@@ -277,7 +277,6 @@ function goToChat(id, fromHistory = false) {
   state.activeAstId = id; 
   saveState(); 
   if (!fromHistory) history.pushState({ page: 'chat', id }, '');
-  renderAstList(); // 触发重新渲染助手列表，应用 active 高亮
   renderChatPage(); 
   closeAll(); 
   userScrolledUp = false; 
@@ -297,7 +296,9 @@ function renderAstList() {
     <div class="ast-card ${a.id === state.activeAstId ? 'active' : ''}" data-id="${a.id}">
       <div class="ast-info">
         <div class="ast-name">${esc(a.name)}</div>
+        <div class="ast-prompt">${esc(a.systemPrompt?.substring(0, 60))}${a.systemPrompt?.length > 60 ? '...' : ''}</div>
       </div>
+      <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
     </div>
   `).join('');
 }
@@ -468,7 +469,7 @@ function renderTopicList() {
   l.innerHTML = a.conversations.map(c => {
     const tok = calcConvContextTokens(c, a.systemPrompt); 
     total += tok;
-    return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}"><span><i class="ph ph-chat-teardrop-text"></i></span><div class="tinfo"><div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div><div class="tmeta">${c.messages.length} 条消息</div></div></div>`;
+    return `<div class="topic-item ${c.id === a.activeConvId ? 'active' : ''}" data-cid="${c.id}"><span><i class="ph ph-chat-teardrop-text"></i></span><div class="tinfo"><div class="ttitle-wrap"><div class="ttitle">${esc(c.title)}</div><span class="nav-tokens">${formatK(tok)}</span></div><div class="tmeta">${c.messages.length} 条消息</div></div><button class="ast-more topic-more"><i class="ph ph-dots-three-vertical"></i></button></div>`;
   }).join('');
   
   if(dtk) dtk.textContent = formatK(total);
@@ -980,6 +981,10 @@ document.addEventListener('click', async e => {
   else if ((el = get('#ast-list'))) {
     const card = get('.ast-card'); 
     if (!card) return;
+    if (get('.ast-more')) { 
+      e.stopPropagation(); 
+      return handleAstMore(card.dataset.id, get('.ast-more')); 
+    }
     goToChat(card.dataset.id);
   }
 
@@ -987,6 +992,7 @@ document.addEventListener('click', async e => {
   else if ((el = get('#topic-list'))) {
     const a = getActiveAst(), item = get('.topic-item'); 
     if (!a || !item) return;
+    if ((el = get('.topic-more'))) return handleTopicMore(item.dataset.cid, el);
     
     a.activeConvId = item.dataset.cid; 
     saveState(); closeAll(); renderChatPage(); renderTopicList(); 
@@ -1204,46 +1210,6 @@ document.addEventListener('click', async e => {
   }
 
 }); // END Document Click
-
-// 桌面端右键呼出卡片更多选项
-document.addEventListener('contextmenu', e => {
-  const astCard = e.target.closest('.ast-card');
-  const topicItem = e.target.closest('.topic-item');
-  if (astCard) {
-    e.preventDefault();
-    handleAstMore(astCard.dataset.id, astCard);
-  } else if (topicItem) {
-    e.preventDefault();
-    handleTopicMore(topicItem.dataset.cid, topicItem);
-  }
-});
-
-// 移动端长按呼出卡片更多选项
-let longPressTimer = null;
-let lpStartX = 0, lpStartY = 0;
-document.addEventListener('touchstart', e => {
-  const target = e.target.closest('.ast-card') || e.target.closest('.topic-item');
-  if (target) {
-    lpStartX = e.touches[0].clientX;
-    lpStartY = e.touches[0].clientY;
-    longPressTimer = setTimeout(() => {
-      if (navigator.vibrate) navigator.vibrate(50);
-      if (target.classList.contains('ast-card')) handleAstMore(target.dataset.id, target);
-      else handleTopicMore(target.dataset.cid, target);
-    }, 500); // 长按触发时间 500ms
-  }
-}, { passive: true });
-document.addEventListener('touchmove', e => {
-  if (longPressTimer) {
-    // 允许有轻微的手指抖动，超过10px认为滑动则取消长按
-    if (Math.abs(e.touches[0].clientX - lpStartX) > 10 || Math.abs(e.touches[0].clientY - lpStartY) > 10) {
-      clearTimeout(longPressTimer); longPressTimer = null;
-    }
-  }
-}, { passive: true });
-['touchend', 'touchcancel'].forEach(evt => document.addEventListener(evt, () => {
-  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-}));
 
 // ==================== 10. GESTURE & INITIALIZATION ====================
 
