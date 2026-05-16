@@ -573,7 +573,7 @@ document.addEventListener('click', async e => {
       if (isFsPromptRawMode) { rawTa.value = vditorInstance ? vditorInstance.getValue() : ''; vdContainer.classList.add('hidden'); rawTa.classList.remove('hidden'); el.innerHTML = '<i class="ph ph-markdown-logo"></i>'; el.title = 'Markdown模式'; } else { if (vditorInstance) vditorInstance.setValue(rawTa.value); rawTa.classList.add('hidden'); vdContainer.classList.remove('hidden'); el.innerHTML = '<i class="ph ph-file-text"></i>'; el.title = '纯文本模式'; }
       setTimeout(syncUndoRedo, 100); return;
     }
-    const btn = get('button[data-md]'); if (btn) { const action = btn.dataset.md; if (isFsPromptRawMode) { $1('fs-prompt-raw-textarea').focus(); document.execCommand(action); } else if (vditorInstance) { const b = document.querySelector(`#fs-prompt-vditor button[data-type="${action}"]`); if (b) b.click(); else document.execCommand(action); } setTimeout(syncUndoRedo, 100); } 
+    const btn = get('button[data-md]'); if (btn) { const action = btn.dataset.md; if (isFsPromptRawMode) { $1('fs-prompt-raw-textarea').focus(); document.execCommand(action); } else if (vditorInstance) { const b = document.querySelector(`#fs-prompt-vditor button[data-type="${action}"]`); if (b) b.click(); else document.execCommand(action); } syncUndoRedo(); } 
   }
   else if ((el = get('#fs-prompt-save'))) { const sp = $1('s-prompt'); if (sp) { const newVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : sp.value); sp.value = newVal; fsPromptOriginalValue = newVal; setTimeout(() => fsPromptChanged = false, 50); $1('s-save')?.click(); } }
   else if ((el = get('#fs-prompt-close'))) handleFsPromptClose();
