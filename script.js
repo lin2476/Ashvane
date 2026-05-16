@@ -250,7 +250,7 @@ function renderAstList() {
   l.innerHTML = state.assistants.map(a => `
     <div class="ast-card" data-id="${a.id}">
       <div class="ast-info">
-        <div class="ast-name">${esc(a.name)}${a.conversations.length ? `<span class="ast-topic-cnt"><i class="ph ph-chat-centered-text"></i> ${a.conversations.length}</span>` : ''}</div>
+        <div class="ast-name">${esc(a.name)}</div>
         <div class="ast-prompt">${esc(a.systemPrompt?.substring(0, 60))}${a.systemPrompt?.length > 60 ? '...' : ''}</div>
       </div>
       <button class="ast-more"><i class="ph ph-dots-three-vertical"></i></button>
@@ -263,7 +263,6 @@ function handleAstMore(id, btn) {
   const idx = state.assistants.indexOf(ast);
   
   const items = [
-    { isHeader: true, label: '操作' }, 
     { label: '删除助手', value: 'delete', icon: '<i class="ph ph-trash"></i>' }
   ];
   if (idx > 0) items.push({ label: '上移', value: 'order_up', icon: '<i class="ph ph-arrow-up"></i>' });
@@ -298,7 +297,7 @@ function renderChatPage() {
   const m = getModelInfo(a.modelId);
   
   const asstNameEl = $1('chat-asst-name'); 
-  if (asstNameEl) asstNameEl.textContent = a.name;
+  if (asstNameEl) asstNameEl.innerHTML = esc(a.name);
   
   const topicNameEl = $1('chat-topic-name'); 
   if (topicNameEl) topicNameEl.textContent = c ? c.title : '新话题'; 
@@ -854,6 +853,19 @@ function saveEdit() {
 // ==================== 8. FS PROMPT EDITOR LOGIC ====================
 let vditorInstance = null, fsPromptOriginalValue = '', fsPromptChanged = false, isFsPromptRawMode = false, ignoreNextPopState = false;
 
+const syncUndoRedo = () => {
+  const ub = $1('fs-undo-btn'), rb = $1('fs-redo-btn');
+  if (!ub || !rb) return;
+  if (isFsPromptRawMode) {
+    ub.disabled = false; rb.disabled = false;
+  } else {
+    const vu = document.querySelector('#fs-prompt-vditor button[data-type="undo"]'), 
+          vr = document.querySelector('#fs-prompt-vditor button[data-type="redo"]');
+    ub.disabled = vu ? vu.classList.contains('vditor-menu--disabled') : true;
+    rb.disabled = vr ? vr.classList.contains('vditor-menu--disabled') : true;
+  }
+};
+
 async function handleFsPromptClose(fromPopState = false) {
   const currentVal = isFsPromptRawMode ? $1('fs-prompt-raw-textarea').value : (vditorInstance ? vditorInstance.getValue() : '');
   
@@ -961,7 +973,7 @@ document.addEventListener('click', async e => {
     saveState(); closeAll(); renderChatPage(); renderTopicList(); 
     userScrolledUp = false; scrollBottom(true, false);
   }
-  else if ((el = get('#new-topic')) || (el = get('#chat-new-topic-btn'))) { 
+  else if ((el = get('#new-topic'))) { 
     const a = getActiveAst(); 
     if (a) { 
       a.activeConvId = null; saveState(); closeAll(); renderChatPage(); 
@@ -1104,10 +1116,15 @@ document.addEventListener('click', async e => {
         
         if (!window.Vditor) return toast('<i class="ph ph-hourglass"></i> 编辑器加载中...');
         if (!vditorInstance) {
-            vditorInstance = new Vditor('fs-prompt-vditor', { mode: 'ir', height: '100%', cache: { enable: false }, value: fsPromptOriginalValue, theme: state.darkMode ? 'dark' : 'classic', icon: 'material', toolbar: ['undo', 'redo'], input: () => { fsPromptChanged = true; } });
+            vditorInstance = new Vditor('fs-prompt-vditor', { 
+                mode: 'ir', height: '100%', cache: { enable: false }, value: fsPromptOriginalValue, theme: state.darkMode ? 'dark' : 'classic', icon: 'material', toolbar: ['undo', 'redo'], 
+                input: () => { fsPromptChanged = true; setTimeout(syncUndoRedo, 100); },
+                after: () => { setTimeout(syncUndoRedo, 100); }
+            });
         } else { 
           vditorInstance.setValue(fsPromptOriginalValue); 
           vditorInstance.setTheme(state.darkMode ? 'dark' : 'classic', state.darkMode ? 'dark' : 'light'); 
+          setTimeout(syncUndoRedo, 100);
         }
       }
     }
@@ -1127,6 +1144,7 @@ document.addEventListener('click', async e => {
         rawTa.classList.add('hidden'); vdContainer.classList.remove('hidden'); 
         el.innerHTML = '<i class="ph ph-file-text"></i>'; el.title = '纯文本模式'; 
       }
+      setTimeout(syncUndoRedo, 100);
       return;
     }
     const btn = get('button[data-md]'); 
@@ -1139,6 +1157,7 @@ document.addEventListener('click', async e => {
         const b = document.querySelector(`#fs-prompt-vditor button[data-type="${action}"]`); 
         if (b) b.click(); else document.execCommand(action); 
       }
+      setTimeout(syncUndoRedo, 100);
     } 
   }
   else if ((el = get('#fs-prompt-save'))) { 
