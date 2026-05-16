@@ -1215,31 +1215,32 @@ document.addEventListener('click', async e => {
 
 // 原生级边缘手势驱动侧边栏逻辑
 let touchStartX = 0, touchCurrentX = 0, touchStartY = 0, isDraggingDrawer = false, draggingDrawer = null, isScrolling = false;
+let gestureRafId = null; // 新增：保存当前的动画帧ID，用于清理冗余帧防掉帧
 
 document.addEventListener('touchstart', (e) => {
   if (window.innerWidth > 768) return; 
   const x = e.touches[0].clientX;
   const y = e.touches[0].clientY;
   touchStartX = x; touchCurrentX = x; touchStartY = y;
-  isScrolling = false; // 重置垂直滚动判定
+  isScrolling = false; 
   
   const app = $1('app');
   const leftOpen = app.classList.contains('left-open'), rightOpen = app.classList.contains('right-open');
   
-  // 防误触：避开可能带有横向滚动的组件（如代码块、公式），触发区扩大到 80px
   if (e.target.closest('pre') || e.target.closest('.katex-display') || e.target.closest('.table-wrapper')) {
     if (x > 80 && x < window.innerWidth - 80) return;
   }
   
   if (!leftOpen && !rightOpen) {
-    // 未展开状态：触发区扩大到 80px
-    if (x < 80) { isDraggingDrawer = true; draggingDrawer = 'left'; }
-    else if (x > window.innerWidth - 80) { isDraggingDrawer = true; draggingDrawer = 'right'; }
+    if (x < 80) { 
+      isDraggingDrawer = true; draggingDrawer = 'left'; 
+    } else if (x > window.innerWidth - 80) { 
+      isDraggingDrawer = true; draggingDrawer = 'right'; 
+      renderSettings(); // 核心修复：手指触摸拉出右侧边栏前，提前渲染设置数据
+    }
   } else if (leftOpen) { 
-    // 助手侧边栏已展开：触摸任何位置（含侧边栏本身）都可以进行滑动闭合
     isDraggingDrawer = true; draggingDrawer = 'left'; 
   } else if (rightOpen) { 
-    // 设置侧边栏已展开：触摸任何位置（含侧边栏本身）都可以进行滑动闭合
     isDraggingDrawer = true; draggingDrawer = 'right'; 
   }
   
@@ -1254,7 +1255,6 @@ document.addEventListener('touchmove', (e) => {
   const dx = x - touchStartX;
   const dy = y - touchStartY;
   
-  // 智能避让：如果用户是上下滑动（垂直位移大于横向位移），则放弃侧滑劫持，让页面正常上下滚动
   if (!isScrolling && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
     isScrolling = true;
     isDraggingDrawer = false;
@@ -1262,19 +1262,20 @@ document.addEventListener('touchmove', (e) => {
     $1('ast-drawer').style.transform = ''; 
     $1('settings-drawer').style.transform = ''; 
     $1('chat-page').style.transform = '';
+    if (gestureRafId) cancelAnimationFrame(gestureRafId);
     return;
   }
   
   if (isScrolling) return;
-
-  // 关键：阻止系统默认侧滑返回上一页事件，解决物理手势跟 JS 冲突造成的画面卡顿
   if (e.cancelable) e.preventDefault(); 
   
   touchCurrentX = x;
   const astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page'), app = $1('app');
   
-  // 使用 GPU 硬件加速的 translate3d 和 requestAnimationFrame 确保丝滑跟手感
-  requestAnimationFrame(() => {
+  // 核心修复：清理掉未执行完的上一帧，彻底解决堆积造成的卡顿掉帧
+  if (gestureRafId) cancelAnimationFrame(gestureRafId);
+  
+  gestureRafId = requestAnimationFrame(() => {
     if (!isDraggingDrawer) return; 
     if (draggingDrawer === 'left') {
       const leftOpen = app.classList.contains('left-open');
@@ -1290,23 +1291,22 @@ document.addEventListener('touchmove', (e) => {
       chatPage.style.transform = `translate3d(${offset}px, 0, 0)`;
     }
   });
-}, { passive: false }); // 必须设为 false 才能生效 e.preventDefault()
+}, { passive: false });
 
 document.addEventListener('touchend', (e) => {
   if (!isDraggingDrawer) return;
   isDraggingDrawer = false;
+  if (gestureRafId) cancelAnimationFrame(gestureRafId); // 修复：手指离开时停止残留的帧计算
   
   const app = $1('app'), astDrawer = $1('ast-drawer'), settingsDrawer = $1('settings-drawer'), chatPage = $1('chat-page');
   app.classList.remove('dragging');
   astDrawer.style.transform = ''; settingsDrawer.style.transform = ''; chatPage.style.transform = '';
   
   const dx = touchCurrentX - touchStartX;
-  // 松手后的惯性阈值及状态判定
   if (Math.abs(dx) > 30) {
     if (draggingDrawer === 'left') toggleDrawer('left', dx > 30);
     else if (draggingDrawer === 'right') toggleDrawer('right', dx < -30);
   } else {
-    // 依然保留点击空白遮罩处闭合侧边栏的功能
     if (draggingDrawer === 'left' && touchStartX > 280 && app.classList.contains('left-open')) toggleDrawer('left', false);
     else if (draggingDrawer === 'right' && touchStartX < window.innerWidth - 280 && app.classList.contains('right-open')) toggleDrawer('right', false);
   }
