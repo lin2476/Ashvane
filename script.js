@@ -238,7 +238,7 @@ function enhanceCodeBlocks(c, prevStates = []) {
         <div class="code-btns">
           <button class="code-icon-btn download-btn" title="下载"><i class="ph ph-download-simple"></i></button>
           <button class="code-icon-btn copy-btn" title="复制"><i class="ph ph-copy"></i></button>
-          <button class="code-icon-btn fold-btn code-fold-bg" title="展开/折叠"><i class="ph ph-caret-down"></i></button>
+          <button class="code-icon-btn fold-btn" title="展开/折叠"><i class="ph ph-caret-down"></i></button>
         </div>
       </div>
     `;
