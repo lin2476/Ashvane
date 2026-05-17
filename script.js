@@ -210,18 +210,65 @@ const md = t => {
   try { return window.marked ? marked.parse(text) : esc(text).replace(/\n/g, '<br>'); } catch(e) { return esc(text).replace(/\n/g, '<br>'); }
 };
 
-function enhanceCodeBlocks(c) {
-  c.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach(pre => {
+function enhanceCodeBlocks(c, prevStates = []) {
+  c.querySelectorAll('pre:not(.code-block-wrapper pre)').forEach((pre, i) => {
     if (pre.dataset.enhanced) return; pre.dataset.enhanced = '1';
-    const code = pre.querySelector('code'), lang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
-    const wrapper = document.createElement('div'); wrapper.className = 'code-block-wrapper';
-    wrapper.innerHTML = `<div class="code-block-header"><span class="code-lang">${lang}</span><div class="code-btns"><button class="code-btn copy-btn"><i class="ph ph-copy"></i> 复制</button><button class="code-btn fold-btn">折叠</button></div></div>`;
+    const code = pre.querySelector('code');
+    const rawLang = code?.className.match(/language-([a-zA-Z0-9_\-]+)/)?.[1] || 'text';
+    
+    const langMap = { javascript: 'JavaScript', typescript: 'TypeScript', html: 'HTML', css: 'CSS', python: 'Python', java: 'Java', cpp: 'C++', csharp: 'C#', php: 'PHP', sql: 'SQL', json: 'JSON', bash: 'Bash', shell: 'Shell', xml: 'XML', yaml: 'YAML', markdown: 'Markdown', go: 'Go', rust: 'Rust', ruby: 'Ruby', swift: 'Swift', kotlin: 'Kotlin' };
+    const displayLang = langMap[rawLang.toLowerCase()] || rawLang.charAt(0).toUpperCase() + rawLang.slice(1);
+
+    const wrapper = document.createElement('div');
+    
+    let isCollapsed = true;
+    if (prevStates && prevStates[i] !== undefined) {
+        isCollapsed = prevStates[i];
+    } else if (streaming) {
+        isCollapsed = false;
+    }
+    
+    wrapper.className = isCollapsed ? 'code-block-wrapper collapsed' : 'code-block-wrapper';
+    wrapper.innerHTML = `
+      <div class="code-block-header">
+        <div class="code-header-left">
+          <i class="ph ph-code"></i>
+          <span class="code-lang">${esc(displayLang)}</span>
+        </div>
+        <div class="code-btns">
+          <button class="code-icon-btn download-btn" title="下载"><i class="ph ph-download-simple"></i></button>
+          <button class="code-icon-btn copy-btn" title="复制"><i class="ph ph-copy"></i></button>
+          <button class="code-icon-btn fold-btn code-fold-bg" title="展开/折叠"><i class="ph ph-caret-down"></i></button>
+        </div>
+      </div>
+    `;
     pre.replaceWith(wrapper); wrapper.appendChild(pre);
     
     on(wrapper.querySelector('.copy-btn'), 'click', e => { 
-      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { e.target.innerHTML = '<i class="ph ph-check"></i> 已复制'; setTimeout(() => e.target.innerHTML = '<i class="ph ph-copy"></i> 复制', 1200); }); 
+      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { 
+        const btn = e.target.closest('.copy-btn');
+        btn.innerHTML = '<i class="ph ph-check"></i>'; 
+        setTimeout(() => btn.innerHTML = '<i class="ph ph-copy"></i>', 1200); 
+      }); 
     });
-    on(wrapper.querySelector('.fold-btn'), 'click', e => { e.stopPropagation(); e.target.textContent = wrapper.classList.toggle('collapsed') ? '展开' : '折叠'; });
+    
+    on(wrapper.querySelector('.download-btn'), 'click', e => {
+      e.stopPropagation();
+      const text = (code || pre).textContent || '';
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `code_${Date.now()}.${rawLang === 'text' ? 'txt' : rawLang}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    on(wrapper.querySelector('.code-block-header'), 'click', e => { 
+      if (!e.target.closest('.copy-btn') && !e.target.closest('.download-btn')) {
+        wrapper.classList.toggle('collapsed'); 
+      }
+    });
+    
     if (code && window.hljs) { try { hljs.highlightElement(code); } catch(e) {} }
   });
   c.querySelectorAll('table:not(.table-wrapper table)').forEach(t => { const w = document.createElement('div'); w.className = 'table-wrapper'; t.replaceWith(w); w.appendChild(t); });
@@ -275,7 +322,12 @@ function updateLive(msgEl, msg) {
   }
   let mc = bub.querySelector('.markdown-body'); 
   if (!mc) { bub.insertAdjacentHTML('beforeend', '<div class="markdown-body"></div>'); mc = bub.querySelector('.markdown-body'); }
-  mc.innerHTML = md(msg.content); enhanceCodeBlocks(bub);
+  
+  const prevStates = Array.from(mc.querySelectorAll('.code-block-wrapper')).map(w => w.classList.contains('collapsed'));
+  
+  mc.innerHTML = md(msg.content); 
+  enhanceCodeBlocks(bub, prevStates);
+  
   const tk = msgEl.querySelector('.msg-tokens'); if (tk) tk.innerHTML = '<i class="ph ph-tag"></i> ' + formatK(getMsgTokens(msg));
 }
 
@@ -509,7 +561,7 @@ document.addEventListener('click', async e => {
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
     state.assistants.unshift({ id: genId(), name: n, systemPrompt: $1('new-ast-prompt')?.value.trim(), temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', conversations:[], activeConvId: null });
     saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('<i class="ph-fill ph-check-circle"></i> 已创建');
-    renderChatPage(); // 触发输入框解禁及视图刷新
+    renderChatPage();
   }
   else if ((el = get('#ast-list'))) {
     const card = get('.ast-card'); if (!card) return;
