@@ -44,20 +44,19 @@ let state = {
 
 let abortCtrl = null, streaming = false, editingMsg = null, userScrolledUp = false;
 
-// 修复图标丢失：确保 svgIco 逻辑在任何地方调用都能正确生成完整 HTML
-const svgIco = (n, c) => c ? `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}-color.svg" class="svg-icon">` : `<span class="svg-icon-mono" style="-webkit-mask-image:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg'); mask-image:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg');"></span>`;
+const svgIco = (n, c) => c ? `<img src="https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}-color.svg" style="width:1.2em; height:1.2em; vertical-align:middle;">` : `<span style="display:inline-block; width:1.1em; height:1.1em; background-color:currentColor; -webkit-mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; mask:url('https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/${n}.svg') center/contain no-repeat; vertical-align:middle;"></span>`;
 const IC_DS_C = svgIco('deepseek', 1), IC_DS_M = svgIco('deepseek', 0);
 const IC_GM_C = svgIco('gemini', 1), IC_GM_M = svgIco('gemini', 0);
-const DS_MODELS = [{ id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', icC: IC_DS_C, icM: IC_DS_M }, { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', icC: IC_DS_C, icM: IC_DS_M }];
+const DS_MODELS = [{ id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', iconColor: IC_DS_C, iconMono: IC_DS_M }, { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', iconColor: IC_DS_C, iconMono: IC_DS_M }];
 
 const getModelInfo = id => {
   const m = DS_MODELS.find(m => m.id === id); 
-  if (m) return { ...m, iconColor: m.icC, iconMono: m.icM };
+  if (m) return m;
   const nid = (id || '').toLowerCase();
   if (nid.includes('gemini')) return { iconColor: IC_GM_C, iconMono: IC_GM_M, name: id, custom: true };
   if (nid.includes('deepseek')) return { iconColor: IC_DS_C, iconMono: IC_DS_M, name: id, custom: true };
-  const ic = '<i class="ph-fill ph-sparkle"></i>';
-  return { iconColor: ic, iconMono: ic, name: id, custom: true };
+  const ic = '<i class="ph-fill ph-sparkle" style="vertical-align:middle;"></i>';
+  return { iconColor: ic.replace('style', 'color:var(--accent); style'), iconMono: ic, name: id, custom: true };
 };
 
 const isDeepSeek = id => DS_MODELS.some(m => m.id === id) || (id || '').toLowerCase().includes('deepseek');
@@ -165,8 +164,8 @@ function handleAstMore(id, btn) {
   showDropdown(btn, items, async val => {
     if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { 
       state.assistants.splice(idx, 1); 
-      if (state.activeAstId === id) state.activeAstId = state.assistants[0]?.id || null; 
-      renderChatPage(); 
+      if (state.activeAstId === id) state.activeAstId = state.assistants[0]?.id; 
+      renderChatPage();
     } else if (val === 'up' || val === 'down') { 
       const t = val === 'up' ? idx - 1 : idx + 1; 
       [state.assistants[idx], state.assistants[t]] = [state.assistants[t], state.assistants[idx]]; 
@@ -178,14 +177,20 @@ function handleAstMore(id, btn) {
 function renderChatPage() {
   let a = getActiveAst(); 
   if (!a && state.assistants.length > 0) { state.activeAstId = state.assistants[0].id; a = getActiveAst(); }
+  const inputEl = $1('user-input');
   
   if (!a) {
     if ($1('chat-asst-name')) $1('chat-asst-name').innerHTML = '无助手';
-    if ($1('chat-topic-name')) $1('chat-topic-name').textContent = '点击侧栏创建助手';
+    if ($1('chat-topic-name')) $1('chat-topic-name').textContent = '暂无话题';
     if ($1('chat-nav-tokens')) $1('chat-nav-tokens').textContent = '(0)';
-    if ($1('messages')) $1('messages').innerHTML = '<div class="welcome"><div class="emoji"><i class="ph-fill ph-ghost"></i></div><h3>还没有助手</h3><p>点击左上角菜单，创建一个助手开始对话吧</p></div>';
+    if ($1('messages')) $1('messages').innerHTML = '<div class="welcome"><div class="emoji"><i class="ph-fill ph-ghost"></i></div><h3>还没有助手</h3><p>请先在左侧栏创建一个助手</p></div>';
+    if ($1('model-chip-btn')) $1('model-chip-btn').innerHTML = '<i class="ph ph-cpu"></i>';
+    if ($1('reasoning-btn')) $1('reasoning-btn').innerHTML = '<i class="ph ph-brain"></i><span>关闭</span>';
+    if (inputEl) { inputEl.disabled = true; inputEl.placeholder = '请先创建助手...'; }
     return;
   }
+
+  if (inputEl && !streaming) { inputEl.disabled = false; inputEl.placeholder = '给助手发送消息，Enter 换行...'; }
 
   const c = getActiveConv(a), m = getModelInfo(a.modelId);
   if ($1('chat-asst-name')) $1('chat-asst-name').innerHTML = esc(a.name);
@@ -265,12 +270,7 @@ function updateLive(msgEl, msg) {
   if (msg.reasoning) { 
     let rb = bub.querySelector('.rblock'); 
     if (!rb) { bub.insertAdjacentHTML('afterbegin', '<div class="rblock"><button class="rhead open"><span><i class="ph ph-brain"></i> 思考过程</span><i class="ph ph-caret-right arr"></i></button><div class="rbody open"></div></div>'); rb = bub.querySelector('.rblock'); }
-    // 体验优化：如果已经开始正式回复且思考块还在展开，自动折叠它
-    if (msg.content.length > 5 && !rb.dataset.autoClosed) { 
-      rb.querySelector('.rhead').classList.remove('open'); 
-      rb.querySelector('.rbody').classList.remove('open'); 
-      rb.dataset.autoClosed = '1'; 
-    }
+    if (msg.content.length > 0 && !rb.dataset.autoClosed) { rb.querySelector('.rhead').classList.remove('open'); rb.querySelector('.rbody').classList.remove('open'); rb.dataset.autoClosed = '1'; }
     rb.querySelector('.rbody').textContent = msg.reasoning;
   }
   let mc = bub.querySelector('.markdown-body'); 
@@ -419,33 +419,15 @@ function showDropdown(anchor, items, onSelect) {
   if (dd.classList.contains('show') && _ddAnchor === anchor) return hideDropdown();
   
   _ddAnchor = anchor;
-  // 核心逻辑修复：弹出菜单时，给对应的卡片增加 .dropdown-open
-  const card = anchor.closest('.ast-card, .topic-item');
-  if (card) card.classList.add('dropdown-open');
-
   dd.innerHTML = items.map((item, i) => item.isHeader ? `<div class="dropdown-header">${item.label}</div>` : `<div class="dropdown-item ${item.selected ? 'selected' : ''}" data-idx="${i}">${item.icon || ''}<span>${item.label}</span>${item.selected ? '<i class="ph ph-check check"></i>' : ''}</div>`).join('');
   
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight; let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`; dd.classList.add('show');
-  
   if (_ddActive) off(document, 'click', _ddActive);
-  _ddActive = e => { 
-    if (e.target.closest('.dropdown-header')) return; 
-    const item = e.target.closest('.dropdown-item'); 
-    if (item) onSelect(items[item.dataset.idx].value); 
-    hideDropdown(); 
-  };
+  _ddActive = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); };
   setTimeout(() => on(document, 'click', _ddActive), 10);
 }
-
-const hideDropdown = () => { 
-  const dd = $1('dropdown-menu'); 
-  if (dd) dd.classList.remove('show'); 
-  // 移除所有卡片的菜单打开状态
-  document.querySelectorAll('.dropdown-open').forEach(el => el.classList.remove('dropdown-open'));
-  if (_ddActive) off(document, 'click', _ddActive); 
-  _ddActive = _ddAnchor = null; 
-};
+const hideDropdown = () => { const dd = $1('dropdown-menu'); if (dd) dd.classList.remove('show'); if (_ddActive) off(document, 'click', _ddActive); _ddActive = _ddAnchor = null; };
 
 function handleTopicMore(cid, btn) {
   if (streaming) return toast('生成中不可操作');
@@ -488,7 +470,12 @@ async function handleFsPromptClose(fromPopState = false) {
   $1('fs-prompt-overlay')?.classList.remove('show'); fsPromptChanged = false;
   if (!fromPopState && history.state?.page === 'fs-prompt') { ignoreNextPopState = true; history.back(); }
 }
-document.addEventListener('input', e => { if (e.target.id === 'fs-prompt-raw-textarea') fsPromptChanged = true; });
+
+document.addEventListener('input', e => { 
+  if (e.target.id === 'fs-prompt-raw-textarea') fsPromptChanged = true; 
+  if (e.target.id === 's-temp') { const v = $1('s-tval'); if (v) v.textContent = parseFloat(e.target.value).toFixed(2); }
+  if (e.target.id === 's-topp') { const v = $1('s-pval'); if (v) v.textContent = parseFloat(e.target.value).toFixed(2); }
+});
 
 document.addEventListener('click', async e => {
   const get = sel => e.target.closest(sel); let el;
@@ -504,7 +491,7 @@ document.addEventListener('click', async e => {
   else if ((el = get('#scroll-down'))) { userScrolledUp = false; scrollBottom(true, false); }
   else if ((el = get('#model-chip-btn'))) {
     if (streaming) return toast('生成中不可切换模型'); e.stopPropagation(); const a = getActiveAst(); if (!a) return;
-    showDropdown(el, [{ isHeader: true, label: 'DeepSeek 模型' }, ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.icC })), { isHeader: true, label: '第三方 API 模型' }, ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: getModelInfo(n).iconColor }))], id => {
+    showDropdown(el, [{ isHeader: true, label: 'DeepSeek 模型' }, ...DS_MODELS.map(m => ({ label: m.name, value: m.id, selected: a.modelId === m.id, icon: m.iconColor })), { isHeader: true, label: '第三方 API 模型' }, ...getCustomModels().map(n => ({ label: n, value: n, selected: a.modelId === n, icon: getModelInfo(n).iconColor }))], id => {
       a.modelId = id; const v = isDeepSeek(id) ? ['off', 'high', 'max'] : ['off', 'low', 'high']; if (!v.includes(a.reasoningEffort)) a.reasoningEffort = 'off'; saveState(); renderChatPage(); toast('已切换模型');
     });
   }
@@ -513,11 +500,16 @@ document.addEventListener('click', async e => {
     const rOpts = isDeepSeek(a.modelId) ? [{label: '关闭', value: 'off'}, {label: 'High', value: 'high'}, {label: 'Max', value: 'max'}] : [{label: '关闭', value: 'off'}, {label: 'Low', value: 'low'}, {label: 'High', value: 'high'}];
     showDropdown(el, rOpts.map(o => ({ label: o.label, value: o.value, selected: a.reasoningEffort === o.value, icon: '<i class="ph ph-brain"></i>' })), val => { a.reasoningEffort = val; saveState(); renderChatPage(); });
   }
-  else if ((el = get('#add-ast-btn'))) openSheet('add-ast-sheet'); 
+  else if ((el = get('#add-ast-btn'))) {
+    if (streaming) return toast('生成中不可操作');
+    openSheet('add-ast-sheet'); 
+  }
   else if ((el = get('#create-ast'))) {
+    if (streaming) return toast('生成中不可操作');
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
     state.assistants.unshift({ id: genId(), name: n, systemPrompt: $1('new-ast-prompt')?.value.trim(), temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', conversations:[], activeConvId: null });
     saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('<i class="ph-fill ph-check-circle"></i> 已创建');
+    renderChatPage(); // 触发输入框解禁及视图刷新
   }
   else if ((el = get('#ast-list'))) {
     const card = get('.ast-card'); if (!card) return;
@@ -532,7 +524,7 @@ document.addEventListener('click', async e => {
     a.activeConvId = item.dataset.cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); userScrolledUp = false; scrollBottom(true, false);
   }
   else if ((el = get('#new-topic'))) { 
-    if (streaming) return toast('生成中不可新建话题');
+    if (streaming) return toast('生成中不可操作');
     const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } 
   }
   else if ((el = get('.density-dot'))) { const tg = $1('messages')?.querySelector(`.msg[data-index="${el.dataset.idx}"]`); if (tg) { $1('chat-container').scrollTo({ top: tg.offsetTop - 14, behavior: 'smooth' }); userScrolledUp = true; } }
@@ -556,7 +548,10 @@ document.addEventListener('click', async e => {
   else if ((el = get('#settings-body'))) {
     const btn = s => get(s);
     if (btn('#data-export')) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ _meta: { version: 10, date: new Date().toISOString() }, data: state }, null, 2)], { type: 'application/json' })); a.download = getBackupName(); a.click(); toast('已导出备份'); } 
-    else if (btn('#data-import-btn')) $1('import-file')?.click();
+    else if (btn('#data-import-btn')) {
+      if (streaming) return toast('生成中不可操作');
+      $1('import-file')?.click();
+    }
     else if (btn('#data-push')) {
       const auth = getWebDAVAuth(); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在同步...');
       const name = getBackupName(), data = { _meta: { version: 10, date: new Date().toISOString() }, data: state };
@@ -568,6 +563,7 @@ document.addEventListener('click', async e => {
       }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 上传失败: ${err.message}`, 4000));
     }
     else if (btn('#data-pull')) {
+      if (streaming) return toast('生成中不可操作');
       const auth = getWebDAVAuth(), pullBtn = btn('#data-pull'); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在获取列表...');
       fetchDAV('backup_index.json', auth, 'GET', null, { 'Cache-Control': 'no-cache, no-store, must-revalidate' }).then(async res => { if(!res.ok) throw new Error(`${res.status} [${res.status===404 ? '暂无索引，请先推送' : '获取失败'}]`); return res.json(); }).then(async files => {
         if (!Array.isArray(files) || !files.length) throw new Error('云端备份列表为空'); toast('<i class="ph ph-hourglass"></i> 校验真实性...');
@@ -581,6 +577,7 @@ document.addEventListener('click', async e => {
       }).catch(err => toast(`<i class="ph-fill ph-warning-circle"></i> 拉取失败: ${err.message}`, 4000));
     }
     else if (btn('#s-save')) {
+      if (streaming) return toast('生成中不可操作');
       const a = getActiveAst(), val = id => $1(id)?.value; if (!a) return;
       a.name = val('s-name')?.trim() || a.name; a.systemPrompt = val('s-prompt')?.trim() ?? a.systemPrompt; a.temperature = parseFloat(val('s-temp') || a.temperature); a.topP = parseFloat(val('s-topp') || a.topP);
       ['dskey:deepseekKey', 'gmkey:geminiKey', 'gmurl:geminiBaseUrl', 'webdavUser:webdavUser', 'webdavToken:webdavToken'].forEach(k => { const[id, sk]=k.split(':'); state[sk] = val('s-'+id)?.trim() ?? state[sk]; });
@@ -588,8 +585,14 @@ document.addEventListener('click', async e => {
       saveState(); applyTheme(); renderChatPage(); renderAstList(); closeAll(); toast('设置已保存');
     } else {
       const head = btn('.settings-fold-head'); if (head) head.parentElement.classList.toggle('open');
-      const themeSw = btn('#s-theme'); if (themeSw) { themeSw.classList.toggle('active'); const tl = $1('theme-label'); if(tl) tl.innerHTML = themeSw.classList.contains('active') ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; }
+      const themeSw = btn('#s-theme'); if (themeSw) { 
+        themeSw.classList.toggle('active'); 
+        state.darkMode = themeSw.classList.contains('active'); 
+        saveState(); applyTheme();
+        const tl = $1('theme-label'); if(tl) tl.innerHTML = state.darkMode ? '<i class="ph-fill ph-moon"></i> 暗色' : '<i class="ph-fill ph-sun"></i> 亮色'; 
+      }
       if (btn('#s-prompt-fs-btn')) { 
+        if (streaming) return toast('生成中不可操作');
         fsPromptOriginalValue = $1('s-prompt')?.value || ''; fsPromptChanged = false; isFsPromptRawMode = false;
         const toggleBtn = $1('fs-prompt-toggle-mode'); if (toggleBtn) { toggleBtn.innerHTML = '<i class="ph ph-file-text"></i>'; toggleBtn.title = '纯文本模式'; }
         $1('fs-prompt-raw-textarea')?.classList.add('hidden'); $1('fs-prompt-vditor')?.classList.remove('hidden'); $1('fs-prompt-overlay')?.classList.add('show'); history.pushState({ page: 'fs-prompt' }, '');
