@@ -23,7 +23,7 @@ const IDB = {
   db: null,
   init: () => new Promise((res, rej) => {
     const req = indexedDB.open('AIChatDB', 1);
-    req.onupgradeneeded = e => { if (!e.target.result.objectStoreNames.contains('store')) e.target.result.createObjectStore('store'); };
+    req.onupgradeneeded = e => e.target.result.createObjectStore('store');
     req.onsuccess = e => { IDB.db = e.target.result; res(); };
     req.onerror = e => rej(e.target.error);
   }),
@@ -89,17 +89,6 @@ function ensureConv(a) {
   return c;
 }
 
-const stopGeneration = () => {
-  if (streaming && abortCtrl) {
-    abortCtrl.abort();
-    streaming = false;
-    abortCtrl = null;
-    $1('send-btn')?.classList.remove('hidden');
-    const uInp = $1('user-input'); if(uInp) uInp.disabled = false;
-    $1('stop-btn')?.classList.add('hidden');
-  }
-};
-
 // 3. UI Helpers
 function toast(m, d = 2500) {
   const t = $1('toast'); if(!t) return;
@@ -134,6 +123,10 @@ function applyTheme() {
   const ht = $1('hljs-theme'); if (ht) ht.href = `https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github${state.darkMode ? '-dark' : ''}.min.css`; 
 }
 
+function setupPWA() { 
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());`], { type: 'application/javascript' }))).catch(()=>{}); 
+}
+
 function toggleDrawer(side, forceState) {
   const app = $1('app'); if (!app) return;
   const isLeft = side === 'left', cls = isLeft ? 'left-open' : 'right-open', opp = isLeft ? 'right-open' : 'left-open';
@@ -152,14 +145,7 @@ const closeAll = (fromPopState = false) => {
 };
 
 const openSheet = id => { closeDrawers(); $1('sheet-overlay')?.classList.add('show'); $1(id)?.classList.add('open'); if (!history.state?.drawer) history.pushState({ ...history.state, drawer: true }, ''); };
-
-function goToChat(id, fromHistory = false) { 
-  stopGeneration(); 
-  state.activeAstId = id; saveState(); 
-  if (!fromHistory) history.pushState({ page: 'chat', id }, ''); 
-  renderChatPage(); renderAstList(); closeAll(); 
-  userScrolledUp = false; scrollBottom(true, false); 
-}
+function goToChat(id, fromHistory = false) { state.activeAstId = id; saveState(); if (!fromHistory) history.pushState({ page: 'chat', id }, ''); renderChatPage(); renderAstList(); closeAll(); userScrolledUp = false; scrollBottom(true, false); }
 
 // 4. Renderers
 function renderAstList() {
@@ -177,10 +163,7 @@ function handleAstMore(id, btn) {
   showDropdown(btn, items, async val => {
     if (val === 'delete' && await showDialog('确定要删除此助手吗？')) { 
       state.assistants.splice(idx, 1); 
-      if (state.activeAstId === id) {
-        stopGeneration();
-        state.activeAstId = state.assistants[0]?.id; 
-      }
+      if (state.activeAstId === id) state.activeAstId = state.assistants[0]?.id; 
       if (state.activeAstId) renderChatPage(); 
     } else if (val === 'up' || val === 'down') { 
       const t = val === 'up' ? idx - 1 : idx + 1; 
@@ -222,12 +205,7 @@ function enhanceCodeBlocks(c) {
     pre.replaceWith(wrapper); wrapper.appendChild(pre);
     
     on(wrapper.querySelector('.copy-btn'), 'click', e => { 
-      e.stopPropagation(); const btn = e.target;
-      copyText((code || pre).textContent || '').then(() => { 
-        btn.innerHTML = '<i class="ph ph-check"></i> 已复制'; 
-        clearTimeout(btn._t);
-        btn._t = setTimeout(() => btn.innerHTML = '<i class="ph ph-copy"></i> 复制', 1200); 
-      }); 
+      e.stopPropagation(); copyText((code || pre).textContent || '').then(() => { e.target.innerHTML = '<i class="ph ph-check"></i> 已复制'; setTimeout(() => e.target.innerHTML = '<i class="ph ph-copy"></i> 复制', 1200); }); 
     });
     on(wrapper.querySelector('.fold-btn'), 'click', e => { e.stopPropagation(); e.target.textContent = wrapper.classList.toggle('collapsed') ? '展开' : '折叠'; });
     if (code && window.hljs) { try { hljs.highlightElement(code); } catch(e) {} }
@@ -323,16 +301,8 @@ async function sendMessage() {
   
   streaming = true; $1('send-btn')?.classList.add('hidden'); inputEl.disabled = true; $1('stop-btn')?.classList.remove('hidden'); 
   const nTk = $1('chat-nav-tokens'); if (nTk) nTk.textContent = `(${c.messages.length})`;
-  abortCtrl = new AbortController(); 
-
-  // 动态获取以避免分离DOM带来的内存漏洞
-  const activeMsgIdx = c.messages.length - 1;
-  const getActiveMsgEl = () => $1('messages')?.querySelector(`.msg[data-index="${activeMsgIdx}"]`);
-  
-  let genTimer = setInterval(() => { 
-    const el = getActiveMsgEl()?.querySelector('.gen-time'); 
-    if (el) el.innerHTML = `<i class="ph ph-timer"></i> ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`; 
-  }, 1000);
+  const activeMsgEl = $1('messages')?.lastElementChild; abortCtrl = new AbortController(); 
+  let genTimer = setInterval(() => { const el = activeMsgEl?.querySelector('.gen-time'); if (el) el.innerHTML = `<i class="ph ph-timer"></i> ${((Date.now() - am.startTime) / 1000).toFixed(0)}s`; }, 1000);
   
   try {
     const { url, headers, body } = getApiConfig(a, c);
@@ -352,13 +322,12 @@ async function sendMessage() {
               if (String(p.thought) === "true") am.reasoning += (p.text || ''); else if (p.text) am.content += p.text;
             }
           } else { const d = chunk.choices?.[0]?.delta; if (d?.reasoning_content) am.reasoning += d.reasoning_content; if (d?.content) am.content += d.content; }
-          if (nTk) nTk.textContent = `(${c.messages.length})`; 
-          updateLive(getActiveMsgEl(), am); scrollBottom(false, false);
+          if (nTk) nTk.textContent = `(${c.messages.length})`; updateLive(activeMsgEl, am); scrollBottom(false, false);
         } catch(e) {}
       }
     }
   } catch (err) { if (err.name !== 'AbortError') am.content = am.content || `❌ 错误：${err.message}`; 
-  } finally { stopGeneration(); clearInterval(genTimer); am.genTime = ((Date.now() - am.startTime) / 1000).toFixed(0); delete am.startTime; saveState(); renderChatPage(); }
+  } finally { streaming = false; abortCtrl = null; clearInterval(genTimer); am.genTime = ((Date.now() - am.startTime) / 1000).toFixed(0); delete am.startTime; saveState(); renderChatPage(); $1('send-btn')?.classList.remove('hidden'); inputEl.disabled = false; $1('stop-btn')?.classList.add('hidden'); }
 }
 
 async function mergeData(data, promptMsg) {
@@ -440,14 +409,9 @@ function showDropdown(anchor, items, onSelect) {
   
   const r = anchor.getBoundingClientRect(), mh = dd.offsetHeight; let top = r.top - mh - 4 > 0 ? r.top - mh - 4 : r.bottom + 4; if (top + mh > window.innerHeight) top = window.innerHeight - mh - 10;
   dd.style.cssText = `top:${top}px; left:${Math.max(5, Math.min(r.left, window.innerWidth - dd.offsetWidth - 5))}px`; dd.classList.add('show');
-  
-  _ddActive = e => { 
-    if (e.target.closest('.dropdown-header')) return; 
-    if (!e.target.closest('.dropdown-menu')) return hideDropdown();
-    const item = e.target.closest('.dropdown-item'); 
-    if (item) { onSelect(items[item.dataset.idx].value); hideDropdown(); } 
-  };
-  setTimeout(() => on(document, 'click', _ddActive), 0);
+  if (_ddActive) off(document, 'click', _ddActive);
+  _ddActive = e => { if (e.target.closest('.dropdown-header')) return; const item = e.target.closest('.dropdown-item'); if (item) onSelect(items[item.dataset.idx].value); hideDropdown(); };
+  setTimeout(() => on(document, 'click', _ddActive), 10);
 }
 const hideDropdown = () => { const dd = $1('dropdown-menu'); if (dd) dd.classList.remove('show'); if (_ddActive) off(document, 'click', _ddActive); _ddActive = _ddAnchor = null; };
 
@@ -459,11 +423,7 @@ function handleTopicMore(cid, btn) {
     if (val === 'rename') { const nt = await showDialog('重命名话题', true, conv.title); if (nt?.trim() && nt.trim() !== conv.title) { conv.title = nt.trim(); saveState(); renderChatPage(); renderTopicList(); } }
     else if (val === 'copy') { const nc = JSON.parse(JSON.stringify(conv)); nc.id = genId(); nc.title += ' 副本'; a.conversations.splice(idx + 1, 0, nc); saveState(); renderTopicList(); toast('已复制话题'); }
     else if (val === 'up' || val === 'down') { const ti = val === 'up' ? idx - 1 : idx + 1; [a.conversations[idx], a.conversations[ti]] = [a.conversations[ti], a.conversations[idx]]; saveState(); renderTopicList(); }
-    else if (val === 'delete' && await showDialog('确定要删除此话题吗？')) { 
-      a.conversations.splice(idx, 1); 
-      if (a.activeConvId === cid) { stopGeneration(); a.activeConvId = a.conversations[0]?.id || null; }
-      saveState(); renderChatPage(); renderTopicList(); 
-    }
+    else if (val === 'delete' && await showDialog('确定要删除此话题吗？')) { a.conversations.splice(idx, 1); if (a.activeConvId === cid) a.activeConvId = a.conversations[0]?.id || null; saveState(); renderChatPage(); renderTopicList(); }
   });
 }
 
@@ -507,7 +467,7 @@ document.addEventListener('click', async e => {
   else if ((el = get('#sheet-overlay'))) closeAll();
   else if ((el = get('#chat-page-mask'))) { toggleDrawer('left', false); toggleDrawer('right', false); }
   else if ((el = get('#send-btn'))) sendMessage();
-  else if ((el = get('#stop-btn'))) stopGeneration();
+  else if ((el = get('#stop-btn'))) abortCtrl?.abort();
   else if ((el = get('#scroll-down'))) { userScrolledUp = false; scrollBottom(true, false); }
   else if ((el = get('#model-chip-btn'))) {
     if (streaming) return toast('生成中不可切换模型'); e.stopPropagation(); const a = getActiveAst(); if (!a) return;
@@ -534,10 +494,9 @@ document.addEventListener('click', async e => {
   else if ((el = get('#topic-list'))) {
     const a = getActiveAst(), item = get('.topic-item'); if (!a || !item) return;
     if ((el = get('.topic-more'))) return handleTopicMore(item.dataset.cid, el);
-    stopGeneration();
     a.activeConvId = item.dataset.cid; saveState(); closeAll(); renderChatPage(); renderTopicList(); userScrolledUp = false; scrollBottom(true, false);
   }
-  else if ((el = get('#new-topic'))) { const a = getActiveAst(); if (a) { stopGeneration(); a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } }
+  else if ((el = get('#new-topic'))) { const a = getActiveAst(); if (a) { a.activeConvId = null; saveState(); closeAll(); renderChatPage(); userScrolledUp = false; scrollBottom(true, false); } }
   else if ((el = get('.density-dot'))) { const tg = $1('messages')?.querySelector(`.msg[data-index="${el.dataset.idx}"]`); if (tg) { $1('chat-container').scrollTo({ top: tg.offsetTop - 14, behavior: 'smooth' }); userScrolledUp = true; } }
   else if ((el = get('#messages'))) {
     const btn = get('button[data-a]'), hint = get('.welcome-hint'), rhead = get('.rhead');
@@ -563,8 +522,6 @@ document.addEventListener('click', async e => {
     else if (btn('#data-push')) {
       const auth = getWebDAVAuth(); if (!auth) return; toast('<i class="ph ph-hourglass"></i> 正在同步...');
       const name = getBackupName(), data = { _meta: { version: 10, date: new Date().toISOString() }, data: state };
-      
-      await fetchDAV('', auth, 'MKCOL').catch(()=>{}); // 智能自动创建同步目录
       fetchDAV(name, auth, 'PUT', data).then(async res => { 
         if(!(res.ok || res.status === 201 || res.status === 204)) throw new Error(`${res.status} [${(await res.text()).toLowerCase().includes('vercel') ? 'Vercel代理未生效' : '被拒绝'}]`);
         let idx = []; try { const r = await fetchDAV('backup_index.json', auth); if (r.ok) idx = await r.json(); } catch(e) {}
@@ -629,6 +586,7 @@ if(userInput) {
 // 8. Init
 await IDB.init().catch(()=>{}); 
 await loadState(); 
+setupPWA(); 
 applyTheme(); 
 
 if (!state.activeAstId || !state.assistants.some(a => a.id === state.activeAstId)) state.activeAstId = state.assistants[0]?.id || 'default-ast';
