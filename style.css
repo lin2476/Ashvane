@@ -209,21 +209,21 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 #chat-page-mask { display: none; position: absolute; inset: 0; z-index: 999; background: transparent; }
 
 @media (max-width: 768px) {
-  .drawer { position: absolute; top: 0; bottom: 0; width: 280px; z-index: 200; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 30px rgba(0,0,0,0.1); }
-  .drawer-left { left: 0; transform: translateX(-100%); }
-  .drawer-right { right: 0; transform: translateX(100%); }
+  .drawer { position: absolute; top: 0; bottom: 0; z-index: 200; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 30px rgba(0,0,0,0.1); }
+  .drawer-left { left: 0; width: 230px; transform: translateX(-100%); }
+  .drawer-right { right: 0; width: 280px; transform: translateX(100%); }
   .chat-page { width: 100vw; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 100; }
   #app.left-open .drawer-left { transform: translateX(0); }
-  #app.left-open .chat-page { transform: translateX(280px); }
+  #app.left-open .chat-page { transform: translateX(230px); }
   #app.right-open .drawer-right { transform: translateX(0); }
   #app.right-open .chat-page { transform: translateX(-280px); }
   #app.left-open #chat-page-mask, #app.right-open #chat-page-mask { display: block; }
 }
 
 @media (min-width: 769px) {
-  .drawer { position: relative; width: 280px; flex-shrink: 0; transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 200; }
-  .drawer-left { margin-left: -280px; border-right: 1px solid var(--border-soft); }
-  .drawer-right { margin-right: -280px; border-left: 1px solid var(--border-soft); }
+  .drawer { position: relative; flex-shrink: 0; transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 200; }
+  .drawer-left { width: 230px; margin-left: -230px; border-right: 1px solid var(--border-soft); }
+  .drawer-right { width: 280px; margin-right: -280px; border-left: 1px solid var(--border-soft); }
   .chat-page { flex: 1; min-width: 0; transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 100; }
   #app.left-open .drawer-left { margin-left: 0; }
   #app.right-open .drawer-right { margin-right: 0; }
