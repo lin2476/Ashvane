@@ -7,12 +7,11 @@
   --tr: .25s cubic-bezier(.4, 0, .2, 1);
   --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   --border-subtle: rgba(128,128,128,.15); --border-soft: rgba(128,128,128,.08);
-  --code-bg: #f5f5f5; --code-header-bg: rgba(0,0,0,0.03);
 }
 [data-theme="dark"] {
   --bg-primary: #000; --bg-secondary: #111118; --bg-tertiary: #1a1a26;
   --bg-bubble-user: #2a362f; --text-primary: #e4e4ed;
-  --accent-light: #1e1b4b; --code-bg: #1a1a26; --code-header-bg: rgba(255,255,255,0.05);
+  --accent-light: #1e1b4b;
 }
 
 *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
@@ -130,6 +129,10 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .msg-actions button { padding:4px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:14px; cursor:pointer; transition:all var(--tr); font-weight:500; }
 .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
+/* V1 的消息操作显隐逻辑：默认透明隐藏，只有在悬停/焦点时浮现 */
+.actions-right button { opacity:0; transition:opacity .2s; pointer-events: none; }
+.msg:hover .actions-right button, .msg:active .actions-right button, .msg:focus-within .actions-right button { opacity:1; pointer-events: auto; }
+
 .bubble :is(h1,h2,h3) { margin:10px 0 4px; font-size:1.05em; }
 .bubble p { margin:4px 0; }
 .bubble p:first-child { margin-top:0; }
@@ -150,19 +153,18 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .bubble img { max-width:100%; border-radius:var(--radius-sm); }
 
 /* ======== 高级代码块折叠样式 (Google AI Studio UI) ======== */
-.code-block-wrapper { border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden; margin: 12px 0; background: var(--code-bg); transition: all var(--tr); }
-.code-block-header { padding: 6px 12px 6px 16px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-subtle); }
-.code-block-wrapper.collapsed .code-block-header { border-bottom: none; background: transparent; }
+.code-block-wrapper { border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden; margin: 12px 0; background: var(--bg-primary); transition: all var(--tr); }
+.code-block-header { padding: 6px 12px 6px 16px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-subtle); }
+.code-block-wrapper.collapsed .code-block-header { border-bottom: none; }
 .code-header-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
 .code-header-left i { font-size: 18px; color: var(--text-secondary); }
 .code-btns { display: flex; align-items: center; gap: 4px; }
 .code-icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: transparent; color: var(--text-secondary); font-size: 16px; cursor: pointer; transition: all var(--tr); }
-.code-block-wrapper.collapsed .copy-btn, .code-block-wrapper.collapsed .download-btn { display: none; }
-.code-block-wrapper.collapsed .code-fold-bg { background: rgba(128,128,128,0.12); color: var(--text-primary); }
+.code-block-wrapper .code-fold-bg { background: rgba(128,128,128,0.12); color: var(--text-primary); }
 .code-fold-bg i { transition: transform var(--tr); }
 .code-block-wrapper:not(.collapsed) .code-fold-bg i { transform: rotate(180deg); }
 .code-block-wrapper.collapsed pre { display: none !important; }
-.bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background: var(--code-bg) !important; color: inherit; }
+.bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background: var(--bg-primary) !important; color: inherit; }
 .bubble .code-block-wrapper pre { padding: 16px; overflow-x: auto; margin: 0; scrollbar-width: none; }
 .bubble .code-block-wrapper pre::-webkit-scrollbar { display: none; }
 
@@ -262,15 +264,9 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
   .code-icon-btn:hover { background: rgba(128,128,128,0.12); color: var(--text-primary); }
   .dropdown-menu .dropdown-item:hover { background:var(--bg-tertiary); }
   #model-chip-btn:hover, #reasoning-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--accent); }
-  .actions-right button { opacity:0; transition:opacity .2s; }
-  .msg:hover .actions-right button { opacity:1; }
   #density-map:hover { background:rgba(128,128,128,0.08); }
   .density-dot:hover { opacity:0.5; }
   #density-map:hover #density-thumb { opacity:0.5; }
-}
-
-@media (hover: none) {
-  .actions-right button { opacity:1; }
 }
 
 .section { margin-bottom:22px; }
