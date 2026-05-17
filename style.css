@@ -126,7 +126,7 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .actions-left .badge, .gen-time { font-size:11px; color:var(--text-secondary); opacity:.65; white-space:nowrap; gap: 4px; }
 .gen-time { font-family:var(--mono); margin-left:6px; }
 
-.msg-actions button { padding:4px 10px; border:none; border-radius:12px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:14px; cursor:pointer; transition:all var(--tr); font-weight:500; }
+.msg-actions button { display:flex; align-items:center; justify-content:center; width:26px; height:26px; padding:0; border:none; border-radius:6px; background:var(--bg-tertiary); color:var(--text-secondary); font-size:14px; cursor:pointer; transition:all var(--tr); }
 .msg-actions button:active { background:var(--accent-light); color:var(--accent); }
 
 /* V1 的消息操作显隐逻辑：默认透明隐藏，只有在悬停/焦点时浮现 */
@@ -160,9 +160,8 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .code-header-left i { font-size: 18px; color: var(--text-secondary); }
 .code-btns { display: flex; align-items: center; gap: 4px; }
 .code-icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: transparent; color: var(--text-secondary); font-size: 16px; cursor: pointer; transition: all var(--tr); }
-.code-block-wrapper .code-fold-bg { background: rgba(128,128,128,0.12); color: var(--text-primary); }
-.code-fold-bg i { transition: transform var(--tr); }
-.code-block-wrapper:not(.collapsed) .code-fold-bg i { transform: rotate(180deg); }
+.fold-btn i { transition: transform var(--tr); }
+.code-block-wrapper:not(.collapsed) .fold-btn i { transform: rotate(180deg); }
 .code-block-wrapper.collapsed pre { display: none !important; }
 .bubble .code-block-wrapper pre, .bubble .code-block-wrapper pre code { background: var(--bg-primary) !important; color: inherit; }
 .bubble .code-block-wrapper pre { padding: 16px; overflow-x: auto; margin: 0; scrollbar-width: none; }
