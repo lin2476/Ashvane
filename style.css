@@ -240,11 +240,12 @@ html,body { height:100%; width:100%; overflow:hidden; font-family:system-ui,-app
 .topics-modal-head { padding:16px 20px; border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
 .topics-modal-body { padding:12px 16px; overflow-y:auto; flex:1; }
 
-.ast-card { display:flex; align-items:center; padding:8px 12px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:10px; border:none; margin-bottom:4px; }
+.ast-card { display:flex; align-items:center; padding:8px 4px 8px 12px; background:var(--bg-secondary); border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); gap:2px; border:none; margin-bottom:4px; }
 .ast-card:last-child { margin-bottom: 0; }
 .ast-card .ast-name { font-size:14px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height: 1.2; }
 
 .ast-more, .topic-more { padding: 4px 10px; font-size: 22px; font-weight: bold; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; margin-left: auto; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all var(--tr); width: 32px; height: 32px; flex-shrink: 0; }
+.ast-more { width: 24px; padding: 0; }
 .topic-item { gap:8px; padding:10px 12px; border-radius:var(--radius-md); cursor:pointer; transition:all var(--tr); margin-bottom:3px; border:1.5px solid transparent; }
 .topic-item .tinfo { flex:1; min-width:0; }
 .ttitle-wrap { margin-bottom:2px; }
