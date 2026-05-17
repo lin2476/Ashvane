@@ -561,7 +561,7 @@ document.addEventListener('click', async e => {
     const n = $1('new-ast-name')?.value.trim(); if (!n) return toast('<i class="ph ph-warning-circle"></i> 请输入名称');
     state.assistants.unshift({ id: genId(), name: n, systemPrompt: $1('new-ast-prompt')?.value.trim(), temperature: 1.0, topP: 1.0, modelId: DEFAULT_MODEL, reasoningEffort: 'off', conversations:[], activeConvId: null });
     saveState(); closeAll(); renderAstList(); $1('new-ast-name').value = ''; toast('<i class="ph-fill ph-check-circle"></i> 已创建');
-    renderChatPage();
+    renderChatPage(); // 触发输入框解禁及视图刷新
   }
   else if ((el = get('#ast-list'))) {
     const card = get('.ast-card'); if (!card) return;
